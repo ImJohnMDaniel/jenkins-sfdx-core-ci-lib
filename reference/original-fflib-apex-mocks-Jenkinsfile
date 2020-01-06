@@ -1,0 +1,103 @@
+#!groovy
+import groovy.json.JsonSlurperClassic
+
+pipeline {
+    agent any 
+    environment {
+        def BUILD_NUMBER = "${env.BUILD_NUMBER}"
+        def RUN_ARTIFACT_DIR = "target/${BUILD_NUMBER}"
+        def SFDX_PROJECT = ""
+        def SFDX_NEW_PACKAGE = ""
+        def SFDX_NEW_PACKAGE_VERSION_ID = ""
+        def SFDX_NEW_PACKAGE_VERSION = ""
+
+        def SFDX_DEV_HUB_USERNAME = "${env.SFDX_DEV_HUB_USERNAME}"
+        def SFDX_DEV_HUB_HOST = "${env.SFDX_DEV_HUB_HOST}"
+
+        def JWT_KEY_CRED_ID = "${env.JWT_CRED_ID_DH}"
+        def CONNECTED_APP_CONSUMER_KEY_DH = "${env.CONNECTED_APP_CONSUMER_KEY_DH}"
+
+        def SFDX_SCRATCH_ORG_ALIAS = "bluesphere"
+
+        // Tools 
+        // def toolbelt = tool 'sfdx'
+        def toolbelt = tool 'sfdx-toolbelt'
+        // def pmdtoolbelt = tool 'pmd-toolbelt'
+
+        // def utils = new rstk.ci.Utilities() // doesn't work
+    }
+
+    stages {
+        stage('Validate') {
+            steps {
+                script {
+                    // if sfdx-project.json file is not present, then abort build
+                    def sfdxProjectFileExists = fileExists 'sfdx-project.json'
+                    if ( ! sfdxProjectFileExists ) {
+                        error 'SFDX project file (sfdx-project.json) not found.'
+                    }
+                }
+            }
+        }
+        
+        stage('Initialize') {
+            steps {
+                script{
+                    sh "mkdir -p ${RUN_ARTIFACT_DIR}"
+                }
+                
+                // process the sfdx-project.json file for later user
+                echo('Deserialize the sfdx-project.json ')
+                
+                script {
+                    def sfdxProjectFileContents = utils.jsonParse( readFile('sfdx-project.json') )                
+                    SFDX_PROJECT = sfdxProjectFileContents
+                }
+                echo('successful use of jsonParse')
+                
+                withCredentials( [ file( credentialsId: JWT_KEY_CRED_ID, variable: 'jwt_key_file') ] ) {
+
+                    // temporary workaround pending resolution to this issue https://github.com/forcedotcom/cli/issues/81
+                    sh returnStatus: true, script: "cp ${jwt_key_file} ./server.key"
+
+                    echo("Authenticate To Dev Hub...")
+                    script {
+                        rc = sh returnStatus: true, script: "${toolbelt}/sfdx force:auth:jwt:grant --clientid ${CONNECTED_APP_CONSUMER_KEY_DH} --username ${SFDX_DEV_HUB_USERNAME} --jwtkeyfile server.key --setalias RSTKDevHub --setdefaultdevhubusername --instanceurl ${SFDX_DEV_HUB_HOST}"
+                        if (rc != 0) { error "hub org authorization failed" }
+                    }
+                }
+                // echo("Create Scratch Org...")
+                // script {
+                //     rmsg = sh returnStdout: true, script: "${toolbelt}/sfdx force:org:create --definitionfile config/project-scratch-def.json --json --setdefaultusername --durationdays 1 --setalias ${SFDX_SCRATCH_ORG_ALIAS}"
+                // }
+                
+            }
+        }
+
+
+    }
+
+    post {
+        always {
+            echo('Deleting scratch org')
+            // script {
+            //     rc = sh returnStatus: true, script: "${toolbelt}/sfdx force:org:delete --targetusername ${SFDX_SCRATCH_ORG_ALIAS} --noprompt"
+            //     if (rc != 0) { 
+            //         error "deletion of scratch org ${SFDX_SCRATCH_ORG_ALIAS} failed"
+            //     }
+
+            //     // temporary workaround pending resolution to this issue https://github.com/forcedotcom/cli/issues/81.  Also, see reference above
+            //     sh returnStatus: true, script: "rm -f ./server.key"
+            // }
+        }
+        success {
+            echo('Send Slack message success')
+            // slackSend channel: '#sf-ci-alerts', color: 'good', failOnError: true, message: "Build completed ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)", tokenCredentialId: 'Slack-Integration-Token-SF-CI-ALERTS'
+        }
+        failure {
+            echo('Send Slack message failure')
+            // slackSend channel: '#sf-ci-alerts', color: 'danger', failOnError: true, message: "Bad news.  Build failed ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)", tokenCredentialId: 'Slack-Integration-Token-SF-CI-ALERTS'
+        }
+    }
+}
+

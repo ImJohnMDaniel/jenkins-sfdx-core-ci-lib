@@ -1,0 +1,41 @@
+{
+  "status": 0,
+  "result": [
+    {
+      "Id": "0A30m00000054CzCAI",
+      "SubscriberPackageId": "03330000000wDAbAAM",
+      "SubscriberPackageName": "Salesforce Connected Apps",
+      "SubscriberPackageNamespace": "sf_com_apps",
+      "SubscriberPackageVersionId": "04t30000001DUvrAAG",
+      "SubscriberPackageVersionName": "Winter '16",
+      "SubscriberPackageVersionNumber": "1.7.0.1"
+    },
+    {
+      "Id": "0A30m00000054ChCAI",
+      "SubscriberPackageId": "033800000006eyOAAQ",
+      "SubscriberPackageName": "apex-lang managed",
+      "SubscriberPackageNamespace": "al",
+      "SubscriberPackageVersionId": "04t80000000jN1qAAE",
+      "SubscriberPackageVersionName": "1.18",
+      "SubscriberPackageVersionNumber": "1.18.0.1"
+    },
+    {
+      "Id": "0A30m00000054CiCAI",
+      "SubscriberPackageId": "033U000000094R9IAI",
+      "SubscriberPackageName": "Rootstock ERP",
+      "SubscriberPackageNamespace": "rstk",
+      "SubscriberPackageVersionId": "04t4O000000A3lfQAC",
+      "SubscriberPackageVersionName": "Winter 2019",
+      "SubscriberPackageVersionNumber": "19.13.1.1"
+    },
+    {
+      "Id": "0A30m00000059pcCAA",
+      "SubscriberPackageId": "0331O000001AXT9QAO",
+      "SubscriberPackageName": "rstk-sfdx-ref-apex-mocks",
+      "SubscriberPackageNamespace": null,
+      "SubscriberPackageVersionId": "04t1O000001RxfyQAC",
+      "SubscriberPackageVersionName": "ver 0.1",
+      "SubscriberPackageVersionNumber": "0.1.0.1"
+    }
+  ]
+}

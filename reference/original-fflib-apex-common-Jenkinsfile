@@ -1,0 +1,462 @@
+#!groovy
+import groovy.json.JsonSlurperClassic
+
+pipeline {
+    agent any 
+    environment {
+        def BUILD_NUMBER = "${env.BUILD_NUMBER}"
+        def RUN_ARTIFACT_DIR = "target/${BUILD_NUMBER}"
+        def SFDX_PROJECT = ""
+        def SFDX_NEW_PACKAGE = ""
+        def SFDX_NEW_PACKAGE_VERSION_ID = ""
+        def SFDX_NEW_PACKAGE_VERSION = ""
+
+        def SFDX_DEV_HUB_USERNAME = "${env.SFDX_DEV_HUB_USERNAME}"
+        def SFDX_DEV_HUB_HOST = "${env.SFDX_DEV_HUB_HOST}"
+
+        def JWT_KEY_CRED_ID = "${env.JWT_CRED_ID_DH}"
+        def CONNECTED_APP_CONSUMER_KEY_DH = "${env.CONNECTED_APP_CONSUMER_KEY_DH}"
+
+        def SFDX_SCRATCH_ORG_ALIAS = "bluesphere"
+        def SFDX_DEV_HUB_ALIAS = "RSTKDevHub"
+
+        // Tools 
+        // def toolbelt = tool 'sfdx'
+        def toolbelt = tool 'sfdx-toolbelt'
+        // def pmdtoolbelt = tool 'pmd-toolbelt'
+    }
+
+    triggers {
+        //     // ref -- https://jenkins.io/doc/book/pipeline/syntax/#triggers
+        //     // cron('H */4 * * 1-5')
+        //     //upstream(upstreamProjects: 'job1,job2', threshold: hudson.model.Result.SUCCESS)
+        //     //upstream(upstreamProjects: "some_project/some_branch", threshold: hudson.model.Result.SUCCESS)
+        //     //upstream(upstreamProjects: "some_project/" + env.BRANCH_NAME.replaceAll("/", "%2F"), threshold: hudson.model.Result.SUCCESS)
+        upstream( 
+            upstreamProjects: "fflib-apex-mocks/" + env.BRANCH_NAME.replaceAll("/", "%2F"), 
+            threshold: hudson.model.Result.SUCCESS
+        )
+    }
+    
+    stages {
+        stage('Validate') {
+            steps {
+                script {
+                    // if sfdx-project.json file is not present, then abort build
+                    def sfdxProjectFileExists = fileExists 'sfdx-project.json'
+                    if ( ! sfdxProjectFileExists ) {
+                        error 'SFDX project file (sfdx-project.json) not found.'
+                    }
+                }
+            }
+        }
+        
+        stage('Initialize') {
+            steps {
+                script{
+                    sh "mkdir -p ${RUN_ARTIFACT_DIR}"
+                }
+                
+                // process the sfdx-project.json file for later user
+                echo('Deserialize the sfdx-project.json ')
+                
+                script {
+                    def sfdxProjectFileContents = jsonParse( readFile('sfdx-project.json') )                
+                    SFDX_PROJECT = sfdxProjectFileContents
+                }
+                
+                withCredentials( [ file( credentialsId: JWT_KEY_CRED_ID, variable: 'jwt_key_file') ] ) {
+
+                    // temporary workaround pending resolution to this issue https://github.com/forcedotcom/cli/issues/81
+                    sh returnStatus: true, script: "cp ${jwt_key_file} ./server.key"
+
+                    echo("Authenticate To Dev Hub...")
+                    script {
+                        rc = sh returnStatus: true, script: "${toolbelt}/sfdx force:auth:jwt:grant --clientid ${CONNECTED_APP_CONSUMER_KEY_DH} --username ${SFDX_DEV_HUB_USERNAME} --jwtkeyfile server.key --setalias ${SFDX_DEV_HUB_ALIAS} --setdefaultdevhubusername --instanceurl ${SFDX_DEV_HUB_HOST}"
+                        if (rc != 0) { error "hub org authorization failed" }
+                    }
+                }
+                echo("Create Scratch Org...")
+                script {
+                    rmsg = sh returnStdout: true, script: "${toolbelt}/sfdx force:org:create --definitionfile config/project-scratch-def.json --json --setdefaultusername --durationdays 1 --setalias ${SFDX_SCRATCH_ORG_ALIAS} --targetdevhubusername ${SFDX_DEV_HUB_ALIAS}"
+                }
+                
+            }
+        }
+
+        stage('Process Resources') {
+            steps {
+                script {
+                    echo("env.BRANCH_NAME == ${env.BRANCH_NAME}")
+
+                    if ( env.BRANCH_NAME == 'master') {
+                        rmsg = sh returnStdout: true, script: "${toolbelt}/sfdx rstk:package:dependencies:install --wait 120 --targetusername ${SFDX_SCRATCH_ORG_ALIAS} --targetdevhubusername ${SFDX_DEV_HUB_ALIAS}"
+                    } else {
+                        rmsg = sh returnStdout: true, script: "${toolbelt}/sfdx rstk:package:dependencies:install --wait 120 --branch ${env.BRANCH_NAME} --targetusername ${SFDX_SCRATCH_ORG_ALIAS} --targetdevhubusername ${SFDX_DEV_HUB_ALIAS}"
+                    }
+                }
+            }
+       }
+
+        stage('Compile') {
+            steps {
+                script {
+                    echo("Push To Test Org And Compile")
+                    rmsg = sh returnStdout: true, script: "${toolbelt}/sfdx force:source:push --json --targetusername ${SFDX_SCRATCH_ORG_ALIAS}"
+                    // printf rmsg
+
+                    def response = jsonParse( rmsg )
+
+                    if (response.status != 0) {
+                        error "push failed -- ${response.message}"
+                    }
+                }
+            }
+        }
+
+        stage('Test') {
+            failFast true
+            parallel {
+                stage('Test: Apex Unit Tests') {
+                    steps {
+                        echo( 'Run All Local Apex Tests' )
+                        timeout(time: 20, unit: 'MINUTES') {
+                            script {
+                                rmsg = sh returnStdout: true, label: 'Executing force:apex:test:run...', script: "${toolbelt}/sfdx force:apex:test:run --testlevel RunLocalTests --outputdir ${RUN_ARTIFACT_DIR} --resultformat tap --json --targetusername ${SFDX_SCRATCH_ORG_ALIAS}"
+                                // Process all unit test reports
+                                echo( "Collect All Test Results")
+                                junit keepLongStdio: true, testResults: "${RUN_ARTIFACT_DIR}/**/*-junit.xml"
+                                def response = jsonParse( rmsg )
+                                if (response.status != 0) {
+                                    echo(response)
+                                    error "apex test run failed -- ${response.message}"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Package') {
+            steps {
+                script {
+                    // this is where the package version will be created
+
+                    def pathToUseForPackageVersionCreation 
+
+                    // What is the default package and what is its directory?
+                    for ( packageDirectory in SFDX_PROJECT.packageDirectories ) {
+                        echo("packageDirectory == ${packageDirectory}")
+                        if ( packageDirectory.default ) {
+                            echo("packageDirectory is default")
+                            pathToUseForPackageVersionCreation = packageDirectory.path 
+
+                            // SFDX_NEW_PACKAGE = packageDirectory.package 
+                            SFDX_NEW_PACKAGE = resolveAliasToId( packageDirectory.package, SFDX_PROJECT )
+                            break 
+                        }
+                    }
+
+                    if ( SFDX_NEW_PACKAGE == null ) {
+                        error  "unable to determine SFDX_NEW_PACKAGE in stage:package"
+                    }
+
+                    if ( pathToUseForPackageVersionCreation == null ) {
+                        error  "unable to determine pathToUseForPackageVersionCreation in stage:package"
+                    }
+
+                    def commandScriptString = "${toolbelt}/sfdx force:package:version:create --path ${pathToUseForPackageVersionCreation} --json --tag ${env.BUILD_TAG.replaceAll(' ','-')} --installationkeybypass --targetdevhubusername ${SFDX_DEV_HUB_ALIAS}"
+
+                    if ( env.BRANCH_NAME != null ) {
+                        commandScriptString = commandScriptString + " --branch ${env.BRANCH_NAME}"
+                    }
+                    echo ("commandScriptString == ${commandScriptString}")
+
+                    rmsg = sh returnStdout: true, script: commandScriptString
+                    //printf rmsg
+
+                    def packageVersionCreationResponse = jsonParse(rmsg)
+
+                    echo ("packageVersionCreationResponse == ${packageVersionCreationResponse}")
+
+                    if ( packageVersionCreationResponse.status != 0 ) {
+                        echo( packageVersionCreationResponse )
+                        error "package version creation has failed -- ${packageVersionCreationResponse.message}"
+                    } else {
+
+                        SFDX_NEW_PACKAGE_VERSION = packageVersionCreationResponse.result
+
+                        if( SFDX_NEW_PACKAGE_VERSION.Status == 'InProgress' 
+                            || SFDX_NEW_PACKAGE_VERSION.Status == 'Queued') {
+                            // The package version creation is still underway
+                            def packageVersionCreationCheckResponseResult = ''
+
+                            timeout(15) {
+                                waitUntil {
+                                    script {
+                                        // use the SFDX_NEW_PACKAGE_VERSION.Id for this command verses SFDX_NEW_PACKAGE_VERSION_ID because we are yet
+                                        //  certain that the package was created correctly
+                                        rmsg = sh returnStdout: true, script: "${toolbelt}/sfdx force:package:version:create:report --packagecreaterequestid ${SFDX_NEW_PACKAGE_VERSION.Id} --json --targetdevhubusername ${SFDX_DEV_HUB_ALIAS}"
+                                        // printf rmsg
+
+                                        def packageVersionCreationCheckResponse = jsonParse(rmsg) 
+
+                                        echo ("packageVersionCreationCheckResponse == ${packageVersionCreationCheckResponse}")
+
+                                        if ( packageVersionCreationCheckResponse.status != 0 ) {
+                                            error "force:package:version:create:report failed -- ${packageVersionCreationCheckResponse.message}"
+                                        }
+
+                                        // The JSON "result" is currently an array.  That is a SFDX bug -- W-4621618
+                                        // Refer to Salesforce DX Success Community post for details https://success.salesforce.com/0D53A00003OTsAD
+                                        SFDX_NEW_PACKAGE_VERSION = packageVersionCreationCheckResponse.result[0]
+                                        
+                                        if ( SFDX_NEW_PACKAGE_VERSION.Status == 'Error' ) {
+                                            error "force:package:version:create:report failed -- ${SFDX_NEW_PACKAGE_VERSION.message}"
+                                        }
+
+                                        def isPackageVersionCreationCompleted = packageVersionCreationCheckResponse.status == 0 && SFDX_NEW_PACKAGE_VERSION.Status != "InProgress" && SFDX_NEW_PACKAGE_VERSION.Status != "Queued"
+                                        echo( "isPackageVersionCreationCompleted == ${isPackageVersionCreationCompleted}")
+                                        return isPackageVersionCreationCompleted
+                                    }
+                                }
+                                echo("Exited the waitUntil phase")
+                            }
+                            echo("Exited the timeout phase")
+                        }
+                    }
+                    echo( "Exited the creation/check phase")
+                    // failure point is probably in this area
+                    echo( "packageVersionCreationResponse == ${packageVersionCreationResponse}")
+
+                    SFDX_NEW_PACKAGE_VERSION_ID = SFDX_NEW_PACKAGE_VERSION.SubscriberPackageVersionId
+
+                    echo( "SFDX_NEW_PACKAGE_VERSION == ${SFDX_NEW_PACKAGE_VERSION}")
+
+                    echo( "SFDX_NEW_PACKAGE_VERSION_ID == ${SFDX_NEW_PACKAGE_VERSION_ID}")
+                }
+            }
+        }
+
+        stage('Artifact Recording') {
+            steps{
+                // if the project has upstring dependencies, install those to the scratch org first
+
+                // Loop through the dependencies.  Find out which ones need to be resolved
+                // The order that the dependencies are listed in the SFDX_PROJECT.packageDirectories array
+                //  is important because that will be the order that they are installed in.  If one dependency
+                //  needs another one listed to be installed first, then place that dependency earlier in the list
+                //  of the SFDX_PROJECT.packageDirectories before the dependent artifact.
+
+                echo("finding all package versions dependencies and recording them for the build")
+                
+                script {
+                    // Get the list of package versions that are currently installed in the default scratch org
+                    rmsg = sh returnStdout: true, script: "${toolbelt}/sfdx force:package:installed:list --json --targetusername ${SFDX_SCRATCH_ORG_ALIAS}"
+                    def allPackageVersionsInstalledInScratchOrg = jsonParse(rmsg).result
+
+                    // Get the complete list of package versions that are currently available in the DevHub
+                    rmsg = sh returnStdout: true, script: "${toolbelt}/sfdx force:package:version:list --json --targetdevhubusername ${SFDX_DEV_HUB_ALIAS}"
+                    def allPackageVersionsAvailableInDevHub = jsonParse(rmsg).result
+
+                    def packageVersion
+
+                    for ( packageVersionsInstalledInScratchOrg in allPackageVersionsInstalledInScratchOrg ) {
+                        echo("packageVersionsInstalledInScratchOrg == ${packageVersionsInstalledInScratchOrg}")
+                        
+                        packageVersion = resolvePackageVersion( packageVersionsInstalledInScratchOrg, allPackageVersionsAvailableInDevHub )
+
+                        echo("dependency packageVersion resolved == ${packageVersion}")
+
+                        recordPackageVersionArtifact ( packageVersion )
+                    }
+
+                    allPackageVersionsAvailable = null 
+
+                    // This is where the new package version that was just created will be captured as an artifact for Jenkins
+                    // this will be where the fingerprints of the build are created and then stored in Jenkins
+                    if ( SFDX_NEW_PACKAGE_VERSION_ID != null ) {
+
+                        // then a package was created.  Record its finger prints
+                        echo("finding all package versions for package ids found")
+                        rmsg = sh returnStdout: true, script: "${toolbelt}/sfdx force:package:version:list --packages ${SFDX_NEW_PACKAGE} --json --targetdevhubusername ${SFDX_DEV_HUB_ALIAS}"
+                        //printf rmsg
+
+                        def response = jsonParse( rmsg )
+                        
+                        def allPackageVersionsAvailable = response.result
+
+                        // loop through all allPackageVersionsAvailable until you find the new one with the SFDX_NEW_PACKAGE_VERSION_ID
+                        for ( packageVersionAvailable in allPackageVersionsAvailable ) {
+                            echo ("packageVersionAvailable == ${packageVersionAvailable}")
+                            echo ("SFDX_NEW_PACKAGE == ${SFDX_NEW_PACKAGE}")
+                            echo ("packageVersionAvailable.Package2Id == ${packageVersionAvailable.Package2Id}")
+                            echo ("SFDX_NEW_PACKAGE_VERSION_ID == ${SFDX_NEW_PACKAGE_VERSION_ID}")
+                            echo ("packageVersionAvailable.SubscriberPackageVersionId == ${packageVersionAvailable.SubscriberPackageVersionId}")
+                            if ( SFDX_NEW_PACKAGE == packageVersionAvailable.Package2Id && SFDX_NEW_PACKAGE_VERSION_ID == packageVersionAvailable.SubscriberPackageVersionId) {
+                                echo ("found a match")
+                                recordPackageVersionArtifact( packageVersionAvailable )
+                                break
+                            }
+                        }
+                    }
+                    
+                    archiveArtifacts artifacts: "${RUN_ARTIFACT_DIR}/*.packageVersion", fingerprint: true, onlyIfSuccessful: true
+                }
+            }
+        }
+
+        // stage('Deploy') {
+        //     steps {
+        //         script {
+
+        //         }
+        //     }
+        // }
+    }
+
+    post {
+        always {
+            echo('Deleting scratch org')
+            script {
+                rc = sh returnStatus: true, script: "${toolbelt}/sfdx force:org:delete --noprompt --targetusername ${SFDX_SCRATCH_ORG_ALIAS} --targetdevhubusername ${SFDX_DEV_HUB_ALIAS}"
+                if (rc != 0) { 
+                    error "deletion of scratch org ${SFDX_SCRATCH_ORG_ALIAS} failed"
+                }
+
+                // temporary workaround pending resolution to this issue https://github.com/forcedotcom/cli/issues/81.  Also, see reference above
+                sh returnStatus: true, script: "rm -f ./server.key"
+            }
+        }
+        success {
+            echo('Send Slack message success')
+            // slackSend channel: '#sf-ci-alerts', color: 'good', failOnError: true, message: "Build completed ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)", tokenCredentialId: 'Slack-Integration-Token-SF-CI-ALERTS'
+        }
+        failure {
+            echo('Send Slack message failure')
+            // slackSend channel: '#sf-ci-alerts', color: 'danger', failOnError: true, message: "Bad news.  Build failed ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)", tokenCredentialId: 'Slack-Integration-Token-SF-CI-ALERTS'
+        }
+    }
+}
+
+@NonCPS
+def jsonParse(def json) {
+    new groovy.json.JsonSlurperClassic().parseText(json)
+}
+
+@NonCPS
+def recordPackageVersionArtifact( def packageVersion ) {
+    def fileToFingerprint = "${RUN_ARTIFACT_DIR}/${packageVersion.Package2Name}-${packageVersion.Package2Id}--v${packageVersion.Version}"
+
+    echo("packageVersion == ${packageVersion}")
+
+    if ( packageVersion.Branch != null ) {
+        fileToFingerprint += "-branch-${packageVersion.Branch.replaceAll("/", "-")}"
+    } 
+
+    fileToFingerprint += "-${packageVersion.SubscriberPackageVersionId}.packageVersion"
+    
+    echo("creating package version artifact for ${fileToFingerprint}")
+
+    writeFile file: fileToFingerprint, text: "${packageVersion}"
+}
+
+@NonCPS
+def resolveAliasToId( def alias, def SFDX_PROJECT ) {
+    echo("resolveAliasToId starting")
+    echo("alias == ${alias}")
+    for ( packageAliasKey in SFDX_PROJECT.packageAliases.keySet() ) {
+        echo("packageAliasKey == ${packageAliasKey}")
+        // echo("packageAlias.containsKey(alias) == ${packageAlias.containsKey(alias)}")
+        if ( alias == packageAliasKey ) {
+            echo ("found a match")
+            return SFDX_PROJECT.packageAliases.get(alias)
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------
+//  Probably obsolete notes:
+//          This approach uses the idea of grabbing the versions that were installed in the scratch org.
+//          The issue is that list does not have a concept of package version branches.  You can only get that
+//          from the force:package:version:list command.  The other issues is that it checks package versions
+//          against the list of packages availabe in the DevHub.  That list does not contain 033 (i.e. 1GPs 
+//          from other vendoers) nor does it contain 04t (i.e. 2GPs from other vendors.)
+// ---------------------------------------------------------------------------------------------------
+
+
+//  The resolvePackageVersion function needs to be changed to 
+//      the following signature -- installedDependency and allPackageVersionsAvailable in DEVHUB
+//  the method needs to be smart enough to recognize when a package is not from the DevHub list
+//      and just record its placement
+//  This cover the scenario where dependencies are being brought in via an OrgSnapshot
+//  
+// resolvePackageVersion( packageVersionsInstalledInScratchOrg, allPackageVersionsAvailableInDevHub )
+//          upstreamDependency is now packageVersionsInstalledInScratchOrg
+//          allPackageVersionsAvailable is now allPackageVersionsAvailableInDevHub
+//
+//  packageVersionsInstalledInScratchOrg format structure is 
+//            {
+//                "Id": "0A30m00000054CzCAI",
+//                "SubscriberPackageId": "03330000000wDAbAAM",
+//                "SubscriberPackageName": "Salesforce Connected Apps",
+//                "SubscriberPackageNamespace": "sf_com_apps",
+//                "SubscriberPackageVersionId": "04t30000001DUvrAAG",
+//                "SubscriberPackageVersionName": "Winter '16",
+//                "SubscriberPackageVersionNumber": "1.7.0.1"
+//            }
+//
+//  allPackageVersionsAvailableInDevHub format structure is
+//            {
+//                "Package2Id": "0Ho1O000000Gma9SAC",
+//                "Branch": "rstk-sfdx-ref",
+//                "Tag": "jenkins-fflib-apex-mocks-rstk-sfdx-ref-2",
+//                "MajorVersion": 0,
+//                "MinorVersion": 1,
+//                "PatchVersion": 0,
+//                "BuildNumber": 1,
+//                "Id": "05i1O000000fxSfQAI",
+//                "SubscriberPackageVersionId": "04t1O000001dpf8QAA",
+//                "Name": "ver 0.1",
+//                "NamespacePrefix": null,
+//                "Package2Name": "rstk-sfdx-ref-apex-mocks",
+//                "Description": null,
+//                "Version": "0.1.0.1",
+//                "IsPasswordProtected": false,
+//                "IsReleased": false,
+//                "CreatedDate": "2019-05-14 09:51",
+//                "LastModifiedDate": "2019-05-14 09:51",
+//                "InstallUrl": "https://login.salesforce.com/packaging/installPackage.apexp?p0=04t1O000001dpf8QAA",
+//                "Alias": ""
+//           }
+@NonCPS
+def resolvePackageVersion( def packageVersionsInstalledInScratchOrg, def allPackageVersionsAvailableInDevHub ) {
+
+    def result // this will be the allPackageVersionsAvailableInDevHub structure mentioned above.
+
+    for ( packageVersionAvailableInDevHub in allPackageVersionsAvailableInDevHub ) {
+        echo ("packageVersionsInstalledInScratchOrg.SubscriberPackageVersionId == ${packageVersionsInstalledInScratchOrg.SubscriberPackageVersionId}")
+        echo ("packageVersionAvailableInDevHub.SubscriberPackageVersionId == ${packageVersionAvailableInDevHub.SubscriberPackageVersionId}")
+        if ( packageVersionsInstalledInScratchOrg.SubscriberPackageVersionId != null && packageVersionsInstalledInScratchOrg.SubscriberPackageVersionId.equals(packageVersionAvailableInDevHub.SubscriberPackageVersionId) ) {
+            result = packageVersionAvailableInDevHub
+            break
+        }
+    } 
+    
+    // if packageVersionsInstalledInScratchOrg is not found in DevHub, then assemble as much of a response as possible.
+    if ( result == null ) {
+        result = [:]
+        result.Package2Id = packageVersionsInstalledInScratchOrg.SubscriberPackageId
+        result.Branch = null
+        result.Version = packageVersionsInstalledInScratchOrg.SubscriberPackageVersionNumber
+        result.SubscriberPackageVersionId = packageVersionsInstalledInScratchOrg.SubscriberPackageVersionId
+        result.Package2Name = packageVersionsInstalledInScratchOrg.SubscriberPackageName
+        result.NamespacePrefix = packageVersionsInstalledInScratchOrg.SubscriberPackageNamespace
+    }
+
+    echo ("result = ${result}")
+
+    // the last line works as the return value
+    return result
+}
