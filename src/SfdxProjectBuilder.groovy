@@ -1,10 +1,6 @@
-// package cev
-
 class SfdxProjectBuilder implements Serializable {
 
   private final def _ // the member variable that contains the jenkinsFileScript
-
-  private final def SFDX_DEV_HUB_ALIAS = "CIDevHub"
 
   private def SFDX_SCRATCH_ORG_DEF_FILE = "config/project-scratch-def.json"
 
@@ -36,7 +32,7 @@ class SfdxProjectBuilder implements Serializable {
 
   private def scratchOrgShouldBeDeleted = true
 
-  private def branchesToBuildPackageFromList = ['master']
+  private def branchesToBuildPackageFromList = ['master', 'devops/master-2gmp-variant']
 
   // the parsed contents of the SFDX project's configuration
   private def SFDX_PROJECT
@@ -278,7 +274,7 @@ class SfdxProjectBuilder implements Serializable {
 
         _.echo("Authenticating To Dev Hub...")
         // script {
-        def rc = _.sh returnStatus: true, script: "${this.toolbelt}/sfdx force:auth:jwt:grant --clientid ${_.env.CONNECTED_APP_CONSUMER_KEY_DH}} --username ${_.env.SFDX_DEV_HUB_USERNAME} --jwtkeyfile server.key --setalias ${SFDX_DEV_HUB_ALIAS} --setdefaultdevhubusername --instanceurl ${_.env.SFDX_DEV_HUB_HOST}"
+        def rc = _.sh returnStatus: true, script: "${this.toolbelt}/sfdx force:auth:jwt:grant --clientid ${_.env.CONNECTED_APP_CONSUMER_KEY_DH}} --username ${_.env.SFDX_DEV_HUB_USERNAME} --jwtkeyfile server.key --instanceurl ${_.env.SFDX_DEV_HUB_HOST}"
         if (rc != 0) { _.error "hub org authorization failed" }
         // }
     }
@@ -287,7 +283,7 @@ class SfdxProjectBuilder implements Serializable {
   private void createScratchOrg() {
     _.echo('Creating scratch org')
 
-    def commandScriptString = "${this.toolbelt}/sfdx force:org:create --definitionfile ${this.SFDX_SCRATCH_ORG_DEF_FILE} --json --setdefaultusername --durationdays 1 --setalias ${SFDX_SCRATCH_ORG_ALIAS} --targetdevhubusername ${SFDX_DEV_HUB_ALIAS} --wait 30"
+    def commandScriptString = "${this.toolbelt}/sfdx force:org:create --definitionfile ${this.SFDX_SCRATCH_ORG_DEF_FILE} --json --durationdays 1 --setalias ${SFDX_SCRATCH_ORG_ALIAS} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME} --wait 30"
 
     def response
 
@@ -326,7 +322,7 @@ class SfdxProjectBuilder implements Serializable {
   private void deleteScratchOrg() {
     if (this.scratchOrgWasCreated && this.scratchOrgShouldBeDeleted) {
       _.echo('Deleting scratch org')
-      def rc = _.sh returnStatus: true, script: "${this.toolbelt}/sfdx force:org:delete --noprompt --targetusername ${SFDX_SCRATCH_ORG_ALIAS} --targetdevhubusername ${SFDX_DEV_HUB_ALIAS}"
+      def rc = _.sh returnStatus: true, script: "${this.toolbelt}/sfdx force:org:delete --noprompt --targetusername ${SFDX_SCRATCH_ORG_ALIAS} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
       if (rc != 0) { 
         _.error "deletion of scratch org ${SFDX_SCRATCH_ORG_ALIAS} failed"
       }
@@ -336,7 +332,7 @@ class SfdxProjectBuilder implements Serializable {
   private void installAllDependencies() {
     _.echo("env.BRANCH_NAME == ${_.env.BRANCH_NAME}")
 
-    def commandScriptString = "${this.toolbelt}/sfdx rstk:package:dependencies:install --wait 240 --targetusername ${SFDX_SCRATCH_ORG_ALIAS} --targetdevhubusername ${SFDX_DEV_HUB_ALIAS} --json"
+    def commandScriptString = "${this.toolbelt}/sfdx rstk:package:dependencies:install --wait 240 --targetusername ${SFDX_SCRATCH_ORG_ALIAS} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME} --json"
 
     if ( _.env.BRANCH_NAME != 'master' ) {
       commandScriptString = commandScriptString + " --branch ${_.env.BRANCH_NAME}"
@@ -445,7 +441,7 @@ class SfdxProjectBuilder implements Serializable {
       _.error  "unable to determine pathToUseForPackageVersionCreation in stage:package"
     }
 
-    def commandScriptString = "${this.toolbelt}/sfdx force:package:version:create --path ${pathToUseForPackageVersionCreation} --json --codecoverage --tag ${_.env.BUILD_TAG.replaceAll(' ','-')} --targetdevhubusername ${SFDX_DEV_HUB_ALIAS}"
+    def commandScriptString = "${this.toolbelt}/sfdx force:package:version:create --path ${pathToUseForPackageVersionCreation} --json --codecoverage --tag ${_.env.BUILD_TAG.replaceAll(' ','-')} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
 
     if ( _.env.BRANCH_NAME != null ) {
       commandScriptString = commandScriptString + " --branch ${_.env.BRANCH_NAME}"
@@ -482,7 +478,7 @@ class SfdxProjectBuilder implements Serializable {
                     // script {
                         // use the SFDX_NEW_PACKAGE_VERSION.Id for this command verses SFDX_NEW_PACKAGE_VERSION_ID because we are yet
                         //  certain that the package was created correctly
-                        rmsg = _.sh returnStdout: true, script: "${this.toolbelt}/sfdx force:package:version:create:report --packagecreaterequestid ${SFDX_NEW_PACKAGE_VERSION.Id} --json --targetdevhubusername ${SFDX_DEV_HUB_ALIAS}"
+                        rmsg = _.sh returnStdout: true, script: "${this.toolbelt}/sfdx force:package:version:create:report --packagecreaterequestid ${SFDX_NEW_PACKAGE_VERSION.Id} --json --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
                         // printf rmsg
 
                         def packageVersionCreationCheckResponse = jsonParse(rmsg) 
@@ -551,7 +547,7 @@ class SfdxProjectBuilder implements Serializable {
     def allPackageVersionsInstalledInScratchOrg = jsonParse(rmsg).result
 
     // Get the complete list of package versions that are currently available in the DevHub
-    rmsg = _.sh returnStdout: true, script: "${this.toolbelt}/sfdx force:package:version:list --json --targetdevhubusername ${SFDX_DEV_HUB_ALIAS}"
+    rmsg = _.sh returnStdout: true, script: "${this.toolbelt}/sfdx force:package:version:list --json --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
     def allPackageVersionsAvailableInDevHub = jsonParse(rmsg).result
 
     def packageVersion
@@ -572,7 +568,7 @@ class SfdxProjectBuilder implements Serializable {
 
         // then a package was created.  Record its finger prints
         _.echo("finding all package versions for package ids found")
-        rmsg = _.sh returnStdout: true, script: "${this.toolbelt}/sfdx force:package:version:list --packages ${SFDX_NEW_PACKAGE} --json --targetdevhubusername ${SFDX_DEV_HUB_ALIAS}"
+        rmsg = _.sh returnStdout: true, script: "${this.toolbelt}/sfdx force:package:version:list --packages ${SFDX_NEW_PACKAGE} --json --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
         //printf rmsg
 
         def response = jsonParse( rmsg )
