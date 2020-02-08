@@ -86,9 +86,9 @@ pipeline {
                     echo("env.BRANCH_NAME == ${env.BRANCH_NAME}")
 
                     if ( env.BRANCH_NAME == 'master') {
-                        rmsg = sh returnStdout: true, script: "${toolbelt}/sfdx rstk:package:dependencies:install --wait 120 --targetusername ${SFDX_SCRATCH_ORG_ALIAS} --targetdevhubusername ${SFDX_DEV_HUB_ALIAS}"
+                        rmsg = sh returnStdout: true, script: "${toolbelt}/sfdx toolbox:package:dependencies:install --wait 120 --targetusername ${SFDX_SCRATCH_ORG_ALIAS} --targetdevhubusername ${SFDX_DEV_HUB_ALIAS}"
                     } else {
-                        rmsg = sh returnStdout: true, script: "${toolbelt}/sfdx rstk:package:dependencies:install --wait 120 --branch ${env.BRANCH_NAME} --targetusername ${SFDX_SCRATCH_ORG_ALIAS} --targetdevhubusername ${SFDX_DEV_HUB_ALIAS}"
+                        rmsg = sh returnStdout: true, script: "${toolbelt}/sfdx toolbox:package:dependencies:install --wait 120 --branch ${env.BRANCH_NAME} --targetusername ${SFDX_SCRATCH_ORG_ALIAS} --targetdevhubusername ${SFDX_DEV_HUB_ALIAS}"
                     }
                 }
             }
@@ -406,8 +406,8 @@ def resolveAliasToId( def alias, def SFDX_PROJECT ) {
 //  allPackageVersionsAvailableInDevHub format structure is
 //            {
 //                "Package2Id": "0Ho1O000000Gma9SAC",
-//                "Branch": "rstk-sfdx-ref",
-//                "Tag": "jenkins-fflib-apex-mocks-rstk-sfdx-ref-2",
+//                "Branch": "blue-sfdx-ref",
+//                "Tag": "jenkins-fflib-apex-mocks-blue-sfdx-ref-2",
 //                "MajorVersion": 0,
 //                "MinorVersion": 1,
 //                "PatchVersion": 0,
@@ -416,7 +416,7 @@ def resolveAliasToId( def alias, def SFDX_PROJECT ) {
 //                "SubscriberPackageVersionId": "04t1O000001dpf8QAA",
 //                "Name": "ver 0.1",
 //                "NamespacePrefix": null,
-//                "Package2Name": "rstk-sfdx-ref-apex-mocks",
+//                "Package2Name": "blue-sfdx-ref-apex-mocks",
 //                "Description": null,
 //                "Version": "0.1.0.1",
 //                "IsPasswordProtected": false,
