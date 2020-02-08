@@ -332,7 +332,7 @@ class SfdxProjectBuilder implements Serializable {
   private void installAllDependencies() {
     _.echo("env.BRANCH_NAME == ${_.env.BRANCH_NAME}")
 
-    def commandScriptString = "${this.toolbelt}/sfdx rstk:package:dependencies:install --wait 240 --targetusername ${SFDX_SCRATCH_ORG_ALIAS} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME} --json"
+    def commandScriptString = "${this.toolbelt}/sfdx toolbox:package:dependencies:install --wait 240 --targetusername ${SFDX_SCRATCH_ORG_ALIAS} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME} --json"
 
     if ( _.env.BRANCH_NAME != 'master' ) {
       commandScriptString = commandScriptString + " --branch ${_.env.BRANCH_NAME}"
