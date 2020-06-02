@@ -258,17 +258,17 @@ class SfdxProjectBuilder implements Serializable {
 
   private void isEnvVarPopulatedConnectedAppConsumerKeyDH()
   {
-
+    isEnvVarPopulated(_.env.CONNECTED_APP_CONSUMER_KEY_DH, 'CONNECTED_APP_CONSUMER_KEY_DH')
   }
 
   private void isEnvVarPopulatedSFDXDevHubUsername()
   {
-
+    isEnvVarPopulated(_.env.SFDX_DEV_HUB_USERNAME, 'SFDX_DEV_HUB_USERNAME')
   }
 
   private void isEnvVarPopulatedSFDXDevHubHost()
   {
-
+    isEnvVarPopulated(_.env.SFDX_DEV_HUB_HOST, 'SFDX_DEV_HUB_HOST')
   }
 
   private void isEnvVarPopulatedJWTCredIdDH()
