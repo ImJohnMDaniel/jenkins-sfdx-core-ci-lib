@@ -175,6 +175,10 @@ class SfdxProjectBuilder implements Serializable {
 
   void validateStage() {
     isProjectFileExisting()
+    isEnvVarPopulatedConnectedAppConsumerKeyDH()
+    isEnvVarPopulatedSFDXDevHubUsername()
+    isEnvVarPopulatedSFDXDevHubHost()
+    isEnvVarPopulatedJWTCredIdDH()
   }
 
   void processResourcesStage() {
@@ -249,6 +253,35 @@ class SfdxProjectBuilder implements Serializable {
     def sfdxProjectFileExists = _.fileExists 'sfdx-project.json'
     if ( ! sfdxProjectFileExists ) {
         _.error 'SFDX project file (sfdx-project.json) not found.'
+    }
+  }
+
+  private void isEnvVarPopulatedConnectedAppConsumerKeyDH()
+  {
+
+  }
+
+  private void isEnvVarPopulatedSFDXDevHubUsername()
+  {
+
+  }
+
+  private void isEnvVarPopulatedSFDXDevHubHost()
+  {
+
+  }
+
+  private void isEnvVarPopulatedJWTCredIdDH()
+  {
+    isEnvVarPopulated(_.env.JWT_CRED_ID_DH, 'JWT_CRED_ID_DH')
+  }
+
+  private void isEnvVarPopulated(enironmentVariable, enironmentVariableName)
+  {
+    _.echo( enironmentVariable )
+    _.echo( enironmentVariableName )
+    if ( ! envVar ) {
+      _.error "Environment Variable ${enironmentVariableName} is null"
     }
   }
 
