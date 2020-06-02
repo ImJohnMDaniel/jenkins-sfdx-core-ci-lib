@@ -267,6 +267,8 @@ class SfdxProjectBuilder implements Serializable {
   }
 
   private void authenticateToDevHub() {
+    _.echo('Authenticate to the Dev Hub ')
+    _.echo(_.env.JWT_CRED_ID_DH)
     _.withCredentials( [ _.file( credentialsId: _.env.JWT_CRED_ID_DH, variable: 'jwt_key_file') ] ) {
         // temporary workaround pending resolution to this issue https://github.com/forcedotcom/cli/issues/81
         _.sh returnStatus: true, script: "cp ${_.jwt_key_file} ./server.key"
