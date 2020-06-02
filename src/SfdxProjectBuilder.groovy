@@ -309,7 +309,7 @@ class SfdxProjectBuilder implements Serializable {
 
         _.echo("Authenticating To Dev Hub...")
         // script {
-        def rc = _.sh returnStatus: true, script: "${this.toolbelt}/sfdx force:auth:jwt:grant --clientid ${_.env.CONNECTED_APP_CONSUMER_KEY_DH}} --username ${_.env.SFDX_DEV_HUB_USERNAME} --jwtkeyfile server.key --instanceurl ${_.env.SFDX_DEV_HUB_HOST}"
+        def rc = _.sh returnStatus: true, script: "${this.toolbelt}/sfdx force:auth:jwt:grant --clientid ${_.env.CONNECTED_APP_CONSUMER_KEY_DH} --username ${_.env.SFDX_DEV_HUB_USERNAME} --jwtkeyfile server.key --instanceurl ${_.env.SFDX_DEV_HUB_HOST}"
         if (rc != 0) { _.error "hub org authorization failed" }
         // }
     }
