@@ -280,7 +280,7 @@ class SfdxProjectBuilder implements Serializable {
   {
     _.echo( enironmentVariable )
     _.echo( enironmentVariableName )
-    if ( envVar is null ) {
+    if ( envVar == null ) {
       _.error "Environment Variable ${enironmentVariableName} is null"
     }
   }
