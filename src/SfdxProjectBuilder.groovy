@@ -26,7 +26,7 @@ class SfdxProjectBuilder implements Serializable {
 
   private def notifyOnSuccessfulBuilds = false 
 
-  private def slackNotificationsIsActive = true
+  private def slackNotificationsIsActive = false
 
   private def scratchOrgWasCreated = false
 
@@ -149,6 +149,12 @@ class SfdxProjectBuilder implements Serializable {
   public SfdxProjectBuilder setSlackNotificationsOff() {
     this.slackNotificationsIsActive = false
     _.echo('SfdxProjectBuilder Parameter set : Slack Notifications turned off')
+    return this
+  }
+
+  public SfdxProjectBuilder setSlackNotificationsOn() {
+    this.slackNotificationsIsActive = true
+    _.echo('SfdxProjectBuilder Parameter set : Slack Notifications turned on')
     return this
   }
 
