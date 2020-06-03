@@ -116,7 +116,7 @@ class SfdxProjectBuilder implements Serializable {
     return this
   }
 
-  // public SfdxProjectBuilder setDependencyInstallationKeys(List keyList) {
+  // pu blic SfdxProjectBuilder setDependencyInstallationKeys(List keyList) {
   public SfdxProjectBuilder setDependencyInstallationKeys(def keysString) {
     if ( keysString != null ) {
       this.installationKeys = keysString
@@ -158,7 +158,7 @@ class SfdxProjectBuilder implements Serializable {
     return this
   }
 
-  // void setBuildDescription(Map args) {
+  // vo id setBuildDescription(Map args) {
   //   jenkinsFileScript.currentBuild.displayName = args.title
   //   jenkinsFileScript.currentBuild.description = args.description
   // }

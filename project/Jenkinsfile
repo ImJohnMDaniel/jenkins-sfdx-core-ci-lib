@@ -1,0 +1,13 @@
+#!groovy
+@Library('sfdx-core-ci-lib')
+import SfdxProjectBuilder
+new SfdxProjectBuilder(this)
+        .setSlackChannelToNotify('#slack-channel')
+        .setScratchOrgDefFile('scratchOrgDefFile')
+        .setDependencyInstallationKeys('keysString')
+        .setPackageInstallationKey('packageInstallationKey')
+        .alwaysBuildPackage()
+        .alwaysNotifyOnSuccess()
+        .setSlackNotificationsOff()
+        .preserveScratchOrg()
+        .execute()
