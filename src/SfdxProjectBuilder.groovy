@@ -337,8 +337,10 @@ class SfdxProjectBuilder implements Serializable {
       _.echo('------------------------------------------------------')
       _.echo(ex.getMessage())
       _.echo('------------------------------------------------------')
-      _.echo(ex.getMessage().contains('OPERATION_TOO_LARGE'))
-      _.echo('------------------------------------------------------')
+      if (ex.getMessage().contains('OPERATION_TOO_LARGE')) {
+        _.echo('exception message contains OPERATION_TOO_LARGE')
+        _.echo('------------------------------------------------------')
+      }
       _.echo(ex.printStackTrace())
       _.error('scratch org creation failed')
     }
