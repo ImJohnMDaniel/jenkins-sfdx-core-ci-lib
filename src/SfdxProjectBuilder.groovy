@@ -22,6 +22,8 @@ class SfdxProjectBuilder implements Serializable {
 
   private def alwaysBuildPackage = false
 
+  private def doNotBuildPackage = false
+
   private def slackChannelName = '#ci-alerts'
 
   private def notifyOnSuccessfulBuilds = false 
@@ -136,9 +138,19 @@ class SfdxProjectBuilder implements Serializable {
   public SfdxProjectBuilder alwaysBuildPackage() {
     this.alwaysBuildPackage = true
     _.echo('SfdxProjectBuilder Parameter set : Always building a package')
+    if ( this.doNotBuildPackage ) {
+      _.error('alwaysBuildPackage() and doNotBuildPackage() cannot both be specified')
+    }
     return this
   }
 
+  public SfdxProjectBuilder doNotBuildPackage() {
+    this.doNotBuildPackage = true
+    _.echo('SfdxProjectBuilder Parameter set : No package will be built.  Overrides all other considerations.')
+    if ( this.alwaysBuildPackage ) {
+      _.error('alwaysBuildPackage() and doNotBuildPackage() cannot both be specified')
+    }
+  }
 
   public SfdxProjectBuilder alwaysNotifyOnSuccess() {
     this.notifyOnSuccessfulBuilds = true
@@ -450,8 +462,10 @@ class SfdxProjectBuilder implements Serializable {
   }
 
   private void packageTheProject() {
-    if ( ! alwaysBuildPackage 
-          && ! branchesToBuildPackageFromList.contains(_.env.BRANCH_NAME)) {
+    if ( ( ! alwaysBuildPackage 
+          && ! branchesToBuildPackageFromList.contains(_.env.BRANCH_NAME) )
+          || doNotBuildPackage
+          ) {
       return
     }
     _.echo('Starting packaging process')
