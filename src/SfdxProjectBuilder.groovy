@@ -400,14 +400,18 @@ class SfdxProjectBuilder implements Serializable {
 
     // _.echo ("commandScriptString == ${commandScriptString}")
 
-    def rmsg = _.sh returnStdout: true, script: commandScriptString
+    _.withEnv(['SFDX_JSON_TO_STDOUT=true']) {
     
-    def response = jsonParse( rmsg )
+      def rmsg = _.sh returnStdout: true, script: commandScriptString
+    
+      def response = jsonParse( rmsg )
 
-    if (response.status != 0) {
-      _.echo rmsg
-      _.error "package dependency installed failed -- ${response.message}"
+      if (response.status != 0) {
+        _.echo rmsg
+        _.error "package dependency installed failed -- ${response.message}"
+      }
     }
+    
   }
 
   private void compileCode() {
