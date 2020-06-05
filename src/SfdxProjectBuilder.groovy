@@ -406,7 +406,7 @@ class SfdxProjectBuilder implements Serializable {
       // then this means that the toolbox plugin has not been installed on this server.
       // echo y | sfdx plugin:install @dx-cli-toolbox/sfdx-toolbox-package-utils
       _.echo ("installing the toolbox plugins")
-      def rmsgInstall = _.sh returnStdout: true, script: 'echo y | sfdx plugin:install @dx-cli-toolbox/sfdx-toolbox-package-utils'
+      def rmsgInstall = _.sh returnStdout: true, script: "echo y | ${this.toolbelt}/sfdx plugin:install @dx-cli-toolbox/sfdx-toolbox-package-utils"
       _.echo ("retrying the toolbox:package:dependencies:install command")
       rmsg = _.sh returnStdout: true, script: commandScriptString
     }
