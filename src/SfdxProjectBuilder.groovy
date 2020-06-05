@@ -402,7 +402,7 @@ class SfdxProjectBuilder implements Serializable {
     
     def rmsg = _.sh returnStdout: true, script: commandScriptString
 
-    if ( rmsg == null ) {
+    if ( rmsg.isEmpty() ) {
       // then this means that the toolbox plugin has not been installed on this server.
       // echo y | sfdx plugin:install @dx-cli-toolbox/sfdx-toolbox-package-utils
       _.echo ("installing the toolbox plugins")
