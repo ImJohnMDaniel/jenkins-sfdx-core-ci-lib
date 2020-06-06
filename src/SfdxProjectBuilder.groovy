@@ -58,52 +58,55 @@ class SfdxProjectBuilder implements Serializable {
           _.buildDiscarder(_.logRotator(numToKeepStr: '5'))
         ])
         this.toolbelt = _.tool 'sfdx-toolbelt'
-        _.triggers {
-          // there is one upstream per dependency
-          // _.sleep time: 2, unit: 'MINUTES'
-          _.upstream(
-            upstreamProjects: "xfflib-apex-mocks/" + _.env.BRANCH_NAME.replaceAll("/", "%2F"), threshold: hudson.model.Result.SUCCESS
-          )
-        }
+
+        // this doesn't work.  There is no "triggers" DSL object
+        // _.triggers {
+        //   // there is one upstream per dependency
+        //   _.upstream(
+        //     upstreamProjects: "xfflib-apex-mocks/" + _.env.BRANCH_NAME.replaceAll("/", "%2F"),  threshold: hudson.model.Result.SUCCESS
+        //   )
+        // }
+        processProjectTriggers()
+
         // _.stages {
-        try {
-          _.stage('Validate') {
-            validateStage()          
-          }
-          _.stage('Initialize') {
-            // _.steps { // apparently not needed in a script
-            initializeStage()
-            // } // steps 
-          }  // stage: Initialize
+                                                    // try {
+                                                    //   _.stage('Validate') {
+                                                    //     validateStage()          
+                                                    //   }
+                                                    //   _.stage('Initialize') {
+                                                    //     // _.steps { // apparently not needed in a script
+                                                    //     initializeStage()
+                                                    //     // } // steps 
+                                                    //   }  // stage: Initialize
 
-          _.stage('Process Resources') {
-            processResourcesStage()
-          } // stage: Process Resources
+                                                    //   _.stage('Process Resources') {
+                                                    //     processResourcesStage()
+                                                    //   } // stage: Process Resources
 
-          _.stage('Compile') {
-            compileStage()
-          } // stage: Compile
+                                                    //   _.stage('Compile') {
+                                                    //     compileStage()
+                                                    //   } // stage: Compile
 
-          _.stage('Test') {
-            testStage()
-          } // stage: Test
+                                                    //   _.stage('Test') {
+                                                    //     testStage()
+                                                    //   } // stage: Test
 
-          _.stage('Package') {
-            packageStage()
-          } // stage: Package
+                                                    //   _.stage('Package') {
+                                                    //     packageStage()
+                                                    //   } // stage: Package
 
-          _.stage('Artifact Recording') {
-            artifactRecordingStage()
-          } // stage: Artifact Recording
+                                                    //   _.stage('Artifact Recording') {
+                                                    //     artifactRecordingStage()
+                                                    //   } // stage: Artifact Recording
 
-          postSuccess()
-        }
-        catch (ex) {
-          postFailure(ex)
-        }
-        finally {
-          postAlways()
-        }
+                                                    //   postSuccess()
+                                                    // }
+                                                    // catch (ex) {
+                                                    //   postFailure(ex)
+                                                    // }
+                                                    // finally {
+                                                    //   postAlways()
+                                                    // }
         //} // stages
       } // pipeline
     } // node
@@ -734,6 +737,21 @@ class SfdxProjectBuilder implements Serializable {
     // the last line works as the return value
     return result
   }
+
+  private void processProjectTriggers() {
+    def theProject = _.build.project
+
+    _.echo("build now text == ${theProject.buildNowText}")    
+  }
+        // jenkinsFileScript.currentBuild.displayName = args.title
+        // _.triggers {
+        //   // there is one upstream per dependency
+        //   _.upstream(
+        //     upstreamProjects: "xfflib-apex-mocks/" + _.env.BRANCH_NAME.replaceAll("/", "%2F"),  threshold: hudson.model.Result.SUCCESS
+        //   )
+        // }
+        
+
 }
 
 
