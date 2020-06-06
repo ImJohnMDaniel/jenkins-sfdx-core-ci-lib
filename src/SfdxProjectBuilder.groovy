@@ -58,6 +58,12 @@ class SfdxProjectBuilder implements Serializable {
           _.buildDiscarder(_.logRotator(numToKeepStr: '5'))
         ])
         this.toolbelt = _.tool 'sfdx-toolbelt'
+        _.triggers {
+          // there is one upstream per dependency
+          _.upstream(
+            _.upstreamProjects: "xfflib-apex-mocks/" + _.env.BRANCH_NAME.replaceAll("/", "%2F"), _.threshold: hudson.model.Result.SUCCESS
+          )
+        }
         // _.stages {
         try {
           _.stage('Validate') {
