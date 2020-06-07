@@ -761,13 +761,17 @@ class SfdxProjectBuilder implements Serializable {
   }
 
   private void processProjectTriggers() {
+    _.echo('processProjectTriggers starting')
     if ( this.upstreamProjectsToTriggerFrom != null ) {
+      _.echo('processProjectTriggers xAAAA')
       for ( upstreamProjectToTriggerFrom in this.upstreamProjectsToTriggerFrom ) {
+        _.echo('processProjectTriggers xBBBB')
         _.upstream(
           upstreamProjects: upstreamProjectToTriggerFrom + "/" + _.env.BRANCH_NAME.replaceAll("/", "%2F"),  threshold: hudson.model.Result.SUCCESS
         )
       }
     }
+    _.echo('processProjectTriggers finished')
   }
     // def theProject = _.currentBuild.rawBuild
     // _.echo("pipelineTriggers == ${theProject.pipelineTriggers}")    
