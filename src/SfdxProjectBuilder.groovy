@@ -59,18 +59,18 @@ class SfdxProjectBuilder implements Serializable {
           // 
           _.buildDiscarder(_.logRotator(numToKeepStr: '5')),
 
-          _.pipelineTriggers(
-            processProjectTriggers()
-          )
+          // _.pipelineTriggers(
+          //   processProjectTriggers()
+          // )
           
           //  THIS DEFINITELY WORKS 
-          // _.pipelineTriggers(
-          //   [
-          //     _.upstream(	
-          //       upstreamProjects: "xfflib-apex-mocks/" + _.env.BRANCH_NAME.replaceAll("/", "%2F"),  threshold: hudson.model.Result.SUCCESS	
-          //     )
-          //   ]
-          // )
+          _.pipelineTriggers(
+            [
+              _.upstream(	
+                upstreamProjects: "xfflib-apex-mocks/" + _.env.BRANCH_NAME.replaceAll("/", "%2F"),  threshold: hudson.model.Result.SUCCESS	
+              )
+            ]
+          )
         ])
         this.toolbelt = _.tool 'sfdx-toolbelt'
 
@@ -753,10 +753,11 @@ class SfdxProjectBuilder implements Serializable {
 
   private Object processProjectTriggers() {
     def result = []
-    _.echo ("result = ${result}")
     
     result[0] = _.upstream(	upstreamProjects: "xfflib-apex-mocks/" + _.env.BRANCH_NAME.replaceAll("/", "%2F"),  threshold: hudson.model.Result.SUCCESS )
     
+    _.echo ("result = ${result}")
+
     return result
   }
 
