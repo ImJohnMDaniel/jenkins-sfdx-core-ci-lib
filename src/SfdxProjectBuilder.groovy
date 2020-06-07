@@ -56,7 +56,7 @@ class SfdxProjectBuilder implements Serializable {
           _.disableConcurrentBuilds(),
           // 
           _.buildDiscarder(_.logRotator(numToKeepStr: '5')),
-          _.pipelineTriggers([upstream('xfflib-apex-mocks')])
+          _.pipelineTriggers([_.upstream('xfflib-apex-mocks')])
         ])
         this.toolbelt = _.tool 'sfdx-toolbelt'
 
@@ -748,11 +748,11 @@ class SfdxProjectBuilder implements Serializable {
     return result
   }
 
-  private void processProjectTriggers() {
-    def theProject = _.currentBuild.rawBuild
+  // private void processProjectTriggers() {
+  //   def theProject = _.currentBuild.rawBuild
 
-    _.echo("pipelineTriggers == ${theProject.pipelineTriggers}")    
-  }
+  //   _.echo("pipelineTriggers == ${theProject.pipelineTriggers}")    
+  // }
         // jenkinsFileScript.currentBuild.displayName = args.title
         // _.triggers {
         //   // there is one upstream per dependency
