@@ -741,7 +741,7 @@ class SfdxProjectBuilder implements Serializable {
   private void processProjectTriggers() {
     def theProject = _.currentBuild.rawBuild
 
-    _.echo("build now text == ${theProject.buildNowText}")    
+    _.echo("pipelineTriggers == ${theProject.pipelineTriggers}")    
   }
         // jenkinsFileScript.currentBuild.displayName = args.title
         // _.triggers {
