@@ -55,7 +55,7 @@ class SfdxProjectBuilder implements Serializable {
           // ensure that concurrent builds on the same project is not possible
           _.disableConcurrentBuilds(),
           // 
-          _.buildDiscarder(_.logRotator(numToKeepStr: '5'))
+          _.buildDiscarder(_.logRotator(numToKeepStr: '5')),
           _.pipelineTriggers([upstream('xfflib-apex-mocks')])
         ])
         this.toolbelt = _.tool 'sfdx-toolbelt'
