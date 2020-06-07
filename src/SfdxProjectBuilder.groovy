@@ -36,6 +36,8 @@ class SfdxProjectBuilder implements Serializable {
 
   private def branchesToBuildPackageFromList = ['master', 'devops/master-2gmp-variant']
 
+  private def upstreamProjectsToTriggerFrom = []
+
   // the parsed contents of the SFDX project's configuration
   private def SFDX_PROJECT
 
@@ -57,10 +59,7 @@ class SfdxProjectBuilder implements Serializable {
           // 
           _.buildDiscarder(_.logRotator(numToKeepStr: '5')),
           _.pipelineTriggers([
-            //_.upstream('xfflib-apex-mocks')
-            _.upstream(
-              upstreamProjects: "xfflib-apex-mocks/" + _.env.BRANCH_NAME.replaceAll("/", "%2F"),  threshold: hudson.model.Result.SUCCESS
-            )
+            processProjectTriggers()
           ])
         ])
         this.toolbelt = _.tool 'sfdx-toolbelt'
@@ -198,6 +197,14 @@ class SfdxProjectBuilder implements Serializable {
   public SfdxProjectBuilder preserveScratchOrg() {
     this.scratchOrgShouldBeDeleted = false
     _.echo('SfdxProjectBuilder Parameter set : Scratch Org will be preserved')
+    return this
+  }
+
+  public SfdxProjectBuilder setUpstreamProjectToTriggerBuildFrom( String jenkinsBuildJobName ) {
+    if ( jenkinsBuildJobName != null && !jenkinsBuildJobName.empty ) {
+      this.upstreamProjectsToTriggerFrom.add( jenkinsBuildJobName )
+      _.echo("SfdxProjectBuilder Parameter set : Added ${jenkinsBuildJobName} to the upstream project build triggers")
+    }
     return this
   }
 
@@ -753,11 +760,15 @@ class SfdxProjectBuilder implements Serializable {
     return result
   }
 
-  // private void processProjectTriggers() {
-  //   def theProject = _.currentBuild.rawBuild
-
-  //   _.echo("pipelineTriggers == ${theProject.pipelineTriggers}")    
-  // }
+  private void processProjectTriggers() {
+    for ( upstreamProjectToTriggerFrom in this.upstreamProjectsToTriggerFrom ) {
+      _.upstream(
+        upstreamProjects: upstreamProjectToTriggerFrom + "/" + _.env.BRANCH_NAME.replaceAll("/", "%2F"),  threshold: hudson.model.Result.SUCCESS
+      )
+    }
+  }
+    // def theProject = _.currentBuild.rawBuild
+    // _.echo("pipelineTriggers == ${theProject.pipelineTriggers}")    
         // jenkinsFileScript.currentBuild.displayName = args.title
         // _.triggers {
         //   // there is one upstream per dependency
