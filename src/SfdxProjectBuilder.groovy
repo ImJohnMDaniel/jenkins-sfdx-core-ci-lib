@@ -752,8 +752,8 @@ class SfdxProjectBuilder implements Serializable {
   }
 
   private Object processProjectTriggers() {
-    result = []
-    // _.echo ("result = ${result}")
+    def result = []
+    _.echo ("result = ${result}")
     return result
   }
   //   // _.echo('processProjectTriggers starting')
