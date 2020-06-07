@@ -754,8 +754,21 @@ class SfdxProjectBuilder implements Serializable {
   private Object processProjectTriggers() {
     def result = []
     _.echo ("result = ${result}")
+    
+    result[0] = _.upstream(	upstreamProjects: "xfflib-apex-mocks/" + _.env.BRANCH_NAME.replaceAll("/", "%2F"),  threshold: hudson.model.Result.SUCCESS )
+    
     return result
   }
+
+          //  THIS DEFINITELY WORKS 
+          // _.pipelineTriggers(
+          //   [
+          //     _.upstream(	
+          //       upstreamProjects: "xfflib-apex-mocks/" + _.env.BRANCH_NAME.replaceAll("/", "%2F"),  threshold: hudson.model.Result.SUCCESS	
+          //     )
+          //   ]
+          // )
+
   //   // _.echo('processProjectTriggers starting')
   //   // if ( this.upstreamProjectsToTriggerFrom != null ) {
   //   //   _.echo('processProjectTriggers xAAAA')
