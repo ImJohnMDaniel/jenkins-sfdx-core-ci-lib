@@ -58,69 +58,51 @@ class SfdxProjectBuilder implements Serializable {
           _.disableConcurrentBuilds(),
           // 
           _.buildDiscarder(_.logRotator(numToKeepStr: '5')),
-          _.pipelineTriggers([
-            processProjectTriggers()
-          ])
+          // _.pipelineTriggers([
+          //   processProjectTriggers()
+          // ])
         ])
         this.toolbelt = _.tool 'sfdx-toolbelt'
 
-// properties(
-  // [
-      // [$class: 'JiraProjectProperty'], 
-      // [$class: 'RebuildSettings', autoRebuild: false, rebuildDisabled: false], 
-      // [$class: 'JobLocalConfiguration', changeReasonComment: ''], 
-      // pipelineTriggers([upstream('xfflib-apex-mocks'), cron('H/15 * * * *'), githubPush()])
-      // ]
-      // )
-
-        // this doesn't work.  There is no "triggers" DSL object
-        // _.triggers {
-        //   // there is one upstream per dependency
-        //   _.upstream(
-        //     upstreamProjects: "xfflib-apex-mocks/" + _.env.BRANCH_NAME.replaceAll("/", "%2F"),  threshold: hudson.model.Result.SUCCESS
-        //   )
-        // }
-        // processProjectTriggers()
-
         // _.stages {
-        try {
-          _.stage('Validate') {
-            validateStage()          
-          }
-          _.stage('Initialize') {
-            // _.steps { // apparently not needed in a script
-            initializeStage()
-            // } // steps 
-          }  // stage: Initialize
+// try {
+//   _.stage('Validate') {
+//     validateStage()          
+//   }
+//   _.stage('Initialize') {
+//     // _.steps { // apparently not needed in a script
+//     initializeStage()
+//     // } // steps 
+//   }  // stage: Initialize
 
-          _.stage('Process Resources') {
-            processResourcesStage()
-          } // stage: Process Resources
+//   _.stage('Process Resources') {
+//     processResourcesStage()
+//   } // stage: Process Resources
 
-          _.stage('Compile') {
-            compileStage()
-          } // stage: Compile
+//   _.stage('Compile') {
+//     compileStage()
+//   } // stage: Compile
 
-          _.stage('Test') {
-            testStage()
-          } // stage: Test
+//   _.stage('Test') {
+//     testStage()
+//   } // stage: Test
 
-          _.stage('Package') {
-            packageStage()
-          } // stage: Package
+//   _.stage('Package') {
+//     packageStage()
+//   } // stage: Package
 
-          _.stage('Artifact Recording') {
-            artifactRecordingStage()
-          } // stage: Artifact Recording
+//   _.stage('Artifact Recording') {
+//     artifactRecordingStage()
+//   } // stage: Artifact Recording
 
-          postSuccess()
-        }
-        catch (ex) {
-          postFailure(ex)
-        }
-        finally {
-          postAlways()
-        }
+//   postSuccess()
+// }
+// catch (ex) {
+//   postFailure(ex)
+// }
+// finally {
+//   postAlways()
+// }
         //} // stages
       } // pipeline
     } // node
