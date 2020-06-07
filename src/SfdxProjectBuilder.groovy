@@ -739,7 +739,7 @@ class SfdxProjectBuilder implements Serializable {
   }
 
   private void processProjectTriggers() {
-    def theProject = _.currentBuild.project
+    def theProject = _.currentBuild.rawBuild
 
     _.echo("build now text == ${theProject.buildNowText}")    
   }
