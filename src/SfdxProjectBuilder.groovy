@@ -58,9 +58,19 @@ class SfdxProjectBuilder implements Serializable {
           _.disableConcurrentBuilds(),
           // 
           _.buildDiscarder(_.logRotator(numToKeepStr: '5')),
-          // _.pipelineTriggers([
-          //   processProjectTriggers()
-          // ])
+
+          _.pipelineTriggers(
+            processProjectTriggers()
+          )
+          
+          //  THIS DEFINITELY WORKS 
+          // _.pipelineTriggers(
+          //   [
+          //     _.upstream(	
+          //       upstreamProjects: "xfflib-apex-mocks/" + _.env.BRANCH_NAME.replaceAll("/", "%2F"),  threshold: hudson.model.Result.SUCCESS	
+          //     )
+          //   ]
+          // )
         ])
         this.toolbelt = _.tool 'sfdx-toolbelt'
 
@@ -742,18 +752,20 @@ class SfdxProjectBuilder implements Serializable {
     return result
   }
 
-  private void processProjectTriggers() {
-    _.echo('processProjectTriggers starting')
-    if ( this.upstreamProjectsToTriggerFrom != null ) {
-      _.echo('processProjectTriggers xAAAA')
-      for ( upstreamProjectToTriggerFrom in this.upstreamProjectsToTriggerFrom ) {
-        _.echo('processProjectTriggers xBBBB')
-        _.upstream(
-          upstreamProjects: upstreamProjectToTriggerFrom + "/" + _.env.BRANCH_NAME.replaceAll("/", "%2F"),  threshold: hudson.model.Result.SUCCESS
-        )
-      }
-    }
-    _.echo('processProjectTriggers finished')
+  private Object processProjectTriggers() {
+    // _.echo('processProjectTriggers starting')
+    // if ( this.upstreamProjectsToTriggerFrom != null ) {
+    //   _.echo('processProjectTriggers xAAAA')
+    //   for ( upstreamProjectToTriggerFrom in this.upstreamProjectsToTriggerFrom ) {
+    //     _.echo('processProjectTriggers xBBBB')
+    //     _.upstream(
+    //       upstreamProjects: upstreamProjectToTriggerFrom + "/" + _.env.BRANCH_NAME.replaceAll("/", "%2F"),  threshold: hudson.model.Result.SUCCESS
+    //     )
+    //   }
+    // }
+    // _.echo('processProjectTriggers finished')
+
+    return []
   }
     // def theProject = _.currentBuild.rawBuild
     // _.echo("pipelineTriggers == ${theProject.pipelineTriggers}")    
