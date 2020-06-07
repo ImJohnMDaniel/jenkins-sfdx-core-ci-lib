@@ -56,6 +56,7 @@ class SfdxProjectBuilder implements Serializable {
           _.disableConcurrentBuilds(),
           // 
           _.buildDiscarder(_.logRotator(numToKeepStr: '5'))
+          printf _.pipelineTriggers
         ])
         this.toolbelt = _.tool 'sfdx-toolbelt'
 
@@ -66,7 +67,7 @@ class SfdxProjectBuilder implements Serializable {
         //     upstreamProjects: "xfflib-apex-mocks/" + _.env.BRANCH_NAME.replaceAll("/", "%2F"),  threshold: hudson.model.Result.SUCCESS
         //   )
         // }
-        processProjectTriggers()
+        // processProjectTriggers()
 
         // _.stages {
                                                     // try {
