@@ -56,9 +56,18 @@ class SfdxProjectBuilder implements Serializable {
           _.disableConcurrentBuilds(),
           // 
           _.buildDiscarder(_.logRotator(numToKeepStr: '5'))
-          printf _.pipelineTriggers
+          _.pipelineTriggers([upstream('xfflib-apex-mocks')])
         ])
         this.toolbelt = _.tool 'sfdx-toolbelt'
+
+// properties(
+  // [
+      // [$class: 'JiraProjectProperty'], 
+      // [$class: 'RebuildSettings', autoRebuild: false, rebuildDisabled: false], 
+      // [$class: 'JobLocalConfiguration', changeReasonComment: ''], 
+      // pipelineTriggers([upstream('xfflib-apex-mocks'), cron('H/15 * * * *'), githubPush()])
+      // ]
+      // )
 
         // this doesn't work.  There is no "triggers" DSL object
         // _.triggers {
