@@ -60,7 +60,7 @@ class SfdxProjectBuilder implements Serializable {
           _.buildDiscarder(_.logRotator(numToKeepStr: '5')),
 
           _.pipelineTriggers(
-          //  processProjectTriggers()
+            processProjectTriggers()
           )
           
           //  THIS DEFINITELY WORKS 
@@ -751,7 +751,11 @@ class SfdxProjectBuilder implements Serializable {
     return result
   }
 
-  // private Object processProjectTriggers() {
+  private Object processProjectTriggers() {
+    result = []
+    _.echo ("result = ${result}")
+    return result
+  }
   //   // _.echo('processProjectTriggers starting')
   //   // if ( this.upstreamProjectsToTriggerFrom != null ) {
   //   //   _.echo('processProjectTriggers xAAAA')
