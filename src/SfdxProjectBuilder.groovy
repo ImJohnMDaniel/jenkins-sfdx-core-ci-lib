@@ -60,7 +60,7 @@ class SfdxProjectBuilder implements Serializable {
           _.buildDiscarder(_.logRotator(numToKeepStr: '5')),
 
           _.pipelineTriggers(
-            processProjectTriggers()
+            // processProjectTriggers()
           )
           
           //  THIS DEFINITELY WORKS 
