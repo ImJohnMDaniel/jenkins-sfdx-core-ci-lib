@@ -569,7 +569,8 @@ finally {
 
     def commandScriptString = "${this.toolbelt}/sfdx force:package:version:create --path ${pathToUseForPackageVersionCreation} --json --codecoverage --tag ${_.env.BUILD_TAG.replaceAll(' ','-')} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
 
-    if ( _.env.BRANCH_NAME != null ) {
+    // use the branch command flag only when the branch is not "master" or when it is "master" and the environment is not set to operate as "master == null"
+    if ( _.env.BRANCH_NAME != 'master' ||  (_.env.BRANCH_NAME == 'master' && !dependencyBuildsBranchMasterAndBranchNullAreTheSame) ) {
       commandScriptString = commandScriptString + " --branch ${_.env.BRANCH_NAME}"
     }
 
@@ -802,7 +803,7 @@ finally {
 
       for ( anUpstreamProjectToTriggerFrom in this.upstreamProjectsToTriggerFrom ) {
         if ( !anUpstreamProjectToTriggerFrom.empty ) {
-          _.echo("adding upstream dependency on project ${anUpstreamProjectToTriggerFrom}")
+          // _.echo("adding upstream dependency on project ${anUpstreamProjectToTriggerFrom}")
           result << _.upstream(	upstreamProjects: anUpstreamProjectToTriggerFrom + "/" + _.env.BRANCH_NAME.replaceAll("/", "%2F"),  threshold: hudson.model.Result.SUCCESS )
         }
       } 
