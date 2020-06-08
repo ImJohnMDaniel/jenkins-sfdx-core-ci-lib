@@ -784,7 +784,7 @@ class SfdxProjectBuilder implements Serializable {
           // _.pipelineTriggers(
           //   [
           //     _.upstream(	
-          //       upstreamProjects: "xfflib-apex-mocks/" + _.env.BRANCH_NAME.replaceAll("/", "%2F"),  threshold: hudson.model.Result.SUCCESS	
+          //       upstreamProjects: "someUpstreamBuildProject/" + _.env.BRANCH_NAME.replaceAll("/", "%2F"),  threshold: hudson.model.Result.SUCCESS	
           //     )
           //   ]
           // )
@@ -801,17 +801,7 @@ class SfdxProjectBuilder implements Serializable {
       } 
     }
 
-    // result[0] = _.upstream(	upstreamProjects: "xfflib-apex-mocks/" + _.env.BRANCH_NAME.replaceAll("/", "%2F"),  threshold: hudson.model.Result.SUCCESS )
-    
-    // _.echo ("result = ${result}")
-
     return result
   }        
 
 }
-
-
-// Enhancement Lists
-//
-//  - Need to actually put a GIT tag on the codebase and push that pack to origin
-//  - Need to figure out how to specify upstream dependency triggered builds -- most likely will invole new plugin to reset dependencies and only when there was a package build on that branch
