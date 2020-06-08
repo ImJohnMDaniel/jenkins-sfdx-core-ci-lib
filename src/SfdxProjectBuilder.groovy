@@ -335,15 +335,15 @@ finally {
   private void initializeBuildScriptVariables() {
     RUN_ARTIFACT_DIR = "target/${_.env.BUILD_NUMBER}"
     SFDX_SCRATCH_ORG_ALIAS = "bluesphere-${_.env.BRANCH_NAME.replaceAll("/", "_")}-${_.env.BUILD_NUMBER}"
-    _.echo("_.env.TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME == ${_.env.TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME}")
+    // _.echo("_.env.TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME == ${_.env.TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME}")
     if ( _.env.TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME != null ) {
-      _.echo("TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME is not null")
+      // _.echo("TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME is not null")
       this.dependencyBuildsBranchMasterAndBranchNullAreTheSame = _.env.TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME.toBoolean()
-      _.echo("this.dependencyBuildsBranchMasterAndBranchNullAreTheSame == ${this.dependencyBuildsBranchMasterAndBranchNullAreTheSame}")
-    } else {
-      _.echo("TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME is null")
+      // _.echo("this.dependencyBuildsBranchMasterAndBranchNullAreTheSame == ${this.dependencyBuildsBranchMasterAndBranchNullAreTheSame}")
+    // } else {
+      //_.echo("TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME is null")
     }
-    _.echo("this.dependencyBuildsBranchMasterAndBranchNullAreTheSame == ${this.dependencyBuildsBranchMasterAndBranchNullAreTheSame}")
+    // _.echo("this.dependencyBuildsBranchMasterAndBranchNullAreTheSame == ${this.dependencyBuildsBranchMasterAndBranchNullAreTheSame}")
   }
 
   private void readAndParseSFDXProjectFile() {
@@ -353,7 +353,7 @@ finally {
 
   private void authenticateToDevHub() {
     _.echo('Authenticate to the Dev Hub ')
-    _.echo(_.env.JWT_CRED_ID_DH)
+    // _.echo(_.env.JWT_CRED_ID_DH)
     _.withCredentials( [ _.file( credentialsId: _.env.JWT_CRED_ID_DH, variable: 'jwt_key_file') ] ) {
         // temporary workaround pending resolution to this issue https://github.com/forcedotcom/cli/issues/81
         _.sh returnStatus: true, script: "cp ${_.jwt_key_file} ./server.key"
@@ -419,32 +419,32 @@ finally {
   }
 
   private void installAllDependencies() {
-    _.echo("env.BRANCH_NAME == ${_.env.BRANCH_NAME}")
-    _.echo("this.dependencyBuildsBranchMasterAndBranchNullAreTheSame == ${this.dependencyBuildsBranchMasterAndBranchNullAreTheSame}")
-    if ( _.env.BRANCH_NAME == 'master' ) {
-      _.echo('branch_name == master')
-    }
-    if ( _.env.BRANCH_NAME != 'master' ) {
-      _.echo('branch_name != master')
-    }
+    // _.echo("env.BRANCH_NAME == ${_.env.BRANCH_NAME}")
+    // _.echo("this.dependencyBuildsBranchMasterAndBranchNullAreTheSame == ${this.dependencyBuildsBranchMasterAndBranchNullAreTheSame}")
+    // if ( _.env.BRANCH_NAME == 'master' ) {
+    //   _.echo('branch_name == master')
+    // }
+    // if ( _.env.BRANCH_NAME != 'master' ) {
+    //   _.echo('branch_name != master')
+    // }
 
-    if ( !this.dependencyBuildsBranchMasterAndBranchNullAreTheSame ) {
-      _.echo('!this.dependencyBuildsBranchMasterAndBranchNullAreTheSame == true')
-    } else {
-      _.echo('!this.dependencyBuildsBranchMasterAndBranchNullAreTheSame == false')
-    }
+    // if ( !this.dependencyBuildsBranchMasterAndBranchNullAreTheSame ) {
+    //   _.echo('!this.dependencyBuildsBranchMasterAndBranchNullAreTheSame == true')
+    // } else {
+    //   _.echo('!this.dependencyBuildsBranchMasterAndBranchNullAreTheSame == false')
+    // }
 
-    if ( _.env.BRANCH_NAME == 'master' && ( !this.dependencyBuildsBranchMasterAndBranchNullAreTheSame ) ) {
-      _.echo('secondary condition true')
-    } else {
-      _.echo('secondary condition false')
-    }
+    // if ( _.env.BRANCH_NAME == 'master' && ( !this.dependencyBuildsBranchMasterAndBranchNullAreTheSame ) ) {
+    //   _.echo('secondary condition true')
+    // } else {
+    //   _.echo('secondary condition false')
+    // }
 
-    if ( _.env.BRANCH_NAME != 'master' || ( _.env.BRANCH_NAME == 'master' && !this.dependencyBuildsBranchMasterAndBranchNullAreTheSame ) ) {
-      _.echo('complete condition true')
-    } else {
-      _.echo('complete condition false')
-    }
+    // if ( _.env.BRANCH_NAME != 'master' || ( _.env.BRANCH_NAME == 'master' && !this.dependencyBuildsBranchMasterAndBranchNullAreTheSame ) ) {
+    //   _.echo('complete condition true')
+    // } else {
+    //   _.echo('complete condition false')
+    // }
 
     def commandScriptString = "${this.toolbelt}/sfdx toolbox:package:dependencies:install --wait 240 --targetusername ${SFDX_SCRATCH_ORG_ALIAS} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME} --json"
     
