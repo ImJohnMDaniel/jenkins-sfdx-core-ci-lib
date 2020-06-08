@@ -339,6 +339,7 @@ finally {
     if ( _.env.TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME != null ) {
       _.echo("TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME is not null")
       this.dependencyBuildsBranchMasterAndBranchNullAreTheSame = _.env.TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME
+      _.echo("this.dependencyBuildsBranchMasterAndBranchNullAreTheSame == ${this.dependencyBuildsBranchMasterAndBranchNullAreTheSame}")
     } else {
       _.echo("TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME is null")
     }
