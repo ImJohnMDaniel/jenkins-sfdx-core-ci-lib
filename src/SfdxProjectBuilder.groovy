@@ -38,6 +38,8 @@ class SfdxProjectBuilder implements Serializable {
 
   private def upstreamProjectsToTriggerFrom = []
 
+  private def dependencyBuildsBranchMasterAndBranchNullAreTheSame = true
+
   // the parsed contents of the SFDX project's configuration
   private def SFDX_PROJECT
 
@@ -333,6 +335,9 @@ finally {
   private void initializeBuildScriptVariables() {
     RUN_ARTIFACT_DIR = "target/${_.env.BUILD_NUMBER}"
     SFDX_SCRATCH_ORG_ALIAS = "bluesphere-${_.env.BRANCH_NAME.replaceAll("/", "_")}-${_.env.BUILD_NUMBER}"
+    if ( _.env.TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME ) {
+      this.dependencyBuildsBranchMasterAndBranchNullAreTheSame = _.env.TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME
+    }
   }
 
   private void readAndParseSFDXProjectFile() {
@@ -411,8 +416,8 @@ finally {
     _.echo("env.BRANCH_NAME == ${_.env.BRANCH_NAME}")
 
     def commandScriptString = "${this.toolbelt}/sfdx toolbox:package:dependencies:install --wait 240 --targetusername ${SFDX_SCRATCH_ORG_ALIAS} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME} --json"
-
-    if ( _.env.BRANCH_NAME != 'master' ) {
+    
+    if ( _.env.BRANCH_NAME != 'master' || ( _.env.BRANCH_NAME == 'master' && ! this.dependencyBuildsBranchMasterAndBranchNullAreTheSame ) ) {
       commandScriptString = commandScriptString + " --branch ${_.env.BRANCH_NAME}"
     }
 
