@@ -342,6 +342,7 @@ finally {
     } else {
       _.echo("TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME is null")
     }
+    _.echo("this.dependencyBuildsBranchMasterAndBranchNullAreTheSame == ${this.dependencyBuildsBranchMasterAndBranchNullAreTheSame}")
   }
 
   private void readAndParseSFDXProjectFile() {
@@ -426,7 +427,7 @@ finally {
       _.echo('branch_name != master')
     }
 
-    if (!this.dependencyBuildsBranchMasterAndBranchNullAreTheSame ) {
+    if ( !this.dependencyBuildsBranchMasterAndBranchNullAreTheSame ) {
       _.echo('!this.dependencyBuildsBranchMasterAndBranchNullAreTheSame == true')
     } else {
       _.echo('!this.dependencyBuildsBranchMasterAndBranchNullAreTheSame == false')
