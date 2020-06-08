@@ -386,7 +386,7 @@ finally {
     }
 
     if (response.status != 0 ) {
-      if (response.name == 'genericTimeoutMessage') {
+      if (response.name.equals('genericTimeoutMessage')) {
         // try one more time to create the scratch org
         _.echo('Original attempt to create scratch org timed out.  Trying to create one again.')
         rmsg = _.sh returnStdout: true, script: commandScriptString
@@ -415,6 +415,18 @@ finally {
   private void installAllDependencies() {
     _.echo("env.BRANCH_NAME == ${_.env.BRANCH_NAME}")
     _.echo("this.dependencyBuildsBranchMasterAndBranchNullAreTheSame == ${this.dependencyBuildsBranchMasterAndBranchNullAreTheSame}")
+    if ( _.env.BRANCH_NAME == 'master' ) {
+      _.echo('branch_name == master')
+    }
+    if ( _.env.BRANCH_NAME != 'master' ) {
+      _.echo('branch_name != master')
+    }
+    if ( _.env.BRANCH_NAME == 'master' && ! this.dependencyBuildsBranchMasterAndBranchNullAreTheSame ) {
+      _.echo('secondary condition true')
+    }
+    if ( _.env.BRANCH_NAME != 'master' || ( _.env.BRANCH_NAME == 'master' && ! this.dependencyBuildsBranchMasterAndBranchNullAreTheSame ) ) {
+      _.echo('complete condition true')
+    }
 
     def commandScriptString = "${this.toolbelt}/sfdx toolbox:package:dependencies:install --wait 240 --targetusername ${SFDX_SCRATCH_ORG_ALIAS} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME} --json"
     
