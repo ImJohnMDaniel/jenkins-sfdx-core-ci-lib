@@ -36,6 +36,10 @@ class SfdxProjectBuilder implements Serializable {
 
   private def branchesToBuildPackageFromList = ['master', 'devops/master-2gmp-variant']
 
+  private def upstreamProjectsToTriggerFrom = []
+
+  private boolean dependencyBuildsBranchMasterAndBranchNullAreTheSame = true
+
   // the parsed contents of the SFDX project's configuration
   private def SFDX_PROJECT
 
@@ -55,9 +59,15 @@ class SfdxProjectBuilder implements Serializable {
           // ensure that concurrent builds on the same project is not possible
           _.disableConcurrentBuilds(),
           // 
-          _.buildDiscarder(_.logRotator(numToKeepStr: '5'))
+          _.buildDiscarder(_.logRotator(numToKeepStr: '5')),
+
+          _.pipelineTriggers(
+            processProjectTriggers()
+          )
+          
         ])
         this.toolbelt = _.tool 'sfdx-toolbelt'
+
         // _.stages {
         try {
           _.stage('Validate') {
@@ -118,7 +128,6 @@ class SfdxProjectBuilder implements Serializable {
     return this
   }
 
-  // pu blic SfdxProjectBuilder setDependencyInstallationKeys(List keyList) {
   public SfdxProjectBuilder setDependencyInstallationKeys(def keysString) {
     if ( keysString != null ) {
       this.installationKeys = keysString
@@ -173,6 +182,14 @@ class SfdxProjectBuilder implements Serializable {
   public SfdxProjectBuilder preserveScratchOrg() {
     this.scratchOrgShouldBeDeleted = false
     _.echo('SfdxProjectBuilder Parameter set : Scratch Org will be preserved')
+    return this
+  }
+
+  public SfdxProjectBuilder setUpstreamProjectToTriggerBuildFrom( String jenkinsBuildJobName ) {
+    if ( jenkinsBuildJobName != null && !jenkinsBuildJobName.empty ) {
+      this.upstreamProjectsToTriggerFrom.add( jenkinsBuildJobName )
+      _.echo("SfdxProjectBuilder Parameter set : Added ${jenkinsBuildJobName} to the upstream project build triggers")
+    }
     return this
   }
 
@@ -296,8 +313,8 @@ class SfdxProjectBuilder implements Serializable {
 
   private void isEnvVarPopulated(enironmentVariable, enironmentVariableName)
   {
-    _.echo( enironmentVariable )
-    _.echo( enironmentVariableName )
+    // _.echo( enironmentVariable )
+    // _.echo( enironmentVariableName )
     if ( ! enironmentVariable ) {
       _.error "Environment Variable ${enironmentVariableName} is null"
     }
@@ -310,6 +327,15 @@ class SfdxProjectBuilder implements Serializable {
   private void initializeBuildScriptVariables() {
     RUN_ARTIFACT_DIR = "target/${_.env.BUILD_NUMBER}"
     SFDX_SCRATCH_ORG_ALIAS = "bluesphere-${_.env.BRANCH_NAME.replaceAll("/", "_")}-${_.env.BUILD_NUMBER}"
+    // _.echo("_.env.TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME == ${_.env.TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME}")
+    if ( _.env.TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME != null ) {
+      // _.echo("TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME is not null")
+      this.dependencyBuildsBranchMasterAndBranchNullAreTheSame = _.env.TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME.toBoolean()
+      // _.echo("this.dependencyBuildsBranchMasterAndBranchNullAreTheSame == ${this.dependencyBuildsBranchMasterAndBranchNullAreTheSame}")
+    // } else {
+      //_.echo("TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME is null")
+    }
+    // _.echo("this.dependencyBuildsBranchMasterAndBranchNullAreTheSame == ${this.dependencyBuildsBranchMasterAndBranchNullAreTheSame}")
   }
 
   private void readAndParseSFDXProjectFile() {
@@ -319,7 +345,7 @@ class SfdxProjectBuilder implements Serializable {
 
   private void authenticateToDevHub() {
     _.echo('Authenticate to the Dev Hub ')
-    _.echo(_.env.JWT_CRED_ID_DH)
+    // _.echo(_.env.JWT_CRED_ID_DH)
     _.withCredentials( [ _.file( credentialsId: _.env.JWT_CRED_ID_DH, variable: 'jwt_key_file') ] ) {
         // temporary workaround pending resolution to this issue https://github.com/forcedotcom/cli/issues/81
         _.sh returnStatus: true, script: "cp ${_.jwt_key_file} ./server.key"
@@ -358,7 +384,7 @@ class SfdxProjectBuilder implements Serializable {
     }
 
     if (response.status != 0 ) {
-      if (response.name == 'genericTimeoutMessage') {
+      if (response.name.equals('genericTimeoutMessage')) {
         // try one more time to create the scratch org
         _.echo('Original attempt to create scratch org timed out.  Trying to create one again.')
         rmsg = _.sh returnStdout: true, script: commandScriptString
@@ -385,15 +411,40 @@ class SfdxProjectBuilder implements Serializable {
   }
 
   private void installAllDependencies() {
-    _.echo("env.BRANCH_NAME == ${_.env.BRANCH_NAME}")
+    // _.echo("env.BRANCH_NAME == ${_.env.BRANCH_NAME}")
+    // _.echo("this.dependencyBuildsBranchMasterAndBranchNullAreTheSame == ${this.dependencyBuildsBranchMasterAndBranchNullAreTheSame}")
+    // if ( _.env.BRANCH_NAME == 'master' ) {
+    //   _.echo('branch_name == master')
+    // }
+    // if ( _.env.BRANCH_NAME != 'master' ) {
+    //   _.echo('branch_name != master')
+    // }
+
+    // if ( !this.dependencyBuildsBranchMasterAndBranchNullAreTheSame ) {
+    //   _.echo('!this.dependencyBuildsBranchMasterAndBranchNullAreTheSame == true')
+    // } else {
+    //   _.echo('!this.dependencyBuildsBranchMasterAndBranchNullAreTheSame == false')
+    // }
+
+    // if ( _.env.BRANCH_NAME == 'master' && ( !this.dependencyBuildsBranchMasterAndBranchNullAreTheSame ) ) {
+    //   _.echo('secondary condition true')
+    // } else {
+    //   _.echo('secondary condition false')
+    // }
+
+    // if ( _.env.BRANCH_NAME != 'master' || ( _.env.BRANCH_NAME == 'master' && !this.dependencyBuildsBranchMasterAndBranchNullAreTheSame ) ) {
+    //   _.echo('complete condition true')
+    // } else {
+    //   _.echo('complete condition false')
+    // }
 
     def commandScriptString = "${this.toolbelt}/sfdx toolbox:package:dependencies:install --wait 240 --targetusername ${SFDX_SCRATCH_ORG_ALIAS} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME} --json"
-
-    if ( _.env.BRANCH_NAME != 'master' ) {
+    
+    if ( _.env.BRANCH_NAME != 'master' || ( _.env.BRANCH_NAME == 'master' && !this.dependencyBuildsBranchMasterAndBranchNullAreTheSame ) ) {
       commandScriptString = commandScriptString + " --branch ${_.env.BRANCH_NAME}"
     }
 
-    if ( this.installationKeys != null  ) {
+    if ( this.installationKeys != null ) {
       // 1:MyPackage1Key 2: 3:MyPackage3Key
       commandScriptString = commandScriptString + " --installationkeys '" + this.installationKeys + "'"
     }
@@ -510,7 +561,8 @@ class SfdxProjectBuilder implements Serializable {
 
     def commandScriptString = "${this.toolbelt}/sfdx force:package:version:create --path ${pathToUseForPackageVersionCreation} --json --codecoverage --tag ${_.env.BUILD_TAG.replaceAll(' ','-')} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
 
-    if ( _.env.BRANCH_NAME != null ) {
+    // use the branch command flag only when the branch is not "master" or when it is "master" and the environment is not set to operate as "master == null"
+    if ( _.env.BRANCH_NAME != 'master' ||  (_.env.BRANCH_NAME == 'master' && !dependencyBuildsBranchMasterAndBranchNullAreTheSame) ) {
       commandScriptString = commandScriptString + " --branch ${_.env.BRANCH_NAME}"
     }
 
@@ -727,10 +779,29 @@ class SfdxProjectBuilder implements Serializable {
     // the last line works as the return value
     return result
   }
+
+          //  THIS DEFINITELY WORKS 
+          // _.pipelineTriggers(
+          //   [
+          //     _.upstream(	
+          //       upstreamProjects: "someUpstreamBuildProject/" + _.env.BRANCH_NAME.replaceAll("/", "%2F"),  threshold: hudson.model.Result.SUCCESS	
+          //     )
+          //   ]
+          // )
+  private Object processProjectTriggers() {
+    def result = []
+
+    if ( this.upstreamProjectsToTriggerFrom != null ) {
+
+      for ( anUpstreamProjectToTriggerFrom in this.upstreamProjectsToTriggerFrom ) {
+        if ( !anUpstreamProjectToTriggerFrom.empty ) {
+          // _.echo("adding upstream dependency on project ${anUpstreamProjectToTriggerFrom}")
+          result << _.upstream(	upstreamProjects: anUpstreamProjectToTriggerFrom + "/" + _.env.BRANCH_NAME.replaceAll("/", "%2F"),  threshold: hudson.model.Result.SUCCESS )
+        }
+      } 
+    }
+
+    return result
+  }        
+
 }
-
-
-// Enhancement Lists
-//
-//  - Need to actually put a GIT tag on the codebase and push that pack to origin
-//  - Need to figure out how to specify upstream dependency triggered builds -- most likely will invole new plugin to reset dependencies and only when there was a package build on that branch

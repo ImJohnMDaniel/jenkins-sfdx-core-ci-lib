@@ -6,6 +6,7 @@ new SfdxProjectBuilder(this)
         .setScratchOrgDefFile('scratchOrgDefFile')
         .setDependencyInstallationKeys('keysString')
         .setPackageInstallationKey('packageInstallationKey')
+        .setUpstreamProjectToTriggerBuildFrom('someUpstreamJenkinsBuildProject') // set once per upstream project
         .alwaysBuildPackage()
         .doNotBuildPackage()
         .alwaysNotifyOnSuccess()
