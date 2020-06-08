@@ -787,16 +787,6 @@ finally {
     return result
   }
 
-  private Object processProjectTriggers() {
-    def result = []
-    
-    result[0] = _.upstream(	upstreamProjects: "xfflib-apex-mocks/" + _.env.BRANCH_NAME.replaceAll("/", "%2F"),  threshold: hudson.model.Result.SUCCESS )
-    
-    _.echo ("result = ${result}")
-
-    return result
-  }
-
           //  THIS DEFINITELY WORKS 
           // _.pipelineTriggers(
           //   [
@@ -805,32 +795,25 @@ finally {
           //     )
           //   ]
           // )
+  private Object processProjectTriggers() {
+    def result = []
 
-  //   // _.echo('processProjectTriggers starting')
-  //   // if ( this.upstreamProjectsToTriggerFrom != null ) {
-  //   //   _.echo('processProjectTriggers xAAAA')
-  //   //   for ( upstreamProjectToTriggerFrom in this.upstreamProjectsToTriggerFrom ) {
-  //   //     _.echo('processProjectTriggers xBBBB')
-  //   //     _.upstream(
-  //   //       upstreamProjects: upstreamProjectToTriggerFrom + "/" + _.env.BRANCH_NAME.replaceAll("/", "%2F"),  threshold: hudson.model.Result.SUCCESS
-  //   //     )
-  //   //   }
-  //   // }
-  //   // _.echo('processProjectTriggers finished')
+    if ( this.upstreamProjectsToTriggerFrom != null ) {
 
-  //   return []
-  // }
+      for ( anUpstreamProjectToTriggerFrom in this.upstreamProjectsToTriggerFrom ) {
+        if ( !anUpstreamProjectToTriggerFrom.isEmpty ) {
+          _.echo("adding upstream dependency on project ${anUpstreamProjectToTriggerFrom}")
+          result << _.upstream(	upstreamProjects: anUpstreamProjectToTriggerFrom + "/" + _.env.BRANCH_NAME.replaceAll("/", "%2F"),  threshold: hudson.model.Result.SUCCESS )
+        }
+      } 
+    }
 
-    // def theProject = _.currentBuild.rawBuild
-    // _.echo("pipelineTriggers == ${theProject.pipelineTriggers}")    
-        // jenkinsFileScript.currentBuild.displayName = args.title
-        // _.triggers {
-        //   // there is one upstream per dependency
-        //   _.upstream(
-        //     upstreamProjects: "xfflib-apex-mocks/" + _.env.BRANCH_NAME.replaceAll("/", "%2F"),  threshold: hudson.model.Result.SUCCESS
-        //   )
-        // }
-        
+    // result[0] = _.upstream(	upstreamProjects: "xfflib-apex-mocks/" + _.env.BRANCH_NAME.replaceAll("/", "%2F"),  threshold: hudson.model.Result.SUCCESS )
+    
+    // _.echo ("result = ${result}")
+
+    return result
+  }        
 
 }
 
