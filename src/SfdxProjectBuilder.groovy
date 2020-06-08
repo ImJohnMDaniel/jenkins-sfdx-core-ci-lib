@@ -801,7 +801,7 @@ finally {
     if ( this.upstreamProjectsToTriggerFrom != null ) {
 
       for ( anUpstreamProjectToTriggerFrom in this.upstreamProjectsToTriggerFrom ) {
-        if ( !anUpstreamProjectToTriggerFrom.isEmpty ) {
+        if ( !anUpstreamProjectToTriggerFrom.empty ) {
           _.echo("adding upstream dependency on project ${anUpstreamProjectToTriggerFrom}")
           result << _.upstream(	upstreamProjects: anUpstreamProjectToTriggerFrom + "/" + _.env.BRANCH_NAME.replaceAll("/", "%2F"),  threshold: hudson.model.Result.SUCCESS )
         }
