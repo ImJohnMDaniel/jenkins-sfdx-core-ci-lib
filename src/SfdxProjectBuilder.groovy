@@ -321,8 +321,8 @@ finally {
 
   private void isEnvVarPopulated(enironmentVariable, enironmentVariableName)
   {
-    _.echo( enironmentVariable )
-    _.echo( enironmentVariableName )
+    // _.echo( enironmentVariable )
+    // _.echo( enironmentVariableName )
     if ( ! enironmentVariable ) {
       _.error "Environment Variable ${enironmentVariableName} is null"
     }
@@ -422,25 +422,19 @@ finally {
       _.echo('branch_name != master')
     }
 
-    if (! this.dependencyBuildsBranchMasterAndBranchNullAreTheSame ) {
-      _.echo('! this.dependencyBuildsBranchMasterAndBranchNullAreTheSame == true')
+    if (!this.dependencyBuildsBranchMasterAndBranchNullAreTheSame ) {
+      _.echo('!this.dependencyBuildsBranchMasterAndBranchNullAreTheSame == true')
     } else {
-      _.echo('! this.dependencyBuildsBranchMasterAndBranchNullAreTheSame == false')
+      _.echo('!this.dependencyBuildsBranchMasterAndBranchNullAreTheSame == false')
     }
 
-    if (! (this.dependencyBuildsBranchMasterAndBranchNullAreTheSame ) ) {
-      _.echo('! (this.dependencyBuildsBranchMasterAndBranchNullAreTheSame) == true')
-    } else {
-      _.echo('! (this.dependencyBuildsBranchMasterAndBranchNullAreTheSame) == false')
-    }
-
-    if ( _.env.BRANCH_NAME == 'master' && (! this.dependencyBuildsBranchMasterAndBranchNullAreTheSame ) ) {
+    if ( _.env.BRANCH_NAME == 'master' && ( !this.dependencyBuildsBranchMasterAndBranchNullAreTheSame ) ) {
       _.echo('secondary condition true')
     } else {
       _.echo('secondary condition false')
     }
 
-    if ( _.env.BRANCH_NAME != 'master' || ( _.env.BRANCH_NAME == 'master' && (! this.dependencyBuildsBranchMasterAndBranchNullAreTheSame ) ) ) {
+    if ( _.env.BRANCH_NAME != 'master' || ( _.env.BRANCH_NAME == 'master' && ( !this.dependencyBuildsBranchMasterAndBranchNullAreTheSame ) ) ) {
       _.echo('complete condition true')
     } else {
       _.echo('complete condition false')
@@ -448,7 +442,7 @@ finally {
 
     def commandScriptString = "${this.toolbelt}/sfdx toolbox:package:dependencies:install --wait 240 --targetusername ${SFDX_SCRATCH_ORG_ALIAS} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME} --json"
     
-    if ( _.env.BRANCH_NAME != 'master' || ( _.env.BRANCH_NAME == 'master' && ( ! this.dependencyBuildsBranchMasterAndBranchNullAreTheSame ) ) ) {
+    if ( _.env.BRANCH_NAME != 'master' || ( _.env.BRANCH_NAME == 'master' && ( !this.dependencyBuildsBranchMasterAndBranchNullAreTheSame ) ) ) {
       commandScriptString = commandScriptString + " --branch ${_.env.BRANCH_NAME}"
     }
 
