@@ -421,11 +421,29 @@ finally {
     if ( _.env.BRANCH_NAME != 'master' ) {
       _.echo('branch_name != master')
     }
+
+    if (! this.dependencyBuildsBranchMasterAndBranchNullAreTheSame ) {
+      _.echo('! this.dependencyBuildsBranchMasterAndBranchNullAreTheSame == true')
+    } else {
+      _.echo('! this.dependencyBuildsBranchMasterAndBranchNullAreTheSame == false')
+    }
+
+    if (! (this.dependencyBuildsBranchMasterAndBranchNullAreTheSame ) ) {
+      _.echo('! (this.dependencyBuildsBranchMasterAndBranchNullAreTheSame) == true')
+    } else {
+      _.echo('! (this.dependencyBuildsBranchMasterAndBranchNullAreTheSame) == false')
+    }
+
     if ( _.env.BRANCH_NAME == 'master' && (! this.dependencyBuildsBranchMasterAndBranchNullAreTheSame ) ) {
       _.echo('secondary condition true')
+    } else {
+      _.echo('secondary condition false')
     }
+
     if ( _.env.BRANCH_NAME != 'master' || ( _.env.BRANCH_NAME == 'master' && (! this.dependencyBuildsBranchMasterAndBranchNullAreTheSame ) ) ) {
       _.echo('complete condition true')
+    } else {
+      _.echo('complete condition false')
     }
 
     def commandScriptString = "${this.toolbelt}/sfdx toolbox:package:dependencies:install --wait 240 --targetusername ${SFDX_SCRATCH_ORG_ALIAS} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME} --json"
