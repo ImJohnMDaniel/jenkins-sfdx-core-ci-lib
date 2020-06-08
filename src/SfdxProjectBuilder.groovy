@@ -414,6 +414,7 @@ finally {
 
   private void installAllDependencies() {
     _.echo("env.BRANCH_NAME == ${_.env.BRANCH_NAME}")
+    _.echo("this.dependencyBuildsBranchMasterAndBranchNullAreTheSame == ${this.dependencyBuildsBranchMasterAndBranchNullAreTheSame}")
 
     def commandScriptString = "${this.toolbelt}/sfdx toolbox:package:dependencies:install --wait 240 --targetusername ${SFDX_SCRATCH_ORG_ALIAS} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME} --json"
     
