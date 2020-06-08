@@ -38,7 +38,7 @@ class SfdxProjectBuilder implements Serializable {
 
   private def upstreamProjectsToTriggerFrom = []
 
-  private def dependencyBuildsBranchMasterAndBranchNullAreTheSame = true
+  private boolean dependencyBuildsBranchMasterAndBranchNullAreTheSame = true
 
   // the parsed contents of the SFDX project's configuration
   private def SFDX_PROJECT
@@ -434,7 +434,7 @@ finally {
       _.echo('secondary condition false')
     }
 
-    if ( _.env.BRANCH_NAME != 'master' || ( _.env.BRANCH_NAME == 'master' && ( !this.dependencyBuildsBranchMasterAndBranchNullAreTheSame ) ) ) {
+    if ( _.env.BRANCH_NAME != 'master' || ( _.env.BRANCH_NAME == 'master' && !this.dependencyBuildsBranchMasterAndBranchNullAreTheSame ) ) {
       _.echo('complete condition true')
     } else {
       _.echo('complete condition false')
@@ -442,11 +442,11 @@ finally {
 
     def commandScriptString = "${this.toolbelt}/sfdx toolbox:package:dependencies:install --wait 240 --targetusername ${SFDX_SCRATCH_ORG_ALIAS} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME} --json"
     
-    if ( _.env.BRANCH_NAME != 'master' || ( _.env.BRANCH_NAME == 'master' && ( !this.dependencyBuildsBranchMasterAndBranchNullAreTheSame ) ) ) {
+    if ( _.env.BRANCH_NAME != 'master' || ( _.env.BRANCH_NAME == 'master' && !this.dependencyBuildsBranchMasterAndBranchNullAreTheSame ) ) {
       commandScriptString = commandScriptString + " --branch ${_.env.BRANCH_NAME}"
     }
 
-    if ( this.installationKeys != null  ) {
+    if ( this.installationKeys != null ) {
       // 1:MyPackage1Key 2: 3:MyPackage3Key
       commandScriptString = commandScriptString + " --installationkeys '" + this.installationKeys + "'"
     }
