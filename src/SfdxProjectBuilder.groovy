@@ -326,7 +326,7 @@ class SfdxProjectBuilder implements Serializable {
 
   private void initializeBuildScriptVariables() {
     RUN_ARTIFACT_DIR = "target/${_.env.BUILD_NUMBER}"
-    SFDX_SCRATCH_ORG_ALIAS = "bluesphere-${_.env.BUILD_TAG.replaceAll("/", "_")}"
+    SFDX_SCRATCH_ORG_ALIAS = "bluesphere-${_.env.BUILD_TAG.replaceAll(' ','-')}"
     // _.echo("_.env.TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME == ${_.env.TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME}")
     if ( _.env.TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME != null ) {
       // _.echo("TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME is not null")
@@ -653,8 +653,14 @@ class SfdxProjectBuilder implements Serializable {
 
   private void tagTheBuild() {
     _.echo("Tagging the build as '${_.env.BUILD_TAG}'")
-    _.sh returnStdout: true, script: "git tag -m '${_.env.BUILD_TAG}' ${_.env.BUILD_TAG} "
+    _.sh returnStdout: true, script: "git tag -m '${_.env.BUILD_TAG}' ${_.env.BUILD_TAG} "    
     // _.sh returnStdout: true, script: "git push --tags"
+    withCredentials([usernamePassword(credentialsId: 'github-user-account-imjohnmdaniel', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
+      sh('''
+        git config --local credential.helper "!f() { echo username=\\$GIT_USERNAME; echo password=\\$GIT_PASSWORD; }; f"
+        git push --tags
+        ''')
+    }
     _.echo('Tagging successful')
   }
 
