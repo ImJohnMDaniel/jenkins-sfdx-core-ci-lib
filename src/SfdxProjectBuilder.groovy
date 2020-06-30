@@ -455,9 +455,7 @@ class SfdxProjectBuilder implements Serializable {
 
     if ( rmsg.isEmpty() ) {
       // then this means that the toolbox plugin has not been installed on this server.
-      // echo y | sfdx plugin:install @dx-cli-toolbox/sfdx-toolbox-package-utils
-      _.echo ("installing the toolbox plugins")
-      def rmsgInstall = _.sh returnStdout: true, script: "echo y | ${this.toolbelt}/sfdx plugins:install @dx-cli-toolbox/sfdx-toolbox-package-utils"
+      installRequiredCLIPlugins()
       _.echo ("retrying the toolbox:package:dependencies:install command")
       rmsg = _.sh returnStdout: true, script: commandScriptString
     }
@@ -469,6 +467,12 @@ class SfdxProjectBuilder implements Serializable {
       _.error "package dependency installed failed -- ${response.message}"
     }
     
+  }
+
+  private void installRequiredCLIPlugins() {
+      // echo y | sfdx plugin:install @dx-cli-toolbox/sfdx-toolbox-package-utils
+      _.echo ("installing the toolbox plugins")
+      def rmsgInstall = _.sh returnStdout: true, script: "echo y | ${this.toolbelt}/sfdx plugins:install @dx-cli-toolbox/sfdx-toolbox-package-utils"
   }
 
   private void compileCode() {
