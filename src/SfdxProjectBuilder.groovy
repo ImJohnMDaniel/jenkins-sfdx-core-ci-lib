@@ -55,6 +55,10 @@ class SfdxProjectBuilder implements Serializable {
       _.checkout _.scm
       // start the pipeline
       _.pipeline {
+        _.agent {
+          _.docker { image 'salesforce/salesforcedx' }
+        }
+        
         _.properties([
           // ensure that concurrent builds on the same project is not possible
           _.disableConcurrentBuilds(),
