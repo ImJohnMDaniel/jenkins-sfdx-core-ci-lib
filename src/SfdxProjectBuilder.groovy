@@ -53,66 +53,67 @@ class SfdxProjectBuilder implements Serializable {
     _.node {
       // checkout the main source code for the project.
       _.checkout _.scm
-      // start the pipeline
-      _.pipeline {
-        _.agent {
-          _.docker { image 'salesforce/salesforcedx' }
-        }
-        
-        _.properties([
-          // ensure that concurrent builds on the same project is not possible
-          _.disableConcurrentBuilds(),
-          // 
-          _.buildDiscarder(_.logRotator(numToKeepStr: '5')),
 
-          _.pipelineTriggers(
-            processProjectTriggers()
-          )
-          
-        ])
-        //this.toolbelt = _.tool 'sfdx-toolbelt'
+      _.docker.image('salesforce/salesforcedx') {
 
-        // _.stages {
-        try {
-          _.stage('Validate') {
-            validateStage()          
+        // start the pipeline
+        _.pipeline {
+
+          _.properties([
+            // ensure that concurrent builds on the same project is not possible
+            _.disableConcurrentBuilds(),
+            // 
+            _.buildDiscarder(_.logRotator(numToKeepStr: '5')),
+
+            _.pipelineTriggers(
+              processProjectTriggers()
+            )
+            
+          ])
+
+          try {
+            _.stage('Validate') {
+              validateStage()          
+            }
+            _.stage('Initialize') {
+              // _.steps { // apparently not needed in a script
+              initializeStage()
+              // } // steps 
+            }  // stage: Initialize
+
+            _.stage('Process Resources') {
+              processResourcesStage()
+            } // stage: Process Resources
+
+            _.stage('Compile') {
+              compileStage()
+            } // stage: Compile
+
+            _.stage('Test') {
+              testStage()
+            } // stage: Test
+
+            _.stage('Package') {
+              packageStage()
+            } // stage: Package
+
+            _.stage('Artifact Recording') {
+              artifactRecordingStage()
+            } // stage: Artifact Recording
+
+            postSuccess()
           }
-          _.stage('Initialize') {
-            // _.steps { // apparently not needed in a script
-            initializeStage()
-            // } // steps 
-          }  // stage: Initialize
+          catch (ex) {
+            postFailure(ex)
+          }
+          finally {
+            postAlways()
+          }
+          
+        } // pipeline
 
-          _.stage('Process Resources') {
-            processResourcesStage()
-          } // stage: Process Resources
+      } // docker
 
-          _.stage('Compile') {
-            compileStage()
-          } // stage: Compile
-
-          _.stage('Test') {
-            testStage()
-          } // stage: Test
-
-          _.stage('Package') {
-            packageStage()
-          } // stage: Package
-
-          _.stage('Artifact Recording') {
-            artifactRecordingStage()
-          } // stage: Artifact Recording
-
-          postSuccess()
-        }
-        catch (ex) {
-          postFailure(ex)
-        }
-        finally {
-          postAlways()
-        }
-        //} // stages
-      } // pipeline
     } // node
   }
 
