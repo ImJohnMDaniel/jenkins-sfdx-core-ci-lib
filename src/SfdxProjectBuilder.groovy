@@ -4,7 +4,7 @@ class SfdxProjectBuilder implements Serializable {
 
   private def SFDX_SCRATCH_ORG_DEF_FILE = "config/project-scratch-def.json"
 
-  private def toolbelt
+  // private def toolbelt
 
   private def RUN_ARTIFACT_DIR 
 
@@ -66,7 +66,7 @@ class SfdxProjectBuilder implements Serializable {
           )
           
         ])
-        this.toolbelt = _.tool 'sfdx-toolbelt'
+        //this.toolbelt = _.tool 'sfdx-toolbelt'
 
         // _.stages {
         try {
@@ -353,7 +353,7 @@ class SfdxProjectBuilder implements Serializable {
 
         _.echo("Authenticating To Dev Hub...")
         // script {
-        def rc = _.sh returnStatus: true, script: "${this.toolbelt}/sfdx force:auth:jwt:grant --clientid ${_.env.CONNECTED_APP_CONSUMER_KEY_DH} --username ${_.env.SFDX_DEV_HUB_USERNAME} --jwtkeyfile server.key --instanceurl ${_.env.SFDX_DEV_HUB_HOST}"
+        def rc = _.sh returnStatus: true, script: "sfdx force:auth:jwt:grant --clientid ${_.env.CONNECTED_APP_CONSUMER_KEY_DH} --username ${_.env.SFDX_DEV_HUB_USERNAME} --jwtkeyfile server.key --instanceurl ${_.env.SFDX_DEV_HUB_HOST}"
         if (rc != 0) { _.error "hub org authorization failed" }
         // }
     }
@@ -362,7 +362,7 @@ class SfdxProjectBuilder implements Serializable {
   private void createScratchOrg() {
     _.echo('Creating scratch org')
 
-    def commandScriptString = "${this.toolbelt}/sfdx force:org:create --definitionfile ${this.SFDX_SCRATCH_ORG_DEF_FILE} --json --durationdays 1 --setalias ${SFDX_SCRATCH_ORG_ALIAS} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME} --wait 30"
+    def commandScriptString = "sfdx force:org:create --definitionfile ${this.SFDX_SCRATCH_ORG_DEF_FILE} --json --durationdays 1 --setalias ${SFDX_SCRATCH_ORG_ALIAS} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME} --wait 30"
 
     def response
 
@@ -403,7 +403,7 @@ class SfdxProjectBuilder implements Serializable {
   private void deleteScratchOrg() {
     if (this.scratchOrgWasCreated && this.scratchOrgShouldBeDeleted) {
       _.echo('Deleting scratch org')
-      def rc = _.sh returnStatus: true, script: "${this.toolbelt}/sfdx force:org:delete --noprompt --targetusername ${SFDX_SCRATCH_ORG_ALIAS} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
+      def rc = _.sh returnStatus: true, script: "sfdx force:org:delete --noprompt --targetusername ${SFDX_SCRATCH_ORG_ALIAS} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
       if (rc != 0) { 
         _.error "deletion of scratch org ${SFDX_SCRATCH_ORG_ALIAS} failed"
       }
@@ -438,7 +438,7 @@ class SfdxProjectBuilder implements Serializable {
     //   _.echo('complete condition false')
     // }
 
-    def commandScriptString = "${this.toolbelt}/sfdx toolbox:package:dependencies:install --wait 240 --targetusername ${SFDX_SCRATCH_ORG_ALIAS} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME} --json"
+    def commandScriptString = "sfdx toolbox:package:dependencies:install --wait 240 --targetusername ${SFDX_SCRATCH_ORG_ALIAS} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME} --json"
     
     if ( _.env.BRANCH_NAME != 'master' || ( _.env.BRANCH_NAME == 'master' && !this.dependencyBuildsBranchMasterAndBranchNullAreTheSame ) ) {
       commandScriptString = commandScriptString + " --branch ${_.env.BRANCH_NAME}"
@@ -472,12 +472,12 @@ class SfdxProjectBuilder implements Serializable {
   private void installRequiredCLIPlugins() {
       // echo y | sfdx plugin:install @dx-cli-toolbox/sfdx-toolbox-package-utils
       _.echo ("installing the toolbox plugins")
-      def rmsgInstall = _.sh returnStdout: true, script: "echo y | ${this.toolbelt}/sfdx plugins:install @dx-cli-toolbox/sfdx-toolbox-package-utils"
+      def rmsgInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install @dx-cli-toolbox/sfdx-toolbox-package-utils"
   }
 
   private void compileCode() {
     _.echo("Push To Scratch Org And Compile")
-    def rmsg = _.sh returnStdout: true, script: "${this.toolbelt}/sfdx force:source:push --json --targetusername ${SFDX_SCRATCH_ORG_ALIAS}"
+    def rmsg = _.sh returnStdout: true, script: "sfdx force:source:push --json --targetusername ${SFDX_SCRATCH_ORG_ALIAS}"
     // printf rmsg
 
     def response = jsonParse( rmsg )
@@ -494,7 +494,7 @@ class SfdxProjectBuilder implements Serializable {
       def rmsg 
       
       try {
-        rmsg = _.sh returnStdout: true, label: 'Executing force:apex:test:run...', script: "${this.toolbelt}/sfdx force:apex:test:run --testlevel RunLocalTests --outputdir ${RUN_ARTIFACT_DIR} --resultformat tap --codecoverage --wait 60 --json --targetusername ${SFDX_SCRATCH_ORG_ALIAS}"
+        rmsg = _.sh returnStdout: true, label: 'Executing force:apex:test:run...', script: "sfdx force:apex:test:run --testlevel RunLocalTests --outputdir ${RUN_ARTIFACT_DIR} --resultformat tap --codecoverage --wait 60 --json --targetusername ${SFDX_SCRATCH_ORG_ALIAS}"
       }
       catch (ex) {
         _.echo(ex.getMessage())
@@ -505,7 +505,7 @@ class SfdxProjectBuilder implements Serializable {
         // execute all unit tests a second time.  There is a bug with snapshots and CMDT-based 
         //      Dependency injection and Apex Unit Tests.  The workaround is to simply
         //      re-run the unit tests again.
-        rmsg = _.sh returnStdout: true, label: 'Executing force:apex:test:run...', script: "${this.toolbelt}/sfdx force:apex:test:run --testlevel RunLocalTests --outputdir ${RUN_ARTIFACT_DIR} --resultformat junit --codecoverage --wait 60 --json --targetusername ${SFDX_SCRATCH_ORG_ALIAS}"
+        rmsg = _.sh returnStdout: true, label: 'Executing force:apex:test:run...', script: "sfdx force:apex:test:run --testlevel RunLocalTests --outputdir ${RUN_ARTIFACT_DIR} --resultformat junit --codecoverage --wait 60 --json --targetusername ${SFDX_SCRATCH_ORG_ALIAS}"
       }
       finally {
         collectTestResults()
@@ -563,7 +563,7 @@ class SfdxProjectBuilder implements Serializable {
       _.error  "unable to determine pathToUseForPackageVersionCreation in stage:package"
     }
 
-    def commandScriptString = "${this.toolbelt}/sfdx force:package:version:create --path ${pathToUseForPackageVersionCreation} --json --codecoverage --tag ${_.env.BUILD_TAG.replaceAll(' ','-')} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
+    def commandScriptString = "sfdx force:package:version:create --path ${pathToUseForPackageVersionCreation} --json --codecoverage --tag ${_.env.BUILD_TAG.replaceAll(' ','-')} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
 
     // use the branch command flag only when the branch is not "master" or when it is "master" and the environment is not set to operate as "master == null"
     if ( _.env.BRANCH_NAME != 'master' ||  (_.env.BRANCH_NAME == 'master' && !dependencyBuildsBranchMasterAndBranchNullAreTheSame) ) {
@@ -601,7 +601,7 @@ class SfdxProjectBuilder implements Serializable {
                     // script {
                         // use the SFDX_NEW_PACKAGE_VERSION.Id for this command verses SFDX_NEW_PACKAGE_VERSION_ID because we are yet
                         //  certain that the package was created correctly
-                        rmsg = _.sh returnStdout: true, script: "${this.toolbelt}/sfdx force:package:version:create:report --packagecreaterequestid ${SFDX_NEW_PACKAGE_VERSION.Id} --json --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
+                        rmsg = _.sh returnStdout: true, script: "sfdx force:package:version:create:report --packagecreaterequestid ${SFDX_NEW_PACKAGE_VERSION.Id} --json --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
                         // printf rmsg
 
                         def packageVersionCreationCheckResponse = jsonParse(rmsg) 
@@ -666,11 +666,11 @@ class SfdxProjectBuilder implements Serializable {
     _.echo("finding all package versions dependencies and recording them for the build")
 
     // Get the list of package versions that are currently installed in the default scratch org
-    def rmsg = _.sh returnStdout: true, script: "${this.toolbelt}/sfdx force:package:installed:list --json --targetusername ${SFDX_SCRATCH_ORG_ALIAS}"
+    def rmsg = _.sh returnStdout: true, script: "sfdx force:package:installed:list --json --targetusername ${SFDX_SCRATCH_ORG_ALIAS}"
     def allPackageVersionsInstalledInScratchOrg = jsonParse(rmsg).result
 
     // Get the complete list of package versions that are currently available in the DevHub
-    rmsg = _.sh returnStdout: true, script: "${this.toolbelt}/sfdx force:package:version:list --json --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
+    rmsg = _.sh returnStdout: true, script: "sfdx force:package:version:list --json --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
     def allPackageVersionsAvailableInDevHub = jsonParse(rmsg).result
 
     def packageVersion
@@ -691,7 +691,7 @@ class SfdxProjectBuilder implements Serializable {
 
         // then a package was created.  Record its finger prints
         _.echo("finding all package versions for package ids found")
-        rmsg = _.sh returnStdout: true, script: "${this.toolbelt}/sfdx force:package:version:list --packages ${SFDX_NEW_PACKAGE} --json --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
+        rmsg = _.sh returnStdout: true, script: "sfdx force:package:version:list --packages ${SFDX_NEW_PACKAGE} --json --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
         //printf rmsg
 
         def response = jsonParse( rmsg )
