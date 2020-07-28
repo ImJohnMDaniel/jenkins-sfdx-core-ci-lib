@@ -78,13 +78,15 @@ class SfdxProjectBuilder implements Serializable {
             }
           }
           _.stage('Initialize') {
-            // _.steps { // apparently not needed in a script
-            initializeStage()
-            // } // steps 
+            this.buildImage.inside {
+              initializeStage()
+            }
           }  // stage: Initialize
 
           _.stage('Process Resources') {
-            processResourcesStage()
+            this.buildImage.inside {
+              processResourcesStage()
+            }
           } // stage: Process Resources
 
           _.stage('Compile') {
