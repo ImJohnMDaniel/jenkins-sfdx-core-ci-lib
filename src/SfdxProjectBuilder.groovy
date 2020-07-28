@@ -6,6 +6,8 @@ class SfdxProjectBuilder implements Serializable {
 
   // private def toolbelt
 
+  private def buildImage
+
   private def RUN_ARTIFACT_DIR 
 
   private def SFDX_SCRATCH_ORG_ALIAS
@@ -54,65 +56,63 @@ class SfdxProjectBuilder implements Serializable {
       // checkout the main source code for the project.
       _.checkout _.scm
 
-      _.docker.image('salesforce/salesforcedx') {
+      // start the pipeline
+      _.pipeline {
 
-        // start the pipeline
-        _.pipeline {
+        _.properties([
+          // ensure that concurrent builds on the same project is not possible
+          _.disableConcurrentBuilds(),
+          // 
+          _.buildDiscarder(_.logRotator(numToKeepStr: '5')),
 
-          _.properties([
-            // ensure that concurrent builds on the same project is not possible
-            _.disableConcurrentBuilds(),
-            // 
-            _.buildDiscarder(_.logRotator(numToKeepStr: '5')),
-
-            _.pipelineTriggers(
-              processProjectTriggers()
-            )
-            
-          ])
-
-          try {
-            _.stage('Validate') {
-              validateStage()          
-            }
-            _.stage('Initialize') {
-              // _.steps { // apparently not needed in a script
-              initializeStage()
-              // } // steps 
-            }  // stage: Initialize
-
-            _.stage('Process Resources') {
-              processResourcesStage()
-            } // stage: Process Resources
-
-            _.stage('Compile') {
-              compileStage()
-            } // stage: Compile
-
-            _.stage('Test') {
-              testStage()
-            } // stage: Test
-
-            _.stage('Package') {
-              packageStage()
-            } // stage: Package
-
-            _.stage('Artifact Recording') {
-              artifactRecordingStage()
-            } // stage: Artifact Recording
-
-            postSuccess()
-          }
-          catch (ex) {
-            postFailure(ex)
-          }
-          finally {
-            postAlways()
-          }
+          _.pipelineTriggers(
+            processProjectTriggers()
+          )
           
-        } // pipeline
+        ])
 
-      } // docker
+        try {
+          _.stage('Validate') {
+            this.buildImage.inside {
+              validateStage()
+            }
+          }
+          _.stage('Initialize') {
+            // _.steps { // apparently not needed in a script
+            initializeStage()
+            // } // steps 
+          }  // stage: Initialize
+
+          _.stage('Process Resources') {
+            processResourcesStage()
+          } // stage: Process Resources
+
+          _.stage('Compile') {
+            compileStage()
+          } // stage: Compile
+
+          _.stage('Test') {
+            testStage()
+          } // stage: Test
+
+          _.stage('Package') {
+            packageStage()
+          } // stage: Package
+
+          _.stage('Artifact Recording') {
+            artifactRecordingStage()
+          } // stage: Artifact Recording
+
+          postSuccess()
+        }
+        catch (ex) {
+          postFailure(ex)
+        }
+        finally {
+          postAlways()
+        }
+        
+      } // pipeline
 
     } // node
   }
@@ -328,6 +328,11 @@ class SfdxProjectBuilder implements Serializable {
 
   private void initializeBuildClass() {
     initializeBuildScriptVariables()
+    initializeDockerImage()
+  }
+
+  private void initializeDockerImage() {
+    this.buildImage = _.docker.image('salesforce/salesforcedx')
   }
 
   private void initializeBuildScriptVariables() {
