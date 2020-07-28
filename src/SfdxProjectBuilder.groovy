@@ -365,10 +365,25 @@ class SfdxProjectBuilder implements Serializable {
         // _.fileOperations([_.fileCopyOperation(excludes: '', flattenFiles: false, includes: _.jwt_key_file, targetLocation: './server.key')])  // some issue with the masking of the file name.  Need to sort it out
 
         _.echo("Authenticating To Dev Hub...")
-        // script {
-        def rc = _.sh returnStatus: true, script: "sfdx force:auth:jwt:grant --clientid ${_.env.CONNECTED_APP_CONSUMER_KEY_DH} --username ${_.env.SFDX_DEV_HUB_USERNAME} --jwtkeyfile server.key --instanceurl ${_.env.SFDX_DEV_HUB_HOST}"
-        if (rc != 0) { _.error "hub org authorization failed" }
+        
+
+        // def rc = _.sh returnStatus: true, script: "sfdx force:auth:jwt:grant --clientid ${_.env.CONNECTED_APP_CONSUMER_KEY_DH} --username ${_.env.SFDX_DEV_HUB_USERNAME} --jwtkeyfile server.key --instanceurl ${_.env.SFDX_DEV_HUB_HOST}"
+        // if (rc != 0) { 
+        //   _.error "hub org authorization failed" 
         // }
+
+      try {
+        def rmsg =  _.sh returnStdout: true, script: "sfdx force:auth:jwt:grant --clientid ${_.env.CONNECTED_APP_CONSUMER_KEY_DH} --username ${_.env.SFDX_DEV_HUB_USERNAME} --jwtkeyfile server.key --instanceurl ${_.env.SFDX_DEV_HUB_HOST}"
+        def response = jsonParse( rmsg )
+        _.echo(response)
+      }
+      catch (ex) {
+        _.echo('------------------------------------------------------')
+        _.echo(ex.getMessage())
+        _.echo('------------------------------------------------------')
+        _.error "hub org authorization failed" 
+      }
+
     }
   }
 
