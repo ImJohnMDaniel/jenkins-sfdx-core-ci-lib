@@ -159,6 +159,7 @@ class SfdxProjectBuilder implements Serializable {
     if ( this.alwaysBuildPackage ) {
       _.error('alwaysBuildPackage() and doNotBuildPackage() cannot both be specified')
     }
+    return this
   }
 
   public SfdxProjectBuilder alwaysNotifyOnSuccess() {
