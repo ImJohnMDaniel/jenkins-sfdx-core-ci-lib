@@ -334,7 +334,7 @@ class SfdxProjectBuilder implements Serializable {
   }
 
   private void initializeDockerImage() {
-    this.buildImage = _.docker.image('salesforce/salesforcedx')
+    this.buildImage = _.docker.image('salesforce/salesforcedx:latest-full')
   }
 
   private void initializeBuildScriptVariables() {
