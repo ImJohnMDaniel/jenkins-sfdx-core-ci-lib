@@ -71,7 +71,7 @@ class SfdxProjectBuilder implements Serializable {
           
         ])
 
-        if ( this.buildImage.isEmpty ) {
+        if ( ! this.buildImage.empty ) {
           this.buildImage.inside('-e HOME=/tmp -e NPM_CONFIG_PREFIX=/tmp/.npm') {
             processStages() 
           }
