@@ -73,18 +73,18 @@ class SfdxProjectBuilder implements Serializable {
 
         try {
           _.stage('Validate') {
-            this.buildImage.inside {
+            this.buildImage.inside('-e HOME=/tmp -e NPM_CONFIG_PREFIX=/tmp/.npm') {
               validateStage()
             }
           }
           _.stage('Initialize') {
-            this.buildImage.inside {
+            this.buildImage.inside('-e HOME=/tmp -e NPM_CONFIG_PREFIX=/tmp/.npm') {
               initializeStage()
             }
           }  // stage: Initialize
 
           _.stage('Process Resources') {
-            this.buildImage.inside {
+            this.buildImage.inside('-e HOME=/tmp -e NPM_CONFIG_PREFIX=/tmp/.npm') {
               processResourcesStage()
             }
           } // stage: Process Resources
