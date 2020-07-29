@@ -374,12 +374,17 @@ class SfdxProjectBuilder implements Serializable {
 
       try {
         def rmsg =  _.sh returnStdout: true, script: "sfdx force:auth:jwt:grant --clientid ${_.env.CONNECTED_APP_CONSUMER_KEY_DH} --username ${_.env.SFDX_DEV_HUB_USERNAME} --jwtkeyfile server.key --instanceurl ${_.env.SFDX_DEV_HUB_HOST} --json"
+        _.echo('mark C')
         def response = jsonParse( rmsg )
+        _.echo('mark D')
         _.echo(response)
+        _.echo('mark E')
       }
       catch (ex) {
         _.echo('------------------------------------------------------')
+        _.echo('mark F')
         _.echo( jsonParse(ex.getMessage()) )
+        _.echo('mark G')
         _.echo('------------------------------------------------------')
         _.error "hub org authorization failed" 
       }
