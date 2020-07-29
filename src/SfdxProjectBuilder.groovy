@@ -71,51 +71,13 @@ class SfdxProjectBuilder implements Serializable {
           
         ])
 
-        this.buildImage.inside('-e HOME=/tmp -e NPM_CONFIG_PREFIX=/tmp/.npm') {
-
-          try {
-            _.stage('Validate') {
-              // this.buildImage.inside('-e HOME=/tmp -e NPM_CONFIG_PREFIX=/tmp/.npm') {
-                validateStage()
-              // }
-            }
-            _.stage('Initialize') {
-              // this.buildImage.inside('-e HOME=/tmp -e NPM_CONFIG_PREFIX=/tmp/.npm') {
-                initializeStage()
-              // }
-            }  // stage: Initialize
-
-            _.stage('Process Resources') {
-              // this.buildImage.inside('-e HOME=/tmp -e NPM_CONFIG_PREFIX=/tmp/.npm') {
-                processResourcesStage()
-              // }
-            } // stage: Process Resources
-
-            _.stage('Compile') {
-              compileStage()
-            } // stage: Compile
-
-            _.stage('Test') {
-              testStage()
-            } // stage: Test
-
-            _.stage('Package') {
-              packageStage()
-            } // stage: Package
-
-            _.stage('Artifact Recording') {
-              artifactRecordingStage()
-            } // stage: Artifact Recording
-
-            postSuccess()
+        if ( this.buildImage.isEmpty ) {
+          this.buildImage.inside('-e HOME=/tmp -e NPM_CONFIG_PREFIX=/tmp/.npm') {
+            processStages() 
           }
-          catch (ex) {
-            postFailure(ex)
-          }
-          finally {
-            postAlways()
-          }
-
+        }
+        else {
+          processStages()
         }
         
       } // pipeline
@@ -209,6 +171,46 @@ class SfdxProjectBuilder implements Serializable {
   //   jenkinsFileScript.currentBuild.displayName = args.title
   //   jenkinsFileScript.currentBuild.description = args.description
   // }
+
+  private void processStages() {
+    try {
+      _.stage('Validate') {
+          validateStage()
+      } // stage: Validate
+
+      _.stage('Initialize') {
+          initializeStage()
+      } // stage: Initialize
+
+      _.stage('Process Resources') {
+          processResourcesStage()
+      } // stage: Process Resources
+
+      _.stage('Compile') {
+        compileStage()
+      } // stage: Compile
+
+      _.stage('Test') {
+        testStage()
+      } // stage: Test
+
+      _.stage('Package') {
+        packageStage()
+      } // stage: Package
+
+      _.stage('Artifact Recording') {
+        artifactRecordingStage()
+      } // stage: Artifact Recording
+
+      postSuccess()
+    }
+    catch (ex) {
+      postFailure(ex)
+    }
+    finally {
+      postAlways()
+    }
+  }
 
   void initializeStage() {
     // setup this build's unique artifact directory
