@@ -379,11 +379,7 @@ class SfdxProjectBuilder implements Serializable {
       }
       catch (ex) {
         _.echo('------------------------------------------------------')
-        _.echo(ex.getMessage())
-        _.echo('------------------------------------------------------')
-        _.sh returnStdout: true, script: "ls -lpa server.key"
-        _.echo('------------------------------------------------------')
-        _.sh returnStdout: true, script: "more /.sfdx/sfdx.log"
+        _.echo( jsonParse(ex.getMessage()) )
         _.echo('------------------------------------------------------')
         _.error "hub org authorization failed" 
       }
