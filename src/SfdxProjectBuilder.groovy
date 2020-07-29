@@ -381,7 +381,7 @@ class SfdxProjectBuilder implements Serializable {
         _.echo('------------------------------------------------------')
         _.echo(ex.getMessage())
         _.echo('------------------------------------------------------')
-        _.sh returnStdout: true, script: "ls -lpa"
+        _.sh returnStdout: true, script: "ls -lpa server.key"
         _.echo('------------------------------------------------------')
         _.sh returnStdout: true, script: "more /.sfdx/sfdx.log"
         _.echo('------------------------------------------------------')
