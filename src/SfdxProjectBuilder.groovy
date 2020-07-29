@@ -4,9 +4,11 @@ class SfdxProjectBuilder implements Serializable {
 
   private def SFDX_SCRATCH_ORG_DEF_FILE = "config/project-scratch-def.json"
 
-  // private def toolbelt
+  private def dockerImage
 
-  private def buildImage
+  private def usingDocker = true
+
+  private def dockerImageName = 'salesforce/salesforcedx:latest-full'
 
   private def RUN_ARTIFACT_DIR 
 
@@ -47,7 +49,6 @@ class SfdxProjectBuilder implements Serializable {
 
   SfdxProjectBuilder(def jenkinsFileScript) {
     _ = jenkinsFileScript
-    // initializeBuildClass() // if you call the private method from the constructor, it has to be @NonCPS annotated
   }
 
   public void execute() {
@@ -70,9 +71,9 @@ class SfdxProjectBuilder implements Serializable {
           )
           
         ])
-
-        if ( this.buildImage != null ) {
-          this.buildImage.inside('-e HOME=/tmp -e NPM_CONFIG_PREFIX=/tmp/.npm') {
+      
+        if ( usingDocker ) {
+          this.dockerImage.inside('-e HOME=/tmp -e NPM_CONFIG_PREFIX=/tmp/.npm') {
             processStages() 
           }
         }
@@ -164,6 +165,14 @@ class SfdxProjectBuilder implements Serializable {
     if ( jenkinsBuildJobName != null && !jenkinsBuildJobName.empty ) {
       this.upstreamProjectsToTriggerFrom.add( jenkinsBuildJobName )
       _.echo("SfdxProjectBuilder Parameter set : Added ${jenkinsBuildJobName} to the upstream project build triggers")
+    }
+    return this
+  }
+
+  public SfdxProjectBuilder setDockerImageName( String dockerImageName ) {
+    if ( dockerImageName != null && !dockerImageName.empty ) {
+      this.dockerImageName = dockerImageName
+      _.echo("SfdxProjectBuilder Parameter set : Setting docker image to be ${dockerImageName}")
     }
     return this
   }
@@ -341,21 +350,17 @@ class SfdxProjectBuilder implements Serializable {
   }
 
   private void initializeDockerImage() {
-    this.buildImage = _.docker.image('salesforce/salesforcedx:latest-full')
+    if ( usingDocker ) {
+      this.dockerImage = _.docker.image(this.dockerImageName)
+    }
   }
 
   private void initializeBuildScriptVariables() {
     RUN_ARTIFACT_DIR = "target/${_.env.BUILD_NUMBER}"
     SFDX_SCRATCH_ORG_ALIAS = "bluesphere-${_.env.BUILD_TAG.replaceAll("/", "_")}"
-    // _.echo("_.env.TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME == ${_.env.TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME}")
     if ( _.env.TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME != null ) {
-      // _.echo("TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME is not null")
       this.dependencyBuildsBranchMasterAndBranchNullAreTheSame = _.env.TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME.toBoolean()
-      // _.echo("this.dependencyBuildsBranchMasterAndBranchNullAreTheSame == ${this.dependencyBuildsBranchMasterAndBranchNullAreTheSame}")
-    // } else {
-      //_.echo("TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME is null")
     }
-    // _.echo("this.dependencyBuildsBranchMasterAndBranchNullAreTheSame == ${this.dependencyBuildsBranchMasterAndBranchNullAreTheSame}")
   }
 
   private void readAndParseSFDXProjectFile() {
