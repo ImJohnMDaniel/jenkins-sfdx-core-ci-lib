@@ -71,47 +71,51 @@ class SfdxProjectBuilder implements Serializable {
           
         ])
 
-        try {
-          _.stage('Validate') {
-            this.buildImage.inside('-e HOME=/tmp -e NPM_CONFIG_PREFIX=/tmp/.npm') {
-              validateStage()
+        this.buildImage.inside('-e HOME=/tmp -e NPM_CONFIG_PREFIX=/tmp/.npm') {
+
+          try {
+            _.stage('Validate') {
+              // this.buildImage.inside('-e HOME=/tmp -e NPM_CONFIG_PREFIX=/tmp/.npm') {
+                validateStage()
+              // }
             }
+            _.stage('Initialize') {
+              // this.buildImage.inside('-e HOME=/tmp -e NPM_CONFIG_PREFIX=/tmp/.npm') {
+                initializeStage()
+              // }
+            }  // stage: Initialize
+
+            _.stage('Process Resources') {
+              // this.buildImage.inside('-e HOME=/tmp -e NPM_CONFIG_PREFIX=/tmp/.npm') {
+                processResourcesStage()
+              // }
+            } // stage: Process Resources
+
+            _.stage('Compile') {
+              compileStage()
+            } // stage: Compile
+
+            _.stage('Test') {
+              testStage()
+            } // stage: Test
+
+            _.stage('Package') {
+              packageStage()
+            } // stage: Package
+
+            _.stage('Artifact Recording') {
+              artifactRecordingStage()
+            } // stage: Artifact Recording
+
+            postSuccess()
           }
-          _.stage('Initialize') {
-            this.buildImage.inside('-e HOME=/tmp -e NPM_CONFIG_PREFIX=/tmp/.npm') {
-              initializeStage()
-            }
-          }  // stage: Initialize
+          catch (ex) {
+            postFailure(ex)
+          }
+          finally {
+            postAlways()
+          }
 
-          _.stage('Process Resources') {
-            this.buildImage.inside('-e HOME=/tmp -e NPM_CONFIG_PREFIX=/tmp/.npm') {
-              processResourcesStage()
-            }
-          } // stage: Process Resources
-
-          _.stage('Compile') {
-            compileStage()
-          } // stage: Compile
-
-          _.stage('Test') {
-            testStage()
-          } // stage: Test
-
-          _.stage('Package') {
-            packageStage()
-          } // stage: Package
-
-          _.stage('Artifact Recording') {
-            artifactRecordingStage()
-          } // stage: Artifact Recording
-
-          postSuccess()
-        }
-        catch (ex) {
-          postFailure(ex)
-        }
-        finally {
-          postAlways()
         }
         
       } // pipeline
