@@ -71,12 +71,13 @@ class SfdxProjectBuilder implements Serializable {
           
         ])
 
-        if ( ! this.buildImage.empty ) {
+        if ( this.buildImage != null ) {
           this.buildImage.inside('-e HOME=/tmp -e NPM_CONFIG_PREFIX=/tmp/.npm') {
             processStages() 
           }
         }
         else {
+          _.echo("No docker image specified")
           processStages()
         }
         
@@ -380,17 +381,17 @@ class SfdxProjectBuilder implements Serializable {
 
       try {
         def rmsg =  _.sh returnStdout: true, script: "sfdx force:auth:jwt:grant --clientid ${_.env.CONNECTED_APP_CONSUMER_KEY_DH} --username ${_.env.SFDX_DEV_HUB_USERNAME} --jwtkeyfile server.key --instanceurl ${_.env.SFDX_DEV_HUB_HOST} --json"
-        _.echo('mark C')
+        // _.echo('mark C')
         def response = jsonParse( rmsg )
-        _.echo('mark D')
+        // _.echo('mark D')
         // _.echo(response)
-        _.echo('mark E')
+        // _.echo('mark E')
       }
       catch (ex) {
         _.echo('------------------------------------------------------')
-        _.echo('mark F')
+        // _.echo('mark F')
         _.echo(ex.getMessage())
-        _.echo('mark G')
+        // _.echo('mark G')
         _.echo('------------------------------------------------------')
         _.error "hub org authorization failed" 
       }
