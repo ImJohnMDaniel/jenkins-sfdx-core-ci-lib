@@ -354,6 +354,7 @@ class SfdxProjectBuilder implements Serializable {
     _.echo("dockerImageName == ${dockerImageName}")
     if ( usingDocker ) {
       this.dockerImage = _.docker.image(this.dockerImageName)
+      _.echo("Using dockerImage ${this.dockerImageName}")
     }
   }
 
