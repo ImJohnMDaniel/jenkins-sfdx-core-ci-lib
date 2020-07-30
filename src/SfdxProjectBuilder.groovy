@@ -350,6 +350,8 @@ class SfdxProjectBuilder implements Serializable {
   }
 
   private void initializeDockerImage() {
+    _.echo("usingDocker == ${usingDocker}")
+    _.echo("dockerImageName == ${dockerImageName}")
     if ( usingDocker ) {
       this.dockerImage = _.docker.image(this.dockerImageName)
     }
