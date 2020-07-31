@@ -183,8 +183,8 @@ class SfdxProjectBuilder implements Serializable {
 
   public SfdxProjectBuilder setNumberOfBuildsToKeep( Integer numberOfBuildsToKeep ) {
     if ( numberOfBuildsToKeep != null ) {
-      this.numberOfBuildsToKeep = numberOfBuildsToKeep
-      _.echo("SfdxProjectBuilder Parameter set : Setting number of builds to keep to be ${numberOfBuildsToKeep}")
+      this.numberOfBuildsToKeep = numberOfBuildsToKeep.toString()
+      _.echo("SfdxProjectBuilder Parameter set : Setting number of builds to keep to be ${numberOfBuildsToKeep.toString()}")
     }
     return this
   }
