@@ -6,7 +6,9 @@ class SfdxProjectBuilder implements Serializable {
 
   private def dockerImage
 
-  private def usingDocker = true
+  private def usingDockerPipelinePlugin = true
+
+  private def usingKubernetesContainerPlugin = false
 
   private def dockerImageName = 'salesforce/salesforcedx:latest-full'
 
@@ -44,6 +46,8 @@ class SfdxProjectBuilder implements Serializable {
 
   private boolean dependencyBuildsBranchMasterAndBranchNullAreTheSame = true
 
+  private def numberOfBuildsToKeep = 5
+
   // the parsed contents of the SFDX project's configuration
   private def SFDX_PROJECT
 
@@ -64,7 +68,7 @@ class SfdxProjectBuilder implements Serializable {
           // ensure that concurrent builds on the same project is not possible
           _.disableConcurrentBuilds(),
           // 
-          _.buildDiscarder(_.logRotator(numToKeepStr: '5')),
+          _.buildDiscarder(_.logRotator(numToKeepStr: this.numberOfBuildsToKeep)),
 
           _.pipelineTriggers(
             processProjectTriggers()
@@ -72,7 +76,7 @@ class SfdxProjectBuilder implements Serializable {
           
         ])
       
-        if ( usingDocker ) {
+        if ( usingDockerPipelinePlugin ) {
           this.dockerImage.inside('-e HOME=/tmp -e NPM_CONFIG_PREFIX=/tmp/.npm') {
             processStages() 
           }
@@ -173,6 +177,14 @@ class SfdxProjectBuilder implements Serializable {
     if ( dockerImageName != null && !dockerImageName.empty ) {
       this.dockerImageName = dockerImageName
       _.echo("SfdxProjectBuilder Parameter set : Setting docker image to be ${dockerImageName}")
+    }
+    return this
+  }
+
+  public SfdxProjectBuilder setNumberOfBuildsToKeep( Integer numberOfBuildsToKeep ) {
+    if ( numberOfBuildsToKeep != null ) {
+      this.numberOfBuildsToKeep = numberOfBuildsToKeep
+      _.echo("SfdxProjectBuilder Parameter set : Setting number of builds to keep to be ${numberOfBuildsToKeep}")
     }
     return this
   }
@@ -350,11 +362,15 @@ class SfdxProjectBuilder implements Serializable {
   }
 
   private void initializeDockerImage() {
-    _.echo("usingDocker == ${usingDocker}")
+    _.echo("usingDockerPipelinePlugin == ${usingDockerPipelinePlugin}")
     _.echo("dockerImageName == ${dockerImageName}")
-    if ( usingDocker ) {
+    if ( usingDockerPipelinePlugin ) {
       this.dockerImage = _.docker.image(this.dockerImageName)
-      _.echo("Using dockerImage ${this.dockerImageName}")
+      _.echo("Using dockerImage ${this.dockerImageName} with Docker Pipeline Plugin")
+    }
+    else if (usingKubernetesContainerPlugin ) {
+      this.dockerImage = _.docker.image(this.dockerImageName)
+      _.echo("Using dockerImage ${this.dockerImageName} with Kubernetes Container Plugin")
     }
   }
 
