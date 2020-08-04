@@ -85,7 +85,7 @@ class SfdxProjectBuilder implements Serializable {
 // TODO: Setup Kubernetes POD here
           // this.node(POD_LABEL) {
           // }
-          this.container('salesforcedx') {
+          this.container() {
             processStages()
           }
         }
