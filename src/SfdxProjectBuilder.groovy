@@ -83,10 +83,7 @@ class SfdxProjectBuilder implements Serializable {
         }
         else if ( usingKubernetesContainerPlugin ) {
 // TODO: Setup Kubernetes POD here
-          // this.node(POD_LABEL) {
-          // }
-          // _.container('salesforcedx') {
-          _.container('POD_LABEL') {
+          _.container('POD_LABEL') {  // salesforcedx
             processStages()
           }
         }
