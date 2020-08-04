@@ -6,9 +6,9 @@ class SfdxProjectBuilder implements Serializable {
 
   private def dockerImage
 
-  private def usingDockerPipelinePlugin = true
+  private def usingDockerPipelinePlugin = false
 
-  private def usingKubernetesContainerPlugin = false
+  private def usingKubernetesContainerPlugin = true
 
   private def dockerImageName = 'salesforce/salesforcedx:latest-full'
 
@@ -67,7 +67,7 @@ class SfdxProjectBuilder implements Serializable {
         _.properties([
           // ensure that concurrent builds on the same project is not possible
           _.disableConcurrentBuilds(),
-          // 
+
           _.buildDiscarder(_.logRotator(numToKeepStr: this.numberOfBuildsToKeep)),
 
           _.pipelineTriggers(
@@ -79,6 +79,14 @@ class SfdxProjectBuilder implements Serializable {
         if ( usingDockerPipelinePlugin ) {
           this.dockerImage.inside('-e HOME=/tmp -e NPM_CONFIG_PREFIX=/tmp/.npm') {
             processStages() 
+          }
+        }
+        else if ( usingKubernetesContainerPlugin ) {
+// TODO: Setup Kubernetes POD here
+          // this.node(POD_LABEL) {
+          // }
+          this.container('salesforcedx') {
+            processStages()
           }
         }
         else {
@@ -368,7 +376,7 @@ class SfdxProjectBuilder implements Serializable {
       this.dockerImage = _.docker.image(this.dockerImageName)
       _.echo("Using dockerImage ${this.dockerImageName} with Docker Pipeline Plugin")
     }
-    else if (usingKubernetesContainerPlugin ) {
+    else if ( usingKubernetesContainerPlugin ) {
       this.dockerImage = _.docker.image(this.dockerImageName)
       _.echo("Using dockerImage ${this.dockerImageName} with Kubernetes Container Plugin")
     }
@@ -380,6 +388,8 @@ class SfdxProjectBuilder implements Serializable {
     if ( _.env.TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME != null ) {
       this.dependencyBuildsBranchMasterAndBranchNullAreTheSame = _.env.TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME.toBoolean()
     }
+// TODO: Figure out way to use env vars to drive the container configuration
+// usingDockerPipelinePlugin
   }
 
   private void readAndParseSFDXProjectFile() {
