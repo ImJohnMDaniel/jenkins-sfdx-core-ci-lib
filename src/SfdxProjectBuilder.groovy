@@ -46,7 +46,7 @@ class SfdxProjectBuilder implements Serializable {
 
   private boolean dependencyBuildsBranchMasterAndBranchNullAreTheSame = true
 
-  private def numberOfBuildsToKeep = 5
+  private def numberOfBuildsToKeep = '5'
 
   // the parsed contents of the SFDX project's configuration
   private def SFDX_PROJECT
