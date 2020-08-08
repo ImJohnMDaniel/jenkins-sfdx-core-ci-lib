@@ -57,7 +57,7 @@ class SfdxProjectBuilder implements Serializable {
 
   public void execute() {
     initializeBuildClass()
-    _.node('salesforcedx') {
+    _.node() {
       // checkout the main source code for the project.
       _.checkout _.scm
 
@@ -75,8 +75,9 @@ class SfdxProjectBuilder implements Serializable {
           )
           
         ])
-      
+        _.echo('MARK 4')
         if ( usingDockerPipelinePlugin ) {
+          _.echo('MARK 5')
           this.dockerImage.inside('-e HOME=/tmp -e NPM_CONFIG_PREFIX=/tmp/.npm') {
             processStages() 
           }
@@ -370,11 +371,11 @@ class SfdxProjectBuilder implements Serializable {
   private void initializeDockerImage() {
     _.echo("usingDockerPipelinePlugin == ${usingDockerPipelinePlugin}")
     _.echo("dockerImageName == ${dockerImageName}")
-    if ( usingDockerPipelinePlugin ) {
+    if ( this.usingDockerPipelinePlugin ) {
       this.dockerImage = _.docker.image(this.dockerImageName)
       _.echo("Using dockerImage ${this.dockerImageName} with Docker Pipeline Plugin")
     }
-    else if ( usingKubernetesContainerPlugin ) {
+    else if ( this.usingKubernetesContainerPlugin ) {
       this.dockerImage = _.docker.image(this.dockerImageName)
       _.echo("Using dockerImage ${this.dockerImageName} with Kubernetes Container Plugin")
     }
