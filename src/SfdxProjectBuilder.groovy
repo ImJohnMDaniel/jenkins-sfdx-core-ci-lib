@@ -64,9 +64,9 @@ class SfdxProjectBuilder implements Serializable {
       // start the pipeline
       _.pipeline {
 
-        _.agent{
+        _.agent (
           _.any
-        }
+        )
 
         _.properties([
           // ensure that concurrent builds on the same project is not possible
@@ -96,7 +96,7 @@ class SfdxProjectBuilder implements Serializable {
           processStages()
         }
         
-      } // pipeline
+      } // pipeli
 
     } // node
   }
