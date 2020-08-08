@@ -64,6 +64,10 @@ class SfdxProjectBuilder implements Serializable {
       // start the pipeline
       _.pipeline {
 
+        _.agent{
+          _.any
+        }
+
         _.properties([
           // ensure that concurrent builds on the same project is not possible
           _.disableConcurrentBuilds(),
@@ -75,9 +79,8 @@ class SfdxProjectBuilder implements Serializable {
           )
           
         ])
-        _.echo('MARK 4')
+
         if ( usingDockerPipelinePlugin ) {
-          _.echo('MARK 5')
           this.dockerImage.inside('-e HOME=/tmp -e NPM_CONFIG_PREFIX=/tmp/.npm') {
             processStages() 
           }
