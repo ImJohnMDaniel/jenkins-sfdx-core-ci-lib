@@ -65,7 +65,7 @@ class SfdxProjectBuilder implements Serializable {
       _.pipeline {
 
         _.agent (
-          _.any
+          any
         )
 
         _.properties([
