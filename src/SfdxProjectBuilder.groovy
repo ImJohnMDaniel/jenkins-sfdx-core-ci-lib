@@ -8,7 +8,7 @@ class SfdxProjectBuilder implements Serializable {
 
   private def usingDockerPipelinePlugin = false
 
-  private def usingKubernetesContainerPlugin = true
+  private def usingKubernetesContainerPlugin = false
 
   private def dockerImageName = 'salesforce/salesforcedx:latest-full'
 
@@ -82,7 +82,7 @@ class SfdxProjectBuilder implements Serializable {
           }
         }
         else if ( usingKubernetesContainerPlugin ) {
-// TODO: Setup Kubernetes POD here
+          // Setup Kubernetes POD here
           _.container('salesforcedx') {  // salesforcedx
             processStages()
           }
@@ -386,8 +386,19 @@ class SfdxProjectBuilder implements Serializable {
     if ( _.env.TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME != null ) {
       this.dependencyBuildsBranchMasterAndBranchNullAreTheSame = _.env.TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME.toBoolean()
     }
-// TODO: Figure out way to use env vars to drive the container configuration
-// usingDockerPipelinePlugin
+    // TODO: Figure out way to use env vars to drive the container configuration
+
+    if ( _.env.JENINS_SFDX_CORE_CI_LIB_CONTAINER_OPTION ) {
+      this.usingDockerPipelinePlugin = false
+      this.usingKubernetesContainerPlugin = false
+      if ( _.env.JENINS_SFDX_CORE_CI_LIB_CONTAINER_OPTION == 'docker-workflow' ) {
+        this.usingDockerPipelinePlugin = true 
+      } else if ( _.env.JENINS_SFDX_CORE_CI_LIB_CONTAINER_OPTION == 'kubernetes' ) {
+        this.usingKubernetesContainerPlugin = true
+      } else {
+        _.error( "Environment variable JENINS_SFDX_CORE_CI_LIB_CONTAINER_OPTION set to ${_.env.JENINS_SFDX_CORE_CI_LIB_CONTAINER_OPTION} but not a valid option" )
+      }
+    }
   }
 
   private void readAndParseSFDXProjectFile() {
