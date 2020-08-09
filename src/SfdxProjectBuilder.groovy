@@ -57,16 +57,17 @@ class SfdxProjectBuilder implements Serializable {
 
   public void execute() {
     initializeBuildClass()
-    _.node() {
+    _.agent {
+      _.label 'salesforcedx'
+    }
+
+    _.node('salesforcedx') {
+
       // checkout the main source code for the project.
       _.checkout _.scm
 
       // start the pipeline
       _.pipeline {
-
-        _.agent ([
-          _.any
-        ])
 
         _.properties([
           // ensure that concurrent builds on the same project is not possible
