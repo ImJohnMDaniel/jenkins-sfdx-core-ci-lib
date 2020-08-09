@@ -57,9 +57,6 @@ class SfdxProjectBuilder implements Serializable {
 
   public void execute() {
     initializeBuildClass()
-    _.agent {
-      _.label 'salesforcedx'
-    }
 
     _.node('salesforcedx') {
 
