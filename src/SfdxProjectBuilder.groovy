@@ -58,7 +58,7 @@ class SfdxProjectBuilder implements Serializable {
   public void execute() {
     initializeBuildClass()
 
-    _.node('salesforcedx') {
+    _.node {
 
       // checkout the main source code for the project.
       _.checkout _.scm
@@ -377,6 +377,7 @@ class SfdxProjectBuilder implements Serializable {
       _.echo("Using dockerImage ${this.dockerImageName} with Docker Pipeline Plugin")
     }
     else if ( this.usingKubernetesContainerPlugin ) {
+// TODO Fix this for Kubernetes
       this.dockerImage = _.docker.image(this.dockerImageName)
       _.echo("Using dockerImage ${this.dockerImageName} with Kubernetes Container Plugin")
     }
