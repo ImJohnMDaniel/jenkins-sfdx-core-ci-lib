@@ -377,8 +377,8 @@ class SfdxProjectBuilder implements Serializable {
       _.echo("Using dockerImage ${this.dockerImageName} with Docker Pipeline Plugin")
     }
     else if ( this.usingKubernetesContainerPlugin ) {
-// TODO Fix this for Kubernetes
-      this.dockerImage = _.docker.image(this.dockerImageName)
+      // WATCH - Kubernetes sets the docker image as part of the podTemplate
+      // this.dockerImage = _.docker.image(this.dockerImageName)
       _.echo("Using dockerImage ${this.dockerImageName} with Kubernetes Container Plugin")
     }
   }
