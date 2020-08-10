@@ -757,7 +757,12 @@ class SfdxProjectBuilder implements Serializable {
 
   private void tagTheBuild() {
     _.echo("Tagging the build as '${_.env.BUILD_TAG}'")
-    _.sh returnStdout: true, script: "git tag -m '${_.env.BUILD_TAG}' ${_.env.BUILD_TAG} "
+
+//  for this to work, the GIT identiy must be established.  The following commands need to be run
+      // git config user.email "you@example.com"
+      // git config user.name "Your Name"
+//     _.sh returnStdout: true, script: "git tag -m '${_.env.BUILD_TAG}' ${_.env.BUILD_TAG} "
+
     // _.sh returnStdout: true, script: "git push --tags"
     _.echo('Tagging successful')
   }
