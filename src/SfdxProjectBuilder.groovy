@@ -405,15 +405,15 @@ class SfdxProjectBuilder implements Serializable {
     }
     // TODO: Figure out way to use env vars to drive the container configuration
 
-    if ( _.env.JENINS_SFDX_CORE_CI_LIB_CONTAINER_OPTION ) {
+    if ( _.env.JENKINS_SFDX_CORE_CI_LIB_CONTAINER_OPTION ) {
       this.usingDockerPipelinePlugin = false
       this.usingKubernetesContainerPlugin = false
-      if ( _.env.JENINS_SFDX_CORE_CI_LIB_CONTAINER_OPTION == 'docker-workflow' ) {
+      if ( _.env.JENKINS_SFDX_CORE_CI_LIB_CONTAINER_OPTION == 'docker-workflow' ) {
         this.usingDockerPipelinePlugin = true 
-      } else if ( _.env.JENINS_SFDX_CORE_CI_LIB_CONTAINER_OPTION == 'kubernetes' ) {
+      } else if ( _.env.JENKINS_SFDX_CORE_CI_LIB_CONTAINER_OPTION == 'kubernetes' ) {
         this.usingKubernetesContainerPlugin = true
       } else {
-        _.error( "Environment variable JENINS_SFDX_CORE_CI_LIB_CONTAINER_OPTION set to ${_.env.JENINS_SFDX_CORE_CI_LIB_CONTAINER_OPTION} but not a valid option" )
+        _.error( "Environment variable JENKINS_SFDX_CORE_CI_LIB_CONTAINER_OPTION set to ${_.env.JENKINS_SFDX_CORE_CI_LIB_CONTAINER_OPTION} but not a valid option" )
       }
     }
   }
