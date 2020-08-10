@@ -58,46 +58,20 @@ class SfdxProjectBuilder implements Serializable {
   public void execute() {
     initializeBuildClass()
 
-    _.node {
+    if ( this.usingKubernetesContainerPlugin ) {
+      _.node('salesforcedx') {
 
-      // checkout the main source code for the project.
-      _.checkout _.scm
+        processInnerNode()
 
-      // start the pipeline
-      _.pipeline {
+      } // node
+    } else {
+      _.node {
 
-        _.properties([
-          // ensure that concurrent builds on the same project is not possible
-          _.disableConcurrentBuilds(),
+        processInnerNode()
 
-          _.buildDiscarder(_.logRotator(numToKeepStr: this.numberOfBuildsToKeep)),
+      } // node
+    }
 
-          _.pipelineTriggers(
-            processProjectTriggers()
-          )
-          
-        ])
-
-        if ( usingDockerPipelinePlugin ) {
-          _.echo('About to setup dockerImage')
-          this.dockerImage.inside('-e HOME=/tmp -e NPM_CONFIG_PREFIX=/tmp/.npm') {
-            processStages() 
-          }
-        }
-        else if ( usingKubernetesContainerPlugin ) {
-          // Setup Kubernetes POD here
-          _.container('salesforcedx') {  // salesforcedx
-            processStages()
-          }
-        }
-        else {
-          _.echo("No docker image specified")
-          processStages()
-        }
-        
-      } // pipeli
-
-    } // node
   }
 
   public SfdxProjectBuilder setSlackChannelToNotify(def slackChannelName) {
@@ -202,6 +176,45 @@ class SfdxProjectBuilder implements Serializable {
   //   jenkinsFileScript.currentBuild.displayName = args.title
   //   jenkinsFileScript.currentBuild.description = args.description
   // }
+
+  private void processInnerNode() {
+      // checkout the main source code for the project.
+      _.checkout _.scm
+
+      // start the pipeline
+      _.pipeline {
+
+        _.properties([
+          // ensure that concurrent builds on the same project is not possible
+          _.disableConcurrentBuilds(),
+
+          _.buildDiscarder(_.logRotator(numToKeepStr: this.numberOfBuildsToKeep)),
+
+          _.pipelineTriggers(
+            processProjectTriggers()
+          )
+          
+        ])
+
+        if ( usingDockerPipelinePlugin ) {
+          _.echo('About to setup dockerImage')
+          this.dockerImage.inside('-e HOME=/tmp -e NPM_CONFIG_PREFIX=/tmp/.npm') {
+            processStages() 
+          }
+        }
+        else if ( usingKubernetesContainerPlugin ) {
+          // Setup Kubernetes POD here
+          _.container('salesforcedx') {  // salesforcedx
+            processStages()
+          }
+        }
+        else {
+          _.echo("No docker image specified")
+          processStages()
+        }
+        
+      } // pipeline
+  }
 
   private void processStages() {
     try {
