@@ -178,7 +178,7 @@ class SfdxProjectBuilder implements Serializable {
 
   private void processInnerNode() {
       // checkout the main source code for the project.
-      // _.checkout _.scm
+      _.checkout _.scm
 
       // start the pipeline
       _.pipeline {
