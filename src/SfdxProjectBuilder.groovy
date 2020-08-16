@@ -56,22 +56,21 @@ class SfdxProjectBuilder implements Serializable {
   }
 
   public void execute() {
-    initializeBuildClass()
+    _.withFolderProperties {
+      initializeBuildClass()
 
-    if ( this.usingKubernetesContainerPlugin ) {
-      _.node('salesforcedx') {
-        _.withFolderProperties {
+      if ( this.usingKubernetesContainerPlugin ) {
+        _.node('salesforcedx') {
+            processInnerNode()
+        } // node
+      } else {
+        _.node {
+
           processInnerNode()
-        }
-      } // node
-    } else {
-      _.node {
 
-        processInnerNode()
-
-      } // node
+        } // node
+      }
     }
-
   }
 
   public SfdxProjectBuilder setSlackChannelToNotify(def slackChannelName) {
