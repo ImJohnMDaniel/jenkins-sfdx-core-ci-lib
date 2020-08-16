@@ -60,9 +60,9 @@ class SfdxProjectBuilder implements Serializable {
 
     if ( this.usingKubernetesContainerPlugin ) {
       _.node('salesforcedx') {
-
-        processInnerNode()
-
+        _.withFolderProperties {
+          processInnerNode()
+        }
       } // node
     } else {
       _.node {
@@ -204,10 +204,8 @@ class SfdxProjectBuilder implements Serializable {
         }
         else if ( usingKubernetesContainerPlugin ) {
           // Setup Kubernetes POD here
-          _.withFolderProperties {
-            _.container('salesforcedx') {  // salesforcedx
-              processStages()
-            }
+          _.container('salesforcedx') {  // salesforcedx
+            processStages()
           }
         }
         else {
