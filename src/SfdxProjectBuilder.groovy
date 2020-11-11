@@ -4,7 +4,13 @@ class SfdxProjectBuilder implements Serializable {
 
   private def SFDX_SCRATCH_ORG_DEF_FILE = "config/project-scratch-def.json"
 
-  private def toolbelt
+  private def dockerImage
+
+  private def usingDockerPipelinePlugin = false
+
+  private def usingKubernetesContainerPlugin = false
+
+  private def dockerImageName = 'salesforce/salesforcedx:latest-full'
 
   private def RUN_ARTIFACT_DIR 
 
@@ -40,76 +46,31 @@ class SfdxProjectBuilder implements Serializable {
 
   private boolean dependencyBuildsBranchMasterAndBranchNullAreTheSame = true
 
+  private def numberOfBuildsToKeep = '30'
+
   // the parsed contents of the SFDX project's configuration
   private def SFDX_PROJECT
 
   SfdxProjectBuilder(def jenkinsFileScript) {
     _ = jenkinsFileScript
-    // initializeBuildClass() // if you call the private method from the constructor, it has to be @NonCPS annotated
   }
 
   public void execute() {
-    initializeBuildClass()
-    _.node {
-      // checkout the main source code for the project.
-      _.checkout _.scm
-      // start the pipeline
-      _.pipeline {
-        _.properties([
-          // ensure that concurrent builds on the same project is not possible
-          _.disableConcurrentBuilds(),
-          // 
-          _.buildDiscarder(_.logRotator(numToKeepStr: '5')),
+    _.withFolderProperties {
+      initializeBuildClass()
 
-          _.pipelineTriggers(
-            processProjectTriggers()
-          )
-          
-        ])
-        this.toolbelt = _.tool 'sfdx-toolbelt'
+      if ( this.usingKubernetesContainerPlugin ) {
+        _.node('salesforcedx') {
+            processInnerNode()
+        } // node
+      } else {
+        _.node {
 
-        // _.stages {
-        try {
-          _.stage('Validate') {
-            validateStage()          
-          }
-          _.stage('Initialize') {
-            // _.steps { // apparently not needed in a script
-            initializeStage()
-            // } // steps 
-          }  // stage: Initialize
+          processInnerNode()
 
-          _.stage('Process Resources') {
-            processResourcesStage()
-          } // stage: Process Resources
-
-          _.stage('Compile') {
-            compileStage()
-          } // stage: Compile
-
-          _.stage('Test') {
-            testStage()
-          } // stage: Test
-
-          _.stage('Package') {
-            packageStage()
-          } // stage: Package
-
-          _.stage('Artifact Recording') {
-            artifactRecordingStage()
-          } // stage: Artifact Recording
-
-          postSuccess()
-        }
-        catch (ex) {
-          postFailure(ex)
-        }
-        finally {
-          postAlways()
-        }
-        //} // stages
-      } // pipeline
-    } // node
+        } // node
+      }
+    }
   }
 
   public SfdxProjectBuilder setSlackChannelToNotify(def slackChannelName) {
@@ -159,6 +120,7 @@ class SfdxProjectBuilder implements Serializable {
     if ( this.alwaysBuildPackage ) {
       _.error('alwaysBuildPackage() and doNotBuildPackage() cannot both be specified')
     }
+    return this
   }
 
   public SfdxProjectBuilder alwaysNotifyOnSuccess() {
@@ -193,10 +155,105 @@ class SfdxProjectBuilder implements Serializable {
     return this
   }
 
+  public SfdxProjectBuilder setDockerImageName( String dockerImageName ) {
+    if ( dockerImageName != null && !dockerImageName.empty ) {
+      this.dockerImageName = dockerImageName
+      _.echo("SfdxProjectBuilder Parameter set : Setting docker image to be ${dockerImageName}")
+    }
+    return this
+  }
+
+  public SfdxProjectBuilder setNumberOfBuildsToKeep( Integer numberOfBuildsToKeep ) {
+    if ( numberOfBuildsToKeep != null ) {
+      this.numberOfBuildsToKeep = numberOfBuildsToKeep.toString()
+      _.echo("SfdxProjectBuilder Parameter set : Setting number of builds to keep to be ${numberOfBuildsToKeep.toString()}")
+    }
+    return this
+  }
+
   // vo id setBuildDescription(Map args) {
   //   jenkinsFileScript.currentBuild.displayName = args.title
   //   jenkinsFileScript.currentBuild.description = args.description
   // }
+
+  private void processInnerNode() {
+      // checkout the main source code for the project.
+      _.checkout _.scm
+
+      // start the pipeline
+      _.pipeline {
+
+        _.properties([
+          // ensure that concurrent builds on the same project is not possible
+          _.disableConcurrentBuilds(),
+
+          _.buildDiscarder(_.logRotator(numToKeepStr: this.numberOfBuildsToKeep)),
+
+          _.pipelineTriggers(
+            processProjectTriggers()
+          )
+          
+        ])
+
+        if ( usingDockerPipelinePlugin ) {
+          _.echo('About to setup dockerImage')
+          this.dockerImage.inside('-e HOME=/tmp -e NPM_CONFIG_PREFIX=/tmp/.npm') {
+            processStages() 
+          }
+        }
+        else if ( usingKubernetesContainerPlugin ) {
+          // Setup Kubernetes POD here
+          _.container('salesforcedx') {  // salesforcedx
+            processStages()
+          }
+        }
+        else {
+          _.echo("No docker image specified")
+          processStages()
+        }
+        
+      } // pipeline
+  }
+
+  private void processStages() {
+    try {
+      _.stage('Validate') {
+          validateStage()
+      } // stage: Validate
+
+      _.stage('Initialize') {
+          initializeStage()
+      } // stage: Initialize
+
+      _.stage('Process Resources') {
+          processResourcesStage()
+      } // stage: Process Resources
+
+      _.stage('Compile') {
+        compileStage()
+      } // stage: Compile
+
+      _.stage('Test') {
+        testStage()
+      } // stage: Test
+
+      _.stage('Package') {
+        packageStage()
+      } // stage: Package
+
+      _.stage('Artifact Recording') {
+        artifactRecordingStage()
+      } // stage: Artifact Recording
+
+      postSuccess()
+    }
+    catch (ex) {
+      postFailure(ex)
+    }
+    finally {
+      postAlways()
+    }
+  }
 
   void initializeStage() {
     // setup this build's unique artifact directory
@@ -322,20 +379,44 @@ class SfdxProjectBuilder implements Serializable {
 
   private void initializeBuildClass() {
     initializeBuildScriptVariables()
+    initializeDockerImage()
+  }
+
+  private void initializeDockerImage() {
+    _.echo("usingDockerPipelinePlugin == ${usingDockerPipelinePlugin}")
+    _.echo("dockerImageName == ${dockerImageName}")
+    if ( this.usingDockerPipelinePlugin ) {
+      this.dockerImage = _.docker.image(this.dockerImageName)
+      _.echo("Using dockerImage ${this.dockerImageName} with Docker Pipeline Plugin")
+    }
+    else if ( this.usingKubernetesContainerPlugin ) {
+      // WATCH - Kubernetes sets the docker image as part of the podTemplate
+      // this.dockerImage = _.docker.image(this.dockerImageName)
+      _.echo("Using dockerImage ${this.dockerImageName} with Kubernetes Container Plugin")
+    }
   }
 
   private void initializeBuildScriptVariables() {
     RUN_ARTIFACT_DIR = "target/${_.env.BUILD_NUMBER}"
-    SFDX_SCRATCH_ORG_ALIAS = "bluesphere-${_.env.BUILD_TAG.replaceAll(' ','-')}"
     // _.echo("_.env.TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME == ${_.env.TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME}")
+    SFDX_SCRATCH_ORG_ALIAS = "bluesphere-${_.env.BUILD_TAG.replaceAll("/", "_")}"
+
     if ( _.env.TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME != null ) {
-      // _.echo("TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME is not null")
       this.dependencyBuildsBranchMasterAndBranchNullAreTheSame = _.env.TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME.toBoolean()
-      // _.echo("this.dependencyBuildsBranchMasterAndBranchNullAreTheSame == ${this.dependencyBuildsBranchMasterAndBranchNullAreTheSame}")
-    // } else {
-      //_.echo("TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME is null")
     }
-    // _.echo("this.dependencyBuildsBranchMasterAndBranchNullAreTheSame == ${this.dependencyBuildsBranchMasterAndBranchNullAreTheSame}")
+    // TODO: Figure out way to use env vars to drive the container configuration
+
+    if ( _.env.JENKINS_SFDX_CORE_CI_LIB_CONTAINER_OPTION ) {
+      this.usingDockerPipelinePlugin = false
+      this.usingKubernetesContainerPlugin = false
+      if ( _.env.JENKINS_SFDX_CORE_CI_LIB_CONTAINER_OPTION == 'docker-workflow' ) {
+        this.usingDockerPipelinePlugin = true 
+      } else if ( _.env.JENKINS_SFDX_CORE_CI_LIB_CONTAINER_OPTION == 'kubernetes' ) {
+        this.usingKubernetesContainerPlugin = true
+      } else {
+        _.error( "Environment variable JENKINS_SFDX_CORE_CI_LIB_CONTAINER_OPTION set to ${_.env.JENKINS_SFDX_CORE_CI_LIB_CONTAINER_OPTION} but not a valid option" )
+      }
+    }
   }
 
   private void readAndParseSFDXProjectFile() {
@@ -352,17 +433,37 @@ class SfdxProjectBuilder implements Serializable {
         // _.fileOperations([_.fileCopyOperation(excludes: '', flattenFiles: false, includes: _.jwt_key_file, targetLocation: './server.key')])  // some issue with the masking of the file name.  Need to sort it out
 
         _.echo("Authenticating To Dev Hub...")
-        // script {
-        def rc = _.sh returnStatus: true, script: "${this.toolbelt}/sfdx force:auth:jwt:grant --clientid ${_.env.CONNECTED_APP_CONSUMER_KEY_DH} --username ${_.env.SFDX_DEV_HUB_USERNAME} --jwtkeyfile server.key --instanceurl ${_.env.SFDX_DEV_HUB_HOST}"
-        if (rc != 0) { _.error "hub org authorization failed" }
+        
+
+        // def rc = _.sh returnStatus: true, script: "sfdx force:auth:jwt:grant --clientid ${_.env.CONNECTED_APP_CONSUMER_KEY_DH} --username ${_.env.SFDX_DEV_HUB_USERNAME} --jwtkeyfile server.key --instanceurl ${_.env.SFDX_DEV_HUB_HOST}"
+        // if (rc != 0) { 
+        //   _.error "hub org authorization failed" 
         // }
+
+      try {
+        def rmsg =  _.sh returnStdout: true, script: "sfdx force:auth:jwt:grant --clientid ${_.env.CONNECTED_APP_CONSUMER_KEY_DH} --username ${_.env.SFDX_DEV_HUB_USERNAME} --jwtkeyfile server.key --instanceurl ${_.env.SFDX_DEV_HUB_HOST} --json"
+        // _.echo('mark C')
+        def response = jsonParse( rmsg )
+        // _.echo('mark D')
+        // _.echo(response)
+        // _.echo('mark E')
+      }
+      catch (ex) {
+        _.echo('------------------------------------------------------')
+        // _.echo('mark F')
+        _.echo(ex.getMessage())
+        // _.echo('mark G')
+        _.echo('------------------------------------------------------')
+        _.error "hub org authorization failed" 
+      }
+
     }
   }
 
   private void createScratchOrg() {
     _.echo('Creating scratch org')
 
-    def commandScriptString = "${this.toolbelt}/sfdx force:org:create --definitionfile ${this.SFDX_SCRATCH_ORG_DEF_FILE} --json --durationdays 1 --setalias ${SFDX_SCRATCH_ORG_ALIAS} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME} --wait 30"
+    def commandScriptString = "sfdx force:org:create --definitionfile ${this.SFDX_SCRATCH_ORG_DEF_FILE} --json --durationdays 1 --setalias ${SFDX_SCRATCH_ORG_ALIAS} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME} --wait 30"
 
     def response
 
@@ -403,7 +504,7 @@ class SfdxProjectBuilder implements Serializable {
   private void deleteScratchOrg() {
     if (this.scratchOrgWasCreated && this.scratchOrgShouldBeDeleted) {
       _.echo('Deleting scratch org')
-      def rc = _.sh returnStatus: true, script: "${this.toolbelt}/sfdx force:org:delete --noprompt --targetusername ${SFDX_SCRATCH_ORG_ALIAS} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
+      def rc = _.sh returnStatus: true, script: "sfdx force:org:delete --noprompt --targetusername ${SFDX_SCRATCH_ORG_ALIAS} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
       if (rc != 0) { 
         _.error "deletion of scratch org ${SFDX_SCRATCH_ORG_ALIAS} failed"
       }
@@ -438,7 +539,7 @@ class SfdxProjectBuilder implements Serializable {
     //   _.echo('complete condition false')
     // }
 
-    def commandScriptString = "${this.toolbelt}/sfdx toolbox:package:dependencies:install --wait 240 --targetusername ${SFDX_SCRATCH_ORG_ALIAS} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME} --json"
+    def commandScriptString = "sfdx toolbox:package:dependencies:install --wait 240 --targetusername ${SFDX_SCRATCH_ORG_ALIAS} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME} --json"
     
     if ( _.env.BRANCH_NAME != 'master' || ( _.env.BRANCH_NAME == 'master' && !this.dependencyBuildsBranchMasterAndBranchNullAreTheSame ) ) {
       commandScriptString = commandScriptString + " --branch ${_.env.BRANCH_NAME}"
@@ -455,9 +556,7 @@ class SfdxProjectBuilder implements Serializable {
 
     if ( rmsg.isEmpty() ) {
       // then this means that the toolbox plugin has not been installed on this server.
-      // echo y | sfdx plugin:install @dx-cli-toolbox/sfdx-toolbox-package-utils
-      _.echo ("installing the toolbox plugins")
-      def rmsgInstall = _.sh returnStdout: true, script: "echo y | ${this.toolbelt}/sfdx plugins:install @dx-cli-toolbox/sfdx-toolbox-package-utils"
+      installRequiredCLIPlugins()
       _.echo ("retrying the toolbox:package:dependencies:install command")
       rmsg = _.sh returnStdout: true, script: commandScriptString
     }
@@ -471,9 +570,15 @@ class SfdxProjectBuilder implements Serializable {
     
   }
 
+  private void installRequiredCLIPlugins() {
+      // echo y | sfdx plugin:install @dx-cli-toolbox/sfdx-toolbox-package-utils
+      _.echo ("installing the toolbox plugins")
+      def rmsgInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install @dx-cli-toolbox/sfdx-toolbox-package-utils"
+  }
+
   private void compileCode() {
     _.echo("Push To Scratch Org And Compile")
-    def rmsg = _.sh returnStdout: true, script: "${this.toolbelt}/sfdx force:source:push --json --targetusername ${SFDX_SCRATCH_ORG_ALIAS}"
+    def rmsg = _.sh returnStdout: true, script: "sfdx force:source:push --json --targetusername ${SFDX_SCRATCH_ORG_ALIAS}"
     // printf rmsg
 
     def response = jsonParse( rmsg )
@@ -490,7 +595,7 @@ class SfdxProjectBuilder implements Serializable {
       def rmsg 
       
       try {
-        rmsg = _.sh returnStdout: true, label: 'Executing force:apex:test:run...', script: "${this.toolbelt}/sfdx force:apex:test:run --testlevel RunLocalTests --outputdir ${RUN_ARTIFACT_DIR} --resultformat tap --codecoverage --wait 60 --json --targetusername ${SFDX_SCRATCH_ORG_ALIAS}"
+        rmsg = _.sh returnStdout: true, label: 'Executing force:apex:test:run...', script: "sfdx force:apex:test:run --testlevel RunLocalTests --outputdir ${RUN_ARTIFACT_DIR} --resultformat tap --codecoverage --wait 60 --json --targetusername ${SFDX_SCRATCH_ORG_ALIAS}"
       }
       catch (ex) {
         _.echo(ex.getMessage())
@@ -501,7 +606,7 @@ class SfdxProjectBuilder implements Serializable {
         // execute all unit tests a second time.  There is a bug with snapshots and CMDT-based 
         //      Dependency injection and Apex Unit Tests.  The workaround is to simply
         //      re-run the unit tests again.
-        rmsg = _.sh returnStdout: true, label: 'Executing force:apex:test:run...', script: "${this.toolbelt}/sfdx force:apex:test:run --testlevel RunLocalTests --outputdir ${RUN_ARTIFACT_DIR} --resultformat junit --codecoverage --wait 60 --json --targetusername ${SFDX_SCRATCH_ORG_ALIAS}"
+        rmsg = _.sh returnStdout: true, label: 'Executing force:apex:test:run...', script: "sfdx force:apex:test:run --testlevel RunLocalTests --outputdir ${RUN_ARTIFACT_DIR} --resultformat junit --codecoverage --wait 60 --json --targetusername ${SFDX_SCRATCH_ORG_ALIAS}"
       }
       finally {
         collectTestResults()
@@ -559,7 +664,7 @@ class SfdxProjectBuilder implements Serializable {
       _.error  "unable to determine pathToUseForPackageVersionCreation in stage:package"
     }
 
-    def commandScriptString = "${this.toolbelt}/sfdx force:package:version:create --path ${pathToUseForPackageVersionCreation} --json --codecoverage --tag ${_.env.BUILD_TAG.replaceAll(' ','-')} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
+    def commandScriptString = "sfdx force:package:version:create --path ${pathToUseForPackageVersionCreation} --json --codecoverage --tag ${_.env.BUILD_TAG.replaceAll(' ','-')} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
 
     // use the branch command flag only when the branch is not "master" or when it is "master" and the environment is not set to operate as "master == null"
     if ( _.env.BRANCH_NAME != 'master' ||  (_.env.BRANCH_NAME == 'master' && !dependencyBuildsBranchMasterAndBranchNullAreTheSame) ) {
@@ -597,7 +702,7 @@ class SfdxProjectBuilder implements Serializable {
                     // script {
                         // use the SFDX_NEW_PACKAGE_VERSION.Id for this command verses SFDX_NEW_PACKAGE_VERSION_ID because we are yet
                         //  certain that the package was created correctly
-                        rmsg = _.sh returnStdout: true, script: "${this.toolbelt}/sfdx force:package:version:create:report --packagecreaterequestid ${SFDX_NEW_PACKAGE_VERSION.Id} --json --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
+                        rmsg = _.sh returnStdout: true, script: "sfdx force:package:version:create:report --packagecreaterequestid ${SFDX_NEW_PACKAGE_VERSION.Id} --json --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
                         // printf rmsg
 
                         def packageVersionCreationCheckResponse = jsonParse(rmsg) 
@@ -653,7 +758,12 @@ class SfdxProjectBuilder implements Serializable {
 
   private void tagTheBuild() {
     _.echo("Tagging the build as '${_.env.BUILD_TAG}'")
+
+//  for this to work, the GIT identiy must be established.  The following commands need to be run
+      // git config user.email "you@example.com"
+      // git config user.name "Your Name"
     _.sh returnStdout: true, script: "git tag -m '${_.env.BUILD_TAG}' ${_.env.BUILD_TAG} "    
+
     // _.sh returnStdout: true, script: "git push --tags"
     withCredentials([usernamePassword(credentialsId: 'github-user-account-imjohnmdaniel', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
       sh('''
@@ -668,11 +778,11 @@ class SfdxProjectBuilder implements Serializable {
     _.echo("finding all package versions dependencies and recording them for the build")
 
     // Get the list of package versions that are currently installed in the default scratch org
-    def rmsg = _.sh returnStdout: true, script: "${this.toolbelt}/sfdx force:package:installed:list --json --targetusername ${SFDX_SCRATCH_ORG_ALIAS}"
+    def rmsg = _.sh returnStdout: true, script: "sfdx force:package:installed:list --json --targetusername ${SFDX_SCRATCH_ORG_ALIAS}"
     def allPackageVersionsInstalledInScratchOrg = jsonParse(rmsg).result
 
     // Get the complete list of package versions that are currently available in the DevHub
-    rmsg = _.sh returnStdout: true, script: "${this.toolbelt}/sfdx force:package:version:list --json --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
+    rmsg = _.sh returnStdout: true, script: "sfdx force:package:version:list --json --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
     def allPackageVersionsAvailableInDevHub = jsonParse(rmsg).result
 
     def packageVersion
@@ -693,7 +803,7 @@ class SfdxProjectBuilder implements Serializable {
 
         // then a package was created.  Record its finger prints
         _.echo("finding all package versions for package ids found")
-        rmsg = _.sh returnStdout: true, script: "${this.toolbelt}/sfdx force:package:version:list --packages ${SFDX_NEW_PACKAGE} --json --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
+        rmsg = _.sh returnStdout: true, script: "sfdx force:package:version:list --packages ${SFDX_NEW_PACKAGE} --json --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
         //printf rmsg
 
         def response = jsonParse( rmsg )
