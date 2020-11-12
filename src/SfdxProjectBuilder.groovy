@@ -415,6 +415,10 @@ class SfdxProjectBuilder implements Serializable {
         _.error( "Environment variable JENKINS_SFDX_CORE_CI_LIB_CONTAINER_OPTION set to ${_.env.JENKINS_SFDX_CORE_CI_LIB_CONTAINER_OPTION} but not a valid option" )
       }
     }
+
+    if ( _.env.DEFAULT_DOCKER_IMAGE_NAME ) {
+      this.dockerImageName = _.env.DEFAULT_DOCKER_IMAGE_NAME
+    }
   }
 
   private void readAndParseSFDXProjectFile() {

@@ -8,6 +8,7 @@ new SfdxProjectBuilder(this)
         .setPackageInstallationKey('packageInstallationKey')
         .setUpstreamProjectToTriggerBuildFrom('someUpstreamJenkinsBuildProject') // set once per upstream project
         .setNumberOfBuildsToKeep(5) // default is 5
+        .setDockerImageName('docker-image-name')
         .alwaysBuildPackage()
         .doNotBuildPackage()
         .alwaysNotifyOnSuccess()
