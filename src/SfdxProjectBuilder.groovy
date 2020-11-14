@@ -398,7 +398,7 @@ class SfdxProjectBuilder implements Serializable {
 
   private void initializeBuildScriptVariables() {
     RUN_ARTIFACT_DIR = "target/${_.env.BUILD_NUMBER}"
-    SFDX_SCRATCH_ORG_ALIAS = "bluesphere-${_.env.BUILD_TAG.replaceAll("/", "_")}"
+    SFDX_SCRATCH_ORG_ALIAS = "bluesphere-${_.env.BUILD_TAG.replaceAll("/", "_").replaceAll(" ","_")}"
     if ( _.env.TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME != null ) {
       this.dependencyBuildsBranchMasterAndBranchNullAreTheSame = _.env.TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME.toBoolean()
     }
