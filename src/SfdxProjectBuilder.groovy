@@ -225,9 +225,9 @@ class SfdxProjectBuilder implements Serializable {
           validateStage()
       } // stage: Validate
 
-      // _.stage('Initialize') {
-      //     initializeStage()
-      // } // stage: Initialize
+      _.stage('Initialize') {
+          initializeStage()
+      } // stage: Initialize
 
       // _.stage('Process Resources') {
       //     processResourcesStage()
@@ -260,6 +260,7 @@ class SfdxProjectBuilder implements Serializable {
   }
 
   void initializeStage() {
+    installRequiredCLIPlugins()
     // setup this build's unique artifact directory
     _.sh "mkdir -p ${RUN_ARTIFACT_DIR}"
 
@@ -276,35 +277,35 @@ class SfdxProjectBuilder implements Serializable {
     isEnvVarPopulatedSFDXDevHubHost()
     isEnvVarPopulatedJWTCredIdDH()
 
-    def rmsg = _.sh returnStdout: true, script: "pwd"
-    _.echo(rmsg)
-    // rmsg = _.sh returnStdout: true, script: "ls -lap /.local/"
+    // def rmsg = _.sh returnStdout: true, script: "pwd"
     // _.echo(rmsg)
-    rmsg = _.sh returnStdout: true, script: 'ls -lap $HOME'
-    _.echo(rmsg)
-    rmsg = _.sh returnStdout: true, script: 'ls -lap /usr/local/lib/sfdx'
-    _.echo(rmsg)
-    rmsg = _.sh returnStdout: true, script: 'ls -lap /usr/local/lib/sfdx/node_modules'
-    _.echo(rmsg)
-    rmsg = _.sh returnStdout: true, script: 'ls -lap /usr/local/lib/sfdx/node_modules/@salesforce'
-    _.echo(rmsg)
+    // // rmsg = _.sh returnStdout: true, script: "ls -lap /.local/"
+    // // _.echo(rmsg)
+    // rmsg = _.sh returnStdout: true, script: 'ls -lap $HOME'
+    // _.echo(rmsg)
+    // rmsg = _.sh returnStdout: true, script: 'ls -lap /usr/local/lib/sfdx'
+    // _.echo(rmsg)
+    // rmsg = _.sh returnStdout: true, script: 'ls -lap /usr/local/lib/sfdx/node_modules'
+    // _.echo(rmsg)
+    // rmsg = _.sh returnStdout: true, script: 'ls -lap /usr/local/lib/sfdx/node_modules/@salesforce'
+    // _.echo(rmsg)
     
     
-    rmsg = _.sh returnStdout: true, script: 'chown -R root /usr/local/lib/sfdx'
-    _.echo(rmsg)
+    // rmsg = _.sh returnStdout: true, script: 'chown -R root /usr/local/lib/sfdx'
+    // _.echo(rmsg)
 
-    rmsg = _.sh returnStdout: true, script: 'ls -lap /usr/local/lib/sfdx'
-    _.echo(rmsg)
+    // rmsg = _.sh returnStdout: true, script: 'ls -lap /usr/local/lib/sfdx'
+    // _.echo(rmsg)
 
-    // _.sh returnStdout: true, script: "ls -lap /root/.local/share/sfdx/node_modules/"
-    rmsg = _.sh returnStdout: true, script: "sfdx plugins"
-    _.echo(rmsg)
-    def rmsgInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install @dx-cli-toolbox/sfdx-toolbox-package-utils"
-    _.echo(rmsgInstall)
-    rmsg = _.sh returnStdout: true, script: "sfdx plugins"
-    _.echo(rmsg)
-    rmsg = _.sh returnStdout: true, script: 'ls -lap $HOME'
-    _.echo(rmsg)
+    // // _.sh returnStdout: true, script: "ls -lap /root/.local/share/sfdx/node_modules/"
+    // rmsg = _.sh returnStdout: true, script: "sfdx plugins"
+    // _.echo(rmsg)
+    // def rmsgInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install @dx-cli-toolbox/sfdx-toolbox-package-utils"
+    // _.echo(rmsgInstall)
+    // rmsg = _.sh returnStdout: true, script: "sfdx plugins"
+    // _.echo(rmsg)
+    // rmsg = _.sh returnStdout: true, script: 'ls -lap $HOME'
+    // _.echo(rmsg)
   }
 
   void processResourcesStage() {
@@ -594,12 +595,12 @@ class SfdxProjectBuilder implements Serializable {
     
     def rmsg = _.sh returnStdout: true, script: commandScriptString
 
-    if ( rmsg.isEmpty() ) {
-      // then this means that the toolbox plugin has not been installed on this server.
-      installRequiredCLIPlugins()
-      _.echo ("retrying the toolbox:package:dependencies:install command")
-      rmsg = _.sh returnStdout: true, script: commandScriptString
-    }
+    // if ( rmsg.isEmpty() ) {
+    //   // then this means that the toolbox plugin has not been installed on this server.
+    //   installRequiredCLIPlugins()
+    //   _.echo ("retrying the toolbox:package:dependencies:install command")
+    //   rmsg = _.sh returnStdout: true, script: commandScriptString
+    // }
   
     def response = jsonParse( rmsg )
 
@@ -611,9 +612,21 @@ class SfdxProjectBuilder implements Serializable {
   }
 
   private void installRequiredCLIPlugins() {
-      // echo y | sfdx plugin:install @dx-cli-toolbox/sfdx-toolbox-package-utils
       _.echo ("installing the toolbox plugins")
-      def rmsgInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install @dx-cli-toolbox/sfdx-toolbox-package-utils"
+      def rmsgToolboxInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install @dx-cli-toolbox/sfdx-toolbox-package-utils"
+      _.echo rmsgToolboxInstall
+
+      _.echo ("installing the sfdmu plugins")
+      def rmsgSFDMUInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install sfdmu"
+      _.echo rmsgSFDMUInstall
+
+      _.echo ("installing the shane-sfdx-plugins  plugins")
+      def rmsgShaneSFDXPluginInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install shane-sfdx-plugins "
+      _.echo rmsgShaneSFDXPluginInstall
+
+      _.echo ("installing the sfpowerkit plugins")
+      def rmsgSFPowerKitInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install sfpowerkit"
+      _.echo rmsgSFPowerKitInstall
   }
 
   private void compileCode() {
