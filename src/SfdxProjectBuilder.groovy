@@ -274,11 +274,13 @@ class SfdxProjectBuilder implements Serializable {
     isEnvVarPopulatedSFDXDevHubHost()
     isEnvVarPopulatedJWTCredIdDH()
 
-
-    _.echo( _.sh returnStdout: true, script: "pwd" )  
-    _.echo( _.sh returnStdout: true, script: "ls -lap /.local/" )  
+    def rmsg = _.sh returnStdout: true, script: "pwd"
+    _.echo(rmsg)
+    rmsg = _.sh returnStdout: true, script: "ls -lap /.local/"
+    _.echo(rmsg)
 //    _.sh returnStdout: true, script: "ls -lap /root/.local/share/sfdx/node_modules/"
-    _.sh returnStdout: true, script: "sfdx plugins"
+    rmsg = _.sh returnStdout: true, script: "sfdx plugins"
+    _.echo(rmsg)
   }
 `
   void processResourcesStage() {
