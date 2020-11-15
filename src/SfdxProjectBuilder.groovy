@@ -32,6 +32,8 @@ class SfdxProjectBuilder implements Serializable {
 
   private def slackChannelName = '#ci-alerts'
 
+  private def slackTokenCredentialId = 'slack-integration-token-credential'
+
   private def notifyOnSuccessfulBuilds = false 
 
   private def slackNotificationsIsActive = false
@@ -329,7 +331,7 @@ class SfdxProjectBuilder implements Serializable {
 
   private void sendSlackMessage(Map args) {
     if ( this.slackNotificationsIsActive ) {
-      def slackResponse = _.slackSend channel: "${this.slackChannelName}", color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false, tokenCredentialId: "slack-integration-token-credential"
+      def slackResponse = _.slackSend channel: "${this.slackChannelName}", color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false, tokenCredentialId: "${this.slackTokenCredentialId}" 
     } else {
       _.echo("Slack notifications are currently off")
     }
@@ -418,6 +420,10 @@ class SfdxProjectBuilder implements Serializable {
 
     if ( _.env.DEFAULT_DOCKER_IMAGE_NAME ) {
       this.dockerImageName = _.env.DEFAULT_DOCKER_IMAGE_NAME
+    }
+
+    if ( _.env.SLACK_TOKEN_CREDENTIAL_ID ) {
+      this.slackTokenCredentialId = _.env.SLACK_TOKEN_CREDENTIAL_ID
     }
   }
 
