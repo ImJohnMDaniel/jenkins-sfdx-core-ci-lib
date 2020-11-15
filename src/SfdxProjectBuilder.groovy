@@ -286,7 +286,7 @@ class SfdxProjectBuilder implements Serializable {
     _.echo(rmsg)
     rmsg = _.sh returnStdout: true, script: 'ls -lap /usr/local/lib/sfdx/node_modules'
     _.echo(rmsg)
-    rmsg = _.sh returnStdout: true, script: 'ls -lap /usr/local/lib/sfdx/node_modules/\@salesforce'
+    rmsg = _.sh returnStdout: true, script: 'ls -lap /usr/local/lib/sfdx/node_modules/@salesforce'
     _.echo(rmsg)
     
     // _.sh returnStdout: true, script: "ls -lap /root/.local/share/sfdx/node_modules/"
