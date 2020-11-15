@@ -282,7 +282,7 @@ class SfdxProjectBuilder implements Serializable {
     rmsg = _.sh returnStdout: true, script: "sfdx plugins"
     _.echo(rmsg)
   }
-`
+
   void processResourcesStage() {
     installAllDependencies()
   }
