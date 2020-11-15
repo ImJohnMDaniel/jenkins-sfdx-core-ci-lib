@@ -180,6 +180,11 @@ class SfdxProjectBuilder implements Serializable {
   // }
 
   private void processInnerNode() {
+      sendSlackMessage(
+        color: 'good',
+        message: "Build ${_.env.JOB_NAME} ${_.env.BUILD_NUMBER} (<${_.env.BUILD_URL}|Open>)"
+      )
+
       // checkout the main source code for the project.
       _.checkout _.scm
 
@@ -223,11 +228,19 @@ class SfdxProjectBuilder implements Serializable {
   private void processStages() {
     try {
       _.stage('Validate') {
-          validateStage()
+        sendSlackMessage(
+          color: 'good',
+          message: "Validate stage"
+        )
+        validateStage()
       } // stage: Validate
 
       _.stage('Initialize') {
-          initializeStage()
+        sendSlackMessage(
+          color: 'good',
+          message: "Initialize stage"
+        )
+        initializeStage()
       } // stage: Initialize
 
       // _.stage('Process Resources') {
@@ -261,6 +274,7 @@ class SfdxProjectBuilder implements Serializable {
   }
 
   void initializeStage() {
+    
     installRequiredCLIPlugins()
     // setup this build's unique artifact directory
     _.sh "mkdir -p ${RUN_ARTIFACT_DIR}"
