@@ -581,7 +581,6 @@ class SfdxProjectBuilder implements Serializable {
   private void installRequiredCLIPlugins() {
       // echo y | sfdx plugin:install @dx-cli-toolbox/sfdx-toolbox-package-utils
       _.echo ("installing the toolbox plugins")
-      _.sh returnStdout: true, script: "whoami"
       _.sh returnStdout: true, script: "sfdx plugins"
       def rmsgInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install @dx-cli-toolbox/sfdx-toolbox-package-utils"
   }
