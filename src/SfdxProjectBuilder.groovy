@@ -223,37 +223,37 @@ class SfdxProjectBuilder implements Serializable {
           validateStage()
       } // stage: Validate
 
-      _.stage('Initialize') {
-          initializeStage()
-      } // stage: Initialize
+      // _.stage('Initialize') {
+      //     initializeStage()
+      // } // stage: Initialize
 
-      _.stage('Process Resources') {
-          processResourcesStage()
-      } // stage: Process Resources
+      // _.stage('Process Resources') {
+      //     processResourcesStage()
+      // } // stage: Process Resources
 
-      _.stage('Compile') {
-        compileStage()
-      } // stage: Compile
+      // _.stage('Compile') {
+      //   compileStage()
+      // } // stage: Compile
 
-      _.stage('Test') {
-        testStage()
-      } // stage: Test
+      // _.stage('Test') {
+      //   testStage()
+      // } // stage: Test
 
-      _.stage('Package') {
-        packageStage()
-      } // stage: Package
+      // _.stage('Package') {
+      //   packageStage()
+      // } // stage: Package
 
-      _.stage('Artifact Recording') {
-        artifactRecordingStage()
-      } // stage: Artifact Recording
+      // _.stage('Artifact Recording') {
+      //   artifactRecordingStage()
+      // } // stage: Artifact Recording
 
-      postSuccess()
+      // postSuccess()
     }
     catch (ex) {
-      postFailure(ex)
+      // postFailure(ex)
     }
     finally {
-      postAlways()
+      // postAlways()
     }
   }
 
@@ -273,6 +273,8 @@ class SfdxProjectBuilder implements Serializable {
     isEnvVarPopulatedSFDXDevHubUsername()
     isEnvVarPopulatedSFDXDevHubHost()
     isEnvVarPopulatedJWTCredIdDH()
+
+    _.sh returnStdout: true, script: "sfdx plugins"
   }
 
   void processResourcesStage() {
@@ -581,7 +583,6 @@ class SfdxProjectBuilder implements Serializable {
   private void installRequiredCLIPlugins() {
       // echo y | sfdx plugin:install @dx-cli-toolbox/sfdx-toolbox-package-utils
       _.echo ("installing the toolbox plugins")
-      _.sh returnStdout: true, script: "sfdx plugins"
       def rmsgInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install @dx-cli-toolbox/sfdx-toolbox-package-utils"
   }
 
