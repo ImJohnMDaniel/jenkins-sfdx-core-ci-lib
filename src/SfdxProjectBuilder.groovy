@@ -290,7 +290,7 @@ class SfdxProjectBuilder implements Serializable {
     _.echo(rmsg)
     
     
-    rmsg = _.sh returnStdout: true, script: 'chown -R $USER /usr/local/lib/sfdx'
+    rmsg = _.sh returnStdout: true, script: 'chown -R root /usr/local/lib/sfdx'
     _.echo(rmsg)
 
     rmsg = _.sh returnStdout: true, script: 'ls -lap /usr/local/lib/sfdx'
