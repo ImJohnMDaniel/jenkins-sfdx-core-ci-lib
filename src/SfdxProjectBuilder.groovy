@@ -199,7 +199,7 @@ class SfdxProjectBuilder implements Serializable {
 
         if ( usingDockerPipelinePlugin ) {
           _.echo('About to setup dockerImage')
-          this.dockerImage.inside('--privileged -it -e HOME=/tmp -e NPM_CONFIG_PREFIX=/tmp/.npm') {
+          this.dockerImage.inside('-e HOME=/tmp -e NPM_CONFIG_PREFIX=/tmp/.npm') {
             processStages() 
           }
         }
@@ -274,8 +274,8 @@ class SfdxProjectBuilder implements Serializable {
     isEnvVarPopulatedSFDXDevHubHost()
     isEnvVarPopulatedJWTCredIdDH()
 
-    _.sh returnStdout: true, script: "ls -lap /root/.local/"
-    _.sh returnStdout: true, script: "ls -lap /root/.local/share/sfdx/node_modules/"
+    _.sh returnStdout: true, script: "ls -lap /root/"
+//    _.sh returnStdout: true, script: "ls -lap /root/.local/share/sfdx/node_modules/"
     _.sh returnStdout: true, script: "sfdx plugins"
   }
 
