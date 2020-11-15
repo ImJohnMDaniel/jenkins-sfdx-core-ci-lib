@@ -363,12 +363,25 @@ class SfdxProjectBuilder implements Serializable {
     _.fileOperations([_.fileDeleteOperation(excludes: '', includes: 'server.key')])
   }
 
+  def slackResponseThreadId
+
   private void sendSlackMessage(Map args) {
     if ( this.slackNotificationsIsActive ) {
-      if ( this.slackChannelName ) {
-        def slackResponse = _.slackSend channel: "${this.slackChannelName}", color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false, tokenCredentialId: "${this.slackTokenCredentialId}" 
+      def slackResponse
+      if ( this.slackResponseThreadId ) {
+        // this message should be appended to an existing Slack thread
+        slackResponse = _.slackSend channel: "${this.slackResponseThreadId}", color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false, tokenCredentialId: "${this.slackTokenCredentialId}" 
+      } else if ( this.slackChannelName ) {
+        // this messages is the start of a Slack thread in the Slack channel specified
+        slackResponse = _.slackSend channel: "${this.slackChannelName}", color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false, tokenCredentialId: "${this.slackTokenCredentialId}" 
       } else {
-        def slackResponse = _.slackSend color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false, tokenCredentialId: "${this.slackTokenCredentialId}" 
+        // this messages is the start of a Slack thread in the default Slack channel specified in the Global Config of Jenkins
+        slackResponse = _.slackSend color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false, tokenCredentialId: "${this.slackTokenCredentialId}" 
+      }
+
+      if ( (! this.slackResponseThreadId) && slackResponse) {
+        // set the Slack Thread Id for future updates
+        this.slackResponseThreadId = slackResponse.threadId
       }
       
     } else {
