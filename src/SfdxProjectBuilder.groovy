@@ -276,10 +276,18 @@ class SfdxProjectBuilder implements Serializable {
 
     def rmsg = _.sh returnStdout: true, script: "pwd"
     _.echo(rmsg)
-    rmsg = _.sh returnStdout: true, script: "ls -lap /.local/"
+    // rmsg = _.sh returnStdout: true, script: "ls -lap /.local/"
+    // _.echo(rmsg)
+    rmsg = _.sh returnStdout: true, script: 'ls -lap $HOME'
     _.echo(rmsg)
-//    _.sh returnStdout: true, script: "ls -lap /root/.local/share/sfdx/node_modules/"
+    // _.sh returnStdout: true, script: "ls -lap /root/.local/share/sfdx/node_modules/"
     rmsg = _.sh returnStdout: true, script: "sfdx plugins"
+    _.echo(rmsg)
+    def rmsgInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install @dx-cli-toolbox/sfdx-toolbox-package-utils"
+    _.echo(rmsgInstall)
+    rmsg = _.sh returnStdout: true, script: "sfdx plugins"
+    _.echo(rmsg)
+    rmsg = _.sh returnStdout: true, script: 'ls -lap $HOME'
     _.echo(rmsg)
   }
 
