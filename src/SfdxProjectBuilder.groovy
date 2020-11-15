@@ -252,10 +252,10 @@ class SfdxProjectBuilder implements Serializable {
       // postSuccess()
     }
     catch (ex) {
-      // postFailure(ex)
+      postFailure(ex)
     }
     finally {
-      // postAlways()
+      postAlways()
     }
   }
 
