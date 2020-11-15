@@ -249,7 +249,7 @@ class SfdxProjectBuilder implements Serializable {
       //   artifactRecordingStage()
       // } // stage: Artifact Recording
 
-      // postSuccess()
+      postSuccess()
     }
     catch (ex) {
       postFailure(ex)
