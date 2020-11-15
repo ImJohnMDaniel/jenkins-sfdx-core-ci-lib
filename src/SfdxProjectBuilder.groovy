@@ -199,7 +199,7 @@ class SfdxProjectBuilder implements Serializable {
 
         if ( usingDockerPipelinePlugin ) {
           _.echo('About to setup dockerImage')
-          this.dockerImage.inside('-e HOME=/tmp -e NPM_CONFIG_PREFIX=/tmp/.npm') {
+          this.dockerImage.inside('--privileged -e HOME=/tmp -e NPM_CONFIG_PREFIX=/tmp/.npm') {
             processStages() 
           }
         }
