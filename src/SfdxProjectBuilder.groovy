@@ -393,7 +393,7 @@ class SfdxProjectBuilder implements Serializable {
         slackResponse = _.slackSend color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false, tokenCredentialId: "${this.slackTokenCredentialId}" 
       }
 
-      if ( (! this.slackResponseThreadId) && slackResponse) {
+      if ( this.slackResponseThreadId == null ) {
         // set the Slack Thread Id for future updates
         this.slackResponseThreadId = slackResponse.threadId
       }
