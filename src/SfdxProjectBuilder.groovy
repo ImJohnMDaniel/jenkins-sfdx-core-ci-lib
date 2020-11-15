@@ -30,7 +30,8 @@ class SfdxProjectBuilder implements Serializable {
 
   private def doNotBuildPackage = false
 
-  private def slackChannelName = '#ci-alerts'
+  // private def slackChannelName = '#ci-alerts'
+  private def slackChannelName
 
   private def slackTokenCredentialId = 'slack-integration-token-credential'
 
@@ -364,11 +365,16 @@ class SfdxProjectBuilder implements Serializable {
 
   private void sendSlackMessage(Map args) {
     if ( this.slackNotificationsIsActive ) {
-      def slackResponse = _.slackSend channel: "${this.slackChannelName}", color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false, tokenCredentialId: "${this.slackTokenCredentialId}" 
+      if ( this.slackChannelName ) {
+        def slackResponse = _.slackSend channel: "${this.slackChannelName}", color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false, tokenCredentialId: "${this.slackTokenCredentialId}" 
+      } else {
+        def slackResponse = _.slackSend color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false, tokenCredentialId: "${this.slackTokenCredentialId}" 
+      }
+      
     } else {
       _.echo("Slack notifications are currently off")
     }
-
+    // def rmsg =  _.sh returnStdout: true, script: "sfdx force:auth:jwt:grant --clientid ${_.env.CONNECTED_APP_CONSUMER_KEY_DH} --username ${_.env.SFDX_DEV_HUB_USERNAME} --jwtkeyfile server.key --instanceurl ${_.env.SFDX_DEV_HUB_HOST} --json"
     // Potential enhancement -- multi-threaded slack messages
     // def slackResponse = slackSend(channel: "cool-threads", message: "Here is the primary message")
     // slackSend(channel: slackResponse.threadId, message: "Thread reply #1")
