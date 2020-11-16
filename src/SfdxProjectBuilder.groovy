@@ -398,7 +398,7 @@ class SfdxProjectBuilder implements Serializable {
           }
         }
       }
-      _.echo("slackResponse.getThreadId() == ${slackResponse.getThreadId()}")
+      _.echo("slackResponse == ${slackResponse}")
       _.echo("slackResponse.threadId == ${slackResponse.threadId}")
       _.echo("slackResponseThreadId == ${slackResponseThreadId}")
       if ( this.slackResponseThreadId == null ) {
