@@ -674,17 +674,17 @@ class SfdxProjectBuilder implements Serializable {
       def rmsgToolboxInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install @dx-cli-toolbox/sfdx-toolbox-package-utils"
       _.echo rmsgToolboxInstall
 
-      _.echo ("installing the sfdmu plugins")
-      def rmsgSFDMUInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install sfdmu"
-      _.echo rmsgSFDMUInstall
+      // _.echo ("installing the sfdmu plugins")
+      // def rmsgSFDMUInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install sfdmu"
+      // _.echo rmsgSFDMUInstall
 
-      _.echo ("installing the shane-sfdx-plugins  plugins")
-      def rmsgShaneSFDXPluginInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install shane-sfdx-plugins "
-      _.echo rmsgShaneSFDXPluginInstall
+      // _.echo ("installing the shane-sfdx-plugins  plugins")
+      // def rmsgShaneSFDXPluginInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install shane-sfdx-plugins "
+      // _.echo rmsgShaneSFDXPluginInstall
 
-      _.echo ("installing the sfpowerkit plugins")
-      def rmsgSFPowerKitInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install sfpowerkit"
-      _.echo rmsgSFPowerKitInstall
+      // _.echo ("installing the sfpowerkit plugins")
+      // def rmsgSFPowerKitInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install sfpowerkit"
+      // _.echo rmsgSFPowerKitInstall
   }
 
   private void compileCode() {
