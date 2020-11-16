@@ -230,7 +230,7 @@ class SfdxProjectBuilder implements Serializable {
       _.stage('Validate') {
         sendSlackMessage(
           color: 'good',
-          message: "Validate stage"
+          message: "Validation stage"
         )
         validateStage()
       } // stage: Validate
@@ -238,30 +238,50 @@ class SfdxProjectBuilder implements Serializable {
       _.stage('Initialize') {
         sendSlackMessage(
           color: 'good',
-          message: "Initialize stage"
+          message: "Initialization stage"
         )
         initializeStage()
       } // stage: Initialize
 
-      // _.stage('Process Resources') {
-      //     processResourcesStage()
-      // } // stage: Process Resources
+      _.stage('Process Resources') {
+        sendSlackMessage(
+          color: 'good',
+          message: "Processing Resources stage"
+        )
+        processResourcesStage()
+      } // stage: Process Resources
 
-      // _.stage('Compile') {
-      //   compileStage()
-      // } // stage: Compile
+      _.stage('Compile') {
+        sendSlackMessage(
+          color: 'good',
+          message: "Compilation stage"
+        )
+        compileStage()
+      } // stage: Compile
 
-      // _.stage('Test') {
-      //   testStage()
-      // } // stage: Test
+      _.stage('Test') {
+        sendSlackMessage(
+          color: 'good',
+          message: "Testing stage"
+        )
+        testStage()
+      } // stage: Test
 
-      // _.stage('Package') {
-      //   packageStage()
-      // } // stage: Package
+      _.stage('Package') {
+        sendSlackMessage(
+          color: 'good',
+          message: "Packaging stage"
+        )
+        packageStage()
+      } // stage: Package
 
-      // _.stage('Artifact Recording') {
-      //   artifactRecordingStage()
-      // } // stage: Artifact Recording
+      _.stage('Artifact Recording') {
+        sendSlackMessage(
+          color: 'good',
+          message: "Artifact Recording stage"
+        )
+        artifactRecordingStage()
+      } // stage: Artifact Recording
 
       postSuccess()
     }
