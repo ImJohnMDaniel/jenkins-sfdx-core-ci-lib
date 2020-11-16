@@ -47,6 +47,8 @@ class SfdxProjectBuilder implements Serializable {
 
   private def upstreamProjectsToTriggerFrom = []
 
+  private def upstreamProjectsToTriggerFromPrefix
+
   private boolean dependencyBuildsBranchMasterMainAndNullAreTheSame = true
 
   private def numberOfBuildsToKeep = '30'
@@ -515,6 +517,10 @@ class SfdxProjectBuilder implements Serializable {
 
     if ( _.env.SLACK_TOKEN_CREDENTIAL_ID ) {
       this.slackTokenCredentialId = _.env.SLACK_TOKEN_CREDENTIAL_ID
+    }
+
+    if ( _.env.UPSTREAM_PROJECT_PREFIX ) {
+      this.upstreamProjectsToTriggerFromPrefix = _.env.UPSTREAM_PROJECT_PREFIX
     }
   }
 
@@ -1014,10 +1020,13 @@ class SfdxProjectBuilder implements Serializable {
 
     if ( this.upstreamProjectsToTriggerFrom != null ) {
 
+      def upstreamProjectName
+
       for ( anUpstreamProjectToTriggerFrom in this.upstreamProjectsToTriggerFrom ) {
         if ( !anUpstreamProjectToTriggerFrom.empty ) {
+          upstreamProjectName = (this.upstreamProjectsToTriggerFromPrefix != null ? (this.upstreamProjectsToTriggerFromPrefix + '/') : '') + anUpstreamProjectToTriggerFrom
           // _.echo("adding upstream dependency on project ${anUpstreamProjectToTriggerFrom}")
-          result << _.upstream(	upstreamProjects: anUpstreamProjectToTriggerFrom + "/" + _.env.BRANCH_NAME.replaceAll("/", "%2F"),  threshold: hudson.model.Result.SUCCESS )
+          result << _.upstream(	upstreamProjects: upstreamProjectName + "/" + _.env.BRANCH_NAME.replaceAll("/", "%2F"),  threshold: hudson.model.Result.SUCCESS )
         }
       } 
     }
