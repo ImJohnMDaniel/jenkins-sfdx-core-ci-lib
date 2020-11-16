@@ -355,7 +355,8 @@ class SfdxProjectBuilder implements Serializable {
     if ( this.notifyOnSuccessfulBuilds || ( _.currentBuild.previousBuild != null && _.currentBuild.resultIsBetterOrEqualTo( _.currentBuild.previousBuild.currentResult ) ) ) {
       sendSlackMessage(
         color: 'good',
-        message: "Build completed ${_.env.JOB_NAME} ${_.env.BUILD_NUMBER} (<${_.env.BUILD_URL}|Open>)"
+        message: "Build completed ${_.env.JOB_NAME} ${_.env.BUILD_NUMBER} (<${_.env.BUILD_URL}|Open>)",
+        isHeaderMessage: true
       )
     }
   }
@@ -365,7 +366,8 @@ class SfdxProjectBuilder implements Serializable {
   
     sendSlackMessage(
       color: 'danger',
-      message: "Build failed ${_.env.JOB_NAME} ${_.env.BUILD_NUMBER} (<${_.env.BUILD_URL}|Open>)"
+      message: "Build failed ${_.env.JOB_NAME} ${_.env.BUILD_NUMBER} (<${_.env.BUILD_URL}|Open>)",
+      isHeaderMessage: true
     )
 
   }
@@ -386,12 +388,14 @@ class SfdxProjectBuilder implements Serializable {
         // this message should be appended to an existing Slack thread
         slackResponse = _.slackSend channel: "${this.slackResponseThreadId}", color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false, tokenCredentialId: "${this.slackTokenCredentialId}" 
       } else {
-        if ( this.slackChannelName ) {
-          // this messages is the start of a Slack thread in the Slack channel specified
-          slackResponse = _.slackSend channel: "${this.slackChannelName}", color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false, tokenCredentialId: "${this.slackTokenCredentialId}" 
-        } else {
-          // this messages is the start of a Slack thread in the default Slack channel specified in the Global Config of Jenkins
-          slackResponse = _.slackSend color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false, tokenCredentialId: "${this.slackTokenCredentialId}" 
+        if ( args.isHeaderMessage ) {
+          if ( this.slackChannelName ) {
+            // this messages is the start of a Slack thread in the Slack channel specified
+            slackResponse = _.slackSend channel: "${this.slackChannelName}", color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false, tokenCredentialId: "${this.slackTokenCredentialId}" 
+          } else {
+            // this messages is the start of a Slack thread in the default Slack channel specified in the Global Config of Jenkins
+            slackResponse = _.slackSend color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false, tokenCredentialId: "${this.slackTokenCredentialId}" 
+          }
         }
       }
       _.echo("slackResponse.getThreadId() == ${slackResponse.getThreadId()}")
