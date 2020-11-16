@@ -43,11 +43,11 @@ class SfdxProjectBuilder implements Serializable {
 
   private def scratchOrgShouldBeDeleted = true
 
-  private def branchesToBuildPackageFromList = ['master', 'devops/master-2gmp-variant']
+  private def branchesToBuildPackageFromList = ['master', 'main']
 
   private def upstreamProjectsToTriggerFrom = []
 
-  private boolean dependencyBuildsBranchMasterAndBranchNullAreTheSame = true
+  private boolean dependencyBuildsBranchMasterMainAndNullAreTheSame = true
 
   private def numberOfBuildsToKeep = '30'
 
@@ -472,8 +472,8 @@ class SfdxProjectBuilder implements Serializable {
   private void initializeBuildScriptVariables() {
     RUN_ARTIFACT_DIR = "target/${_.env.BUILD_NUMBER}"
     SFDX_SCRATCH_ORG_ALIAS = "bluesphere-${_.env.BUILD_TAG.replaceAll("/", "_").replaceAll(" ","_")}"
-    if ( _.env.TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME != null ) {
-      this.dependencyBuildsBranchMasterAndBranchNullAreTheSame = _.env.TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_AND_NULL_THE_SAME.toBoolean()
+    if ( _.env.TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_MAIN_AND_NULL_THE_SAME != null ) {
+      this.dependencyBuildsBranchMasterMainAndNullAreTheSame = _.env.TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_MAIN_AND_NULL_THE_SAME.toBoolean()
     }
     // TODO: Figure out way to use env vars to drive the container configuration
 
@@ -592,7 +592,7 @@ class SfdxProjectBuilder implements Serializable {
 
   private void installAllDependencies() {
     // _.echo("env.BRANCH_NAME == ${_.env.BRANCH_NAME}")
-    // _.echo("this.dependencyBuildsBranchMasterAndBranchNullAreTheSame == ${this.dependencyBuildsBranchMasterAndBranchNullAreTheSame}")
+    // _.echo("this.dependencyBuildsBranchMasterMainAndNullAreTheSame == ${this.dependencyBuildsBranchMasterMainAndNullAreTheSame}")
     // if ( _.env.BRANCH_NAME == 'master' ) {
     //   _.echo('branch_name == master')
     // }
@@ -600,19 +600,19 @@ class SfdxProjectBuilder implements Serializable {
     //   _.echo('branch_name != master')
     // }
 
-    // if ( !this.dependencyBuildsBranchMasterAndBranchNullAreTheSame ) {
-    //   _.echo('!this.dependencyBuildsBranchMasterAndBranchNullAreTheSame == true')
+    // if ( !this.dependencyBuildsBranchMasterMainAndNullAreTheSame ) {
+    //   _.echo('!this.dependencyBuildsBranchMasterMainAndNullAreTheSame == true')
     // } else {
-    //   _.echo('!this.dependencyBuildsBranchMasterAndBranchNullAreTheSame == false')
+    //   _.echo('!this.dependencyBuildsBranchMasterMainAndNullAreTheSame == false')
     // }
 
-    // if ( _.env.BRANCH_NAME == 'master' && ( !this.dependencyBuildsBranchMasterAndBranchNullAreTheSame ) ) {
+    // if ( _.env.BRANCH_NAME == 'master' && ( !this.dependencyBuildsBranchMasterMainAndNullAreTheSame ) ) {
     //   _.echo('secondary condition true')
     // } else {
     //   _.echo('secondary condition false')
     // }
 
-    // if ( _.env.BRANCH_NAME != 'master' || ( _.env.BRANCH_NAME == 'master' && !this.dependencyBuildsBranchMasterAndBranchNullAreTheSame ) ) {
+    // if ( _.env.BRANCH_NAME != 'master' || ( _.env.BRANCH_NAME == 'master' && !this.dependencyBuildsBranchMasterMainAndNullAreTheSame ) ) {
     //   _.echo('complete condition true')
     // } else {
     //   _.echo('complete condition false')
@@ -620,7 +620,7 @@ class SfdxProjectBuilder implements Serializable {
 
     def commandScriptString = "sfdx toolbox:package:dependencies:install --wait 240 --targetusername ${SFDX_SCRATCH_ORG_ALIAS} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME} --json"
     
-    if ( _.env.BRANCH_NAME != 'master' || ( _.env.BRANCH_NAME == 'master' && !this.dependencyBuildsBranchMasterAndBranchNullAreTheSame ) ) {
+    if ( (_.env.BRANCH_NAME != 'master' && _.env.BRANCH_NAME != 'main') || ( (_.env.BRANCH_NAME == 'master' || _.env.BRANCH_NAME == 'main') && !this.dependencyBuildsBranchMasterMainAndNullAreTheSame ) ) {
       commandScriptString = commandScriptString + " --branch ${_.env.BRANCH_NAME}"
     }
 
@@ -758,7 +758,7 @@ class SfdxProjectBuilder implements Serializable {
     def commandScriptString = "sfdx force:package:version:create --path ${pathToUseForPackageVersionCreation} --json --codecoverage --tag ${_.env.BUILD_TAG.replaceAll(' ','-')} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
 
     // use the branch command flag only when the branch is not "master" or when it is "master" and the environment is not set to operate as "master == null"
-    if ( _.env.BRANCH_NAME != 'master' ||  (_.env.BRANCH_NAME == 'master' && !dependencyBuildsBranchMasterAndBranchNullAreTheSame) ) {
+    if ( (_.env.BRANCH_NAME != 'master' && _.env.BRANCH_NAME != 'main') || ( (_.env.BRANCH_NAME == 'master' || _.env.BRANCH_NAME == 'main') && !this.dependencyBuildsBranchMasterMainAndNullAreTheSame ) ) {
       commandScriptString = commandScriptString + " --branch ${_.env.BRANCH_NAME}"
     }
 
