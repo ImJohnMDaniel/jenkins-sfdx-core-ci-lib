@@ -392,7 +392,7 @@ class SfdxProjectBuilder implements Serializable {
         // this messages is the start of a Slack thread in the default Slack channel specified in the Global Config of Jenkins
         slackResponse = _.slackSend color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false, tokenCredentialId: "${this.slackTokenCredentialId}" 
       }
-
+      _.echo( "The Slack Response Thread Id is ${slackResponseThreadId}")
       if ( this.slackResponseThreadId == null ) {
         // set the Slack Thread Id for future updates
         this.slackResponseThreadId = slackResponse.threadId
