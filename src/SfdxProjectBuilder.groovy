@@ -200,7 +200,7 @@ class SfdxProjectBuilder implements Serializable {
   private void processInnerNode() {
       sendSlackMessage(
         color: 'good',
-        message: "Build ${_.env.JOB_NAME} ${_.env.BUILD_NUMBER} (<${_.env.BUILD_URL}|Open>)"
+        message: "Build ${_.env.JOB_NAME} ${_.env.BUILD_NUMBER} (<${_.env.BUILD_URL}|Open>)",
         isHeaderMessage: true
       )
 
