@@ -201,6 +201,7 @@ class SfdxProjectBuilder implements Serializable {
       sendSlackMessage(
         color: 'good',
         message: "Build ${_.env.JOB_NAME} ${_.env.BUILD_NUMBER} (<${_.env.BUILD_URL}|Open>)"
+        isHeaderMessage: true
       )
 
       // checkout the main source code for the project.
@@ -408,7 +409,7 @@ class SfdxProjectBuilder implements Serializable {
       sendSlackMessage(
         color: 'good',
         message: "Build completed ${_.env.JOB_NAME} ${_.env.BUILD_NUMBER} (<${_.env.BUILD_URL}|Open>)",
-        isHeaderMessage: true
+        isFooterMessage: true
       )
     }
   }
@@ -419,7 +420,7 @@ class SfdxProjectBuilder implements Serializable {
     sendSlackMessage(
       color: 'danger',
       message: "Build failed ${_.env.JOB_NAME} ${_.env.BUILD_NUMBER} (<${_.env.BUILD_URL}|Open>)",
-      isHeaderMessage: true
+      isFooterMessage: true
     )
 
   }
@@ -432,6 +433,7 @@ class SfdxProjectBuilder implements Serializable {
   }
 
   def slackResponseThreadId
+  def sendThreadedSlackMessages = false
 
   private void sendSlackMessage(Map args) {
     
@@ -439,29 +441,60 @@ class SfdxProjectBuilder implements Serializable {
 
     if ( this.slackNotificationsIsActive ) {
 
-      def slackResponse
-      
-      if ( args.isHeaderMessage ) {
+      // header messages -- should be shown if system allows it 
+      // thread messages -- should be shown only if slackResponseThreadId != null
+      // footer messages -- should always be shown -- if slackResponseThreadId != null, then footer message should be part of thread  else should be in slackChannelName
+
+      def shouldSendMessage = false 
+      def slackChannelToSendMessageTo
+
+      if ( args.isHeaderMessage && this.sendThreadedSlackMessages) {
       
         if ( this.slackChannelName ) {
+          slackChannelToSendMessageTo = this.slackChannelName
           // this messages is the start of a Slack thread in the Slack channel specified
-          slackResponse = _.slackSend channel: "${this.slackChannelName}", color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false 
+          // slackResponse = _.slackSend channel: "${this.slackChannelName}", color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false 
       
-        } else {
+        // } else {
           // this messages is the start of a Slack thread in the default Slack channel specified in the Global Config of Jenkins
+          // slackResponse = _.slackSend color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false
+        }
+      } else if ( args.isFooterMessage ) {
+        if ( this.slackChannelName ) {
+          slackChannelToSendMessageTo = this.slackChannelName
+        }
+        shouldSendMessage = true
+      } else if ( this.sendThreadedSlackMessages && this.slackResponseThreadId ) {
+        shouldSendMessage = true
+        slackChannelToSendMessageTo = this.slackResponseThreadId
+      }
+
+      debug("shouldSendMessage == ${shouldSendMessage}")
+
+      if ( shouldSendMessage ) {
+
+        debug("slackChannelToSendMessageTo == ${slackChannelToSendMessageTo}")
+  
+        def slackResponse
+
+        if ( slackChannelToSendMessageTo ) {
+          slackResponse = _.slackSend channel: "${slackChannelToSendMessageTo}", color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false
+        } else {
           slackResponse = _.slackSend color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false
         }
-        _.echo("slackResponse == ${slackResponse}")
-        _.echo("slackResponse.threadId == ${slackResponse.threadId}")
-        _.echo("slackResponseThreadId == ${slackResponseThreadId}")
-        if ( this.slackResponseThreadId == null ) {
+        debug("slackResponse == ${slackResponse}")
+        debug("slackResponse.threadId == ${slackResponse.threadId}")
+        debug("slackResponseThreadId == ${slackResponseThreadId}")
+        if ( this.slackResponseThreadId == null && slackResponse && slackResponse.threadId ) {
           // set the Slack Thread Id for future updates
           this.slackResponseThreadId = slackResponse.threadId
         }
-      } else if ( this.slackResponseThreadId ) {
-        // this message should be appended to an existing Slack thread
-        slackResponse = _.slackSend channel: "${this.slackResponseThreadId}", color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false
-      }       
+      }
+
+      // } else if ( this.slackResponseThreadId ) {
+      //   // this message should be appended to an existing Slack thread
+      //   slackResponse = _.slackSend channel: "${this.slackResponseThreadId}", color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false
+      // }       
     } else {
       _.echo("Slack notifications are currently off")
     }
