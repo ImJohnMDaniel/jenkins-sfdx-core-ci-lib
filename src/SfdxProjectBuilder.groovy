@@ -366,8 +366,8 @@ class SfdxProjectBuilder implements Serializable {
     // _.echo(rmsg)
 
     // // _.sh returnStdout: true, script: "ls -lap /root/.local/share/sfdx/node_modules/"
-    def rmsgForPluginCheck = _.sh returnStdout: true, script: "sfdx plugins"
-    _.echo(rmsgForPluginCheck)
+    // def rmsgForPluginCheck = _.sh returnStdout: true, script: "sfdx plugins"
+    // _.echo(rmsgForPluginCheck)
     // def rmsgInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install @dx-cli-toolbox/sfdx-toolbox-package-utils"
     // _.echo(rmsgInstall)
     // rmsg = _.sh returnStdout: true, script: "sfdx plugins"
@@ -558,16 +558,16 @@ class SfdxProjectBuilder implements Serializable {
   }
 
   private void initializeDockerImage() {
-    _.echo("usingDockerPipelinePlugin == ${usingDockerPipelinePlugin}")
-    _.echo("dockerImageName == ${dockerImageName}")
+    debug("usingDockerPipelinePlugin == ${usingDockerPipelinePlugin}")
+    debug("dockerImageName == ${dockerImageName}")
     if ( this.usingDockerPipelinePlugin ) {
       this.dockerImage = _.docker.image(this.dockerImageName)
-      _.echo("Using dockerImage ${this.dockerImageName} with Docker Pipeline Plugin")
+      debug("Using dockerImage ${this.dockerImageName} with Docker Pipeline Plugin")
     }
     else if ( this.usingKubernetesContainerPlugin ) {
       // WATCH - Kubernetes sets the docker image as part of the podTemplate
       // this.dockerImage = _.docker.image(this.dockerImageName)
-      _.echo("Using dockerImage ${this.dockerImageName} with Kubernetes Container Plugin")
+      debug("Using dockerImage ${this.dockerImageName} with Kubernetes Container Plugin")
     }
   }
 
