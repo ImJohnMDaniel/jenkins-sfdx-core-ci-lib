@@ -449,7 +449,7 @@ class SfdxProjectBuilder implements Serializable {
 
       def shouldSendMessage = false 
       def slackChannelToSendMessageTo
-      def shouldReplyBroadcast = false
+      def shouldReplyBroadcast = 'false'
 
       if ( args.isHeaderMessage && this.sendThreadedSlackMessages) {
       
@@ -470,7 +470,7 @@ class SfdxProjectBuilder implements Serializable {
           slackChannelToSendMessageTo = this.slackChannelName
         }
         if ( args.isBroadcastingReply ) {
-          shouldReplyBroadcast = true
+          shouldReplyBroadcast = 'true'
         }
         shouldSendMessage = true
       } else if ( this.sendThreadedSlackMessages && this.slackResponseThreadId ) {
@@ -487,9 +487,9 @@ class SfdxProjectBuilder implements Serializable {
         def slackResponse
 
         if ( slackChannelToSendMessageTo ) {
-          slackResponse = _.slackSend channel: "${slackChannelToSendMessageTo}", color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false
+          slackResponse = _.slackSend channel: "${slackChannelToSendMessageTo}", color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false, replyBroadcast: ${shouldReplyBroadcast}
         } else {
-          slackResponse = _.slackSend color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false
+          slackResponse = _.slackSend color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false, replyBroadcast: ${shouldReplyBroadcast}
         }
         debug("slackResponse == ${slackResponse}")
         debug("slackResponse.threadId == ${slackResponse.threadId}")
