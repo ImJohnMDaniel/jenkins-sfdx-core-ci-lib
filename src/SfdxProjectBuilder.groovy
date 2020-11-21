@@ -26,6 +26,8 @@ class SfdxProjectBuilder implements Serializable {
 
   private def packageInstallationKey
 
+  private def loggingDebugMessages = false
+
   private def alwaysBuildPackage = false
 
   private def doNotBuildPackage = false
@@ -181,6 +183,12 @@ class SfdxProjectBuilder implements Serializable {
       this.stageToStopBuildAt = stageToStopBuildAt
       _.echo("SfdxProjectBuilder Parameter set : Stopping build after stage ${stageToStopBuildAt.toString()}")
     }
+    return this
+  }
+
+  public SfdxProjectBuilder setDebugOn() {
+    this.loggingDebugMessages = true
+    _.echo('SfdxProjectBuilder Parameter set : Logging of debug messages is turned on')
     return this
   }
 
@@ -426,6 +434,9 @@ class SfdxProjectBuilder implements Serializable {
   def slackResponseThreadId
 
   private void sendSlackMessage(Map args) {
+    
+    debug( "sendSlackMessage with message of '${args.message}'")
+
     if ( this.slackNotificationsIsActive ) {
 
       def slackResponse
@@ -1055,5 +1066,11 @@ class SfdxProjectBuilder implements Serializable {
 
     return result
   }        
+
+  private void debug( def message ) {
+    if ( loggingDebugMessages ) {
+      _.echo("DEBUG: ${message}")
+    }
+  }
 
 }
