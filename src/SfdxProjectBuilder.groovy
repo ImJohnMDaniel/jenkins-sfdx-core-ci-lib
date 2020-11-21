@@ -421,7 +421,7 @@ class SfdxProjectBuilder implements Serializable {
       color: 'danger',
       message: "Build failed ${_.env.JOB_NAME} ${_.env.BUILD_NUMBER} (<${_.env.BUILD_URL}|Open>)",
       isFooterMessage: true,
-      broadcastReply: true
+      isBroadcastingReply: true
     )
 
   }
@@ -469,7 +469,7 @@ class SfdxProjectBuilder implements Serializable {
         } else if ( this.slackChannelName ) {
           slackChannelToSendMessageTo = this.slackChannelName
         }
-        if ( args.broadcastReply ) {
+        if ( args.isBroadcastingReply ) {
           shouldReplyBroadcast = true
         }
         shouldSendMessage = true
@@ -487,9 +487,9 @@ class SfdxProjectBuilder implements Serializable {
         def slackResponse
 
         if ( slackChannelToSendMessageTo ) {
-          slackResponse = _.slackSend channel: "${slackChannelToSendMessageTo}", color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false, replyBroadcast: ${shouldReplyBroadcast}
+          slackResponse = _.slackSend channel: "${slackChannelToSendMessageTo}", color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false
         } else {
-          slackResponse = _.slackSend color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false, replyBroadcast: ${shouldReplyBroadcast}
+          slackResponse = _.slackSend color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false
         }
         debug("slackResponse == ${slackResponse}")
         debug("slackResponse.threadId == ${slackResponse.threadId}")
