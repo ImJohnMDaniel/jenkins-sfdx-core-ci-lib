@@ -33,8 +33,6 @@ class SfdxProjectBuilder implements Serializable {
   // private def slackChannelName = '#ci-alerts'
   private def slackChannelName
 
-  private def slackTokenCredentialId = 'slack-integration-token-credential'
-
   private def notifyOnSuccessfulBuilds = false 
 
   private def slackNotificationsIsActive = false
@@ -52,6 +50,8 @@ class SfdxProjectBuilder implements Serializable {
   private boolean dependencyBuildsBranchMasterMainAndNullAreTheSame = true
 
   private def numberOfBuildsToKeep = '30'
+
+  private def stageToStopBuildAt = 99
 
   // the parsed contents of the SFDX project's configuration
   private def SFDX_PROJECT
@@ -176,6 +176,14 @@ class SfdxProjectBuilder implements Serializable {
     return this
   }
 
+  public SfdxProjectBuilder stopBuildAtStage( Integer stageToStopBuildAt ) {
+    if ( stageToStopBuildAt != null ) {
+      this.stageToStopBuildAt = stageToStopBuildAt
+      _.echo("SfdxProjectBuilder Parameter set : Stopping build after stage ${stageToStopBuildAt.toString()}")
+    }
+    return this
+  }
+
   // vo id setBuildDescription(Map args) {
   //   jenkinsFileScript.currentBuild.displayName = args.title
   //   jenkinsFileScript.currentBuild.description = args.description
@@ -230,59 +238,73 @@ class SfdxProjectBuilder implements Serializable {
   private void processStages() {
     try {
       _.stage('Validate') {
-        sendSlackMessage(
-          color: 'good',
-          message: "Validation stage"
-        )
-        validateStage()
+        if ( this.stageToStopBuildAt > 1 ) {
+          sendSlackMessage(
+            color: 'good',
+            message: "Validation stage"
+          )
+          validateStage()
+        }
       } // stage: Validate
 
       _.stage('Initialize') {
-        sendSlackMessage(
-          color: 'good',
-          message: "Initialization stage"
-        )
-        initializeStage()
+        if ( this.stageToStopBuildAt > 2 ) {
+          sendSlackMessage(
+            color: 'good',
+            message: "Initialization stage"
+          )
+          initializeStage()
+        }
       } // stage: Initialize
 
       _.stage('Process Resources') {
-        sendSlackMessage(
-          color: 'good',
-          message: "Processing Resources stage"
-        )
-        processResourcesStage()
+        if ( this.stageToStopBuildAt > 3 ) {
+          sendSlackMessage(
+            color: 'good',
+            message: "Processing Resources stage"
+          )
+          processResourcesStage()
+        }
       } // stage: Process Resources
 
       _.stage('Compile') {
-        sendSlackMessage(
-          color: 'good',
-          message: "Compilation stage"
-        )
-        compileStage()
+        if ( this.stageToStopBuildAt > 4 ) {
+          sendSlackMessage(
+            color: 'good',
+            message: "Compilation stage"
+          )
+          compileStage()
+        }
       } // stage: Compile
 
       _.stage('Test') {
-        sendSlackMessage(
-          color: 'good',
-          message: "Testing stage"
-        )
-        testStage()
+        if ( this.stageToStopBuildAt > 5 ) {
+          sendSlackMessage(
+            color: 'good',
+            message: "Testing stage"
+          )
+          testStage()
+        }
       } // stage: Test
 
       _.stage('Package') {
-        sendSlackMessage(
-          color: 'good',
-          message: "Packaging stage"
-        )
-        packageStage()
+        if ( this.stageToStopBuildAt > 6 ) {
+          sendSlackMessage(
+            color: 'good',
+            message: "Packaging stage"
+          )
+          packageStage()
+        }
       } // stage: Package
 
       _.stage('Artifact Recording') {
-        sendSlackMessage(
-          color: 'good',
-          message: "Artifact Recording stage"
-        )
-        artifactRecordingStage()
+        if ( this.stageToStopBuildAt > 7 ) {
+          sendSlackMessage(
+            color: 'good',
+            message: "Artifact Recording stage"
+          )
+          artifactRecordingStage()
+        }
       } // stage: Artifact Recording
 
       postSuccess()
@@ -405,14 +427,18 @@ class SfdxProjectBuilder implements Serializable {
 
   private void sendSlackMessage(Map args) {
     if ( this.slackNotificationsIsActive ) {
+
       def slackResponse
+      
       if ( args.isHeaderMessage ) {
+      
         if ( this.slackChannelName ) {
           // this messages is the start of a Slack thread in the Slack channel specified
-          slackResponse = _.slackSend channel: "${this.slackChannelName}", color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false, tokenCredentialId: "${this.slackTokenCredentialId}" 
+          slackResponse = _.slackSend channel: "${this.slackChannelName}", color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false 
+      
         } else {
           // this messages is the start of a Slack thread in the default Slack channel specified in the Global Config of Jenkins
-          slackResponse = _.slackSend color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false, tokenCredentialId: "${this.slackTokenCredentialId}" 
+          slackResponse = _.slackSend color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false
         }
         _.echo("slackResponse == ${slackResponse}")
         _.echo("slackResponse.threadId == ${slackResponse.threadId}")
@@ -423,7 +449,7 @@ class SfdxProjectBuilder implements Serializable {
         }
       } else if ( this.slackResponseThreadId ) {
         // this message should be appended to an existing Slack thread
-        slackResponse = _.slackSend channel: "${this.slackResponseThreadId}", color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false, tokenCredentialId: "${this.slackTokenCredentialId}" 
+        slackResponse = _.slackSend channel: "${this.slackResponseThreadId}", color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false
       }       
     } else {
       _.echo("Slack notifications are currently off")
@@ -513,10 +539,6 @@ class SfdxProjectBuilder implements Serializable {
 
     if ( _.env.DEFAULT_DOCKER_IMAGE_NAME ) {
       this.dockerImageName = _.env.DEFAULT_DOCKER_IMAGE_NAME
-    }
-
-    if ( _.env.SLACK_TOKEN_CREDENTIAL_ID ) {
-      this.slackTokenCredentialId = _.env.SLACK_TOKEN_CREDENTIAL_ID
     }
 
     if ( _.env.UPSTREAM_PROJECT_PREFIX ) {
