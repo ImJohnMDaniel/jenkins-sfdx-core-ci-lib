@@ -245,75 +245,75 @@ class SfdxProjectBuilder implements Serializable {
 
   private void processStages() {
     try {
-      _.stage('Validate') {
-        if ( this.stageToStopBuildAt > 1 ) {
+      if ( this.stageToStopBuildAt > 1 ) {
+        _.stage('Validate') {
           sendSlackMessage(
             color: 'good',
             message: "Validation stage"
           )
           validateStage()
-        }
-      } // stage: Validate
+        } // stage: Validate
+      }
 
-      _.stage('Initialize') {
-        if ( this.stageToStopBuildAt > 2 ) {
+      if ( this.stageToStopBuildAt > 2 ) {
+        _.stage('Initialize') {
           sendSlackMessage(
             color: 'good',
             message: "Initialization stage"
           )
           initializeStage()
-        }
-      } // stage: Initialize
+        } // stage: Initialize
+      }
 
-      _.stage('Process Resources') {
-        if ( this.stageToStopBuildAt > 3 ) {
+      if ( this.stageToStopBuildAt > 3 ) {
+        _.stage('Process Resources') {
           sendSlackMessage(
             color: 'good',
             message: "Processing Resources stage"
           )
           processResourcesStage()
-        }
-      } // stage: Process Resources
+        } // stage: Process Resources
+      }
 
-      _.stage('Compile') {
-        if ( this.stageToStopBuildAt > 4 ) {
+      if ( this.stageToStopBuildAt > 4 ) {
+        _.stage('Compile') {
           sendSlackMessage(
             color: 'good',
             message: "Compilation stage"
           )
           compileStage()
-        }
-      } // stage: Compile
+        } // stage: Compile
+      }
 
-      _.stage('Test') {
-        if ( this.stageToStopBuildAt > 5 ) {
+      if ( this.stageToStopBuildAt > 5 ) {
+        _.stage('Test') {
           sendSlackMessage(
             color: 'good',
             message: "Testing stage"
           )
           testStage()
-        }
-      } // stage: Test
+        } // stage: Test
+      }
 
-      _.stage('Package') {
-        if ( this.stageToStopBuildAt > 6 ) {
+      if ( this.stageToStopBuildAt > 6 ) {
+        _.stage('Package') {
           sendSlackMessage(
             color: 'good',
             message: "Packaging stage"
           )
           packageStage()
-        }
-      } // stage: Package
+        } // stage: Package
+      }
 
-      _.stage('Artifact Recording') {
-        if ( this.stageToStopBuildAt > 7 ) {
+      if ( this.stageToStopBuildAt > 7 ) {
+        _.stage('Artifact Recording') {
           sendSlackMessage(
             color: 'good',
             message: "Artifact Recording stage"
           )
           artifactRecordingStage()
-        }
-      } // stage: Artifact Recording
+        } // stage: Artifact Recording
+      } 
 
       postSuccess()
     }
