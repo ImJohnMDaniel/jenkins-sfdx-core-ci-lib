@@ -32,8 +32,11 @@ class SfdxProjectBuilder implements Serializable {
 
   private def doNotBuildPackage = false
 
-  // private def slackChannelName = '#ci-alerts'
   private def slackChannelName
+
+  private def slackResponseThreadId
+
+  private def sendThreadedSlackMessages = true
 
   private def notifyOnSuccessfulBuilds = false 
 
@@ -432,9 +435,6 @@ class SfdxProjectBuilder implements Serializable {
     // temporary workaround pending resolution to this issue https://github.com/forcedotcom/cli/issues/81.  Also, see reference in authenticateToDevHub() method
     _.fileOperations([_.fileDeleteOperation(excludes: '', includes: 'server.key')])
   }
-
-  def slackResponseThreadId
-  def sendThreadedSlackMessages = true
 
   private void sendSlackMessage(Map args) {
     
