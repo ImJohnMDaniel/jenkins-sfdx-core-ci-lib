@@ -483,13 +483,14 @@ class SfdxProjectBuilder implements Serializable {
       if ( shouldSendMessage ) {
 
         debug("slackChannelToSendMessageTo == ${slackChannelToSendMessageTo}")
+        debug("shouldReplyBroadcast == ${shouldReplyBroadcast}")
   
         def slackResponse
 
         if ( slackChannelToSendMessageTo ) {
-          slackResponse = _.slackSend channel: "${slackChannelToSendMessageTo}", color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false, replyBroadcast: ${shouldReplyBroadcast}
+          slackResponse = _.slackSend channel: "${slackChannelToSendMessageTo}", color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false, replyBroadcast: "${shouldReplyBroadcast}"
         } else {
-          slackResponse = _.slackSend color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false, replyBroadcast: ${shouldReplyBroadcast}
+          slackResponse = _.slackSend color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false, replyBroadcast: "${shouldReplyBroadcast}"
         }
         debug("slackResponse == ${slackResponse}")
         debug("slackResponse.threadId == ${slackResponse.threadId}")
