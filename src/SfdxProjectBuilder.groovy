@@ -462,7 +462,9 @@ class SfdxProjectBuilder implements Serializable {
         }
         shouldSendMessage = true
       } else if ( args.isFooterMessage ) {
-        if ( this.slackChannelName ) {
+        if ( this.slackResponseThreadId ) {
+          slackChannelToSendMessageTo = this.slackResponseThreadId
+        } else if ( this.slackChannelName ) {
           slackChannelToSendMessageTo = this.slackChannelName
         }
         shouldSendMessage = true
