@@ -246,7 +246,7 @@ class SfdxProjectBuilder implements Serializable {
 
   private void processStages() {
     try {
-      if ( this.stageToStopBuildAt > 1 ) {
+      if ( this.stageToStopBuildAt >= 1 ) {
         _.stage('Validate') {
           sendSlackMessage(
             color: 'good',
@@ -256,7 +256,7 @@ class SfdxProjectBuilder implements Serializable {
         } // stage: Validate
       }
 
-      if ( this.stageToStopBuildAt > 2 ) {
+      if ( this.stageToStopBuildAt >= 2 ) {
         _.stage('Initialize') {
           sendSlackMessage(
             color: 'good',
@@ -266,7 +266,7 @@ class SfdxProjectBuilder implements Serializable {
         } // stage: Initialize
       }
 
-      if ( this.stageToStopBuildAt > 3 ) {
+      if ( this.stageToStopBuildAt >= 3 ) {
         _.stage('Process Resources') {
           sendSlackMessage(
             color: 'good',
@@ -276,7 +276,7 @@ class SfdxProjectBuilder implements Serializable {
         } // stage: Process Resources
       }
 
-      if ( this.stageToStopBuildAt > 4 ) {
+      if ( this.stageToStopBuildAt >= 4 ) {
         _.stage('Compile') {
           sendSlackMessage(
             color: 'good',
@@ -286,7 +286,7 @@ class SfdxProjectBuilder implements Serializable {
         } // stage: Compile
       }
 
-      if ( this.stageToStopBuildAt > 5 ) {
+      if ( this.stageToStopBuildAt >= 5 ) {
         _.stage('Test') {
           sendSlackMessage(
             color: 'good',
@@ -296,7 +296,7 @@ class SfdxProjectBuilder implements Serializable {
         } // stage: Test
       }
 
-      if ( this.stageToStopBuildAt > 6 ) {
+      if ( this.stageToStopBuildAt >= 6 ) {
         _.stage('Package') {
           sendSlackMessage(
             color: 'good',
@@ -306,7 +306,7 @@ class SfdxProjectBuilder implements Serializable {
         } // stage: Package
       }
 
-      if ( this.stageToStopBuildAt > 7 ) {
+      if ( this.stageToStopBuildAt >= 7 ) {
         _.stage('Artifact Recording') {
           sendSlackMessage(
             color: 'good',
