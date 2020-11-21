@@ -433,11 +433,12 @@ class SfdxProjectBuilder implements Serializable {
   }
 
   def slackResponseThreadId
-  def sendThreadedSlackMessages = false
+  def sendThreadedSlackMessages = true
 
   private void sendSlackMessage(Map args) {
     
-    debug( "sendSlackMessage with message of '${args.message}'")
+    debug("sendSlackMessage with message of '${args.message}'")
+    debug("sendThreadedSlackMessages == ${sendThreadedSlackMessages}")
 
     if ( this.slackNotificationsIsActive ) {
 
