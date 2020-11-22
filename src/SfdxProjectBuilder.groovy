@@ -2,7 +2,7 @@ class SfdxProjectBuilder implements Serializable {
 
   private final def _ // the member variable that contains the jenkinsFileScript
 
-  private def SFDX_SCRATCH_ORG_DEF_FILE = "config/project-scratch-def.json"
+  private def sfdxScratchOrgDefinitionFile = "config/project-scratch-def.json"
 
   private def dockerImage
 
@@ -12,15 +12,15 @@ class SfdxProjectBuilder implements Serializable {
 
   private def dockerImageName = 'salesforce/salesforcedx:latest-full'
 
-  private def RUN_ARTIFACT_DIR 
+  private def workingArtifactDirectory 
 
-  private def SFDX_SCRATCH_ORG_ALIAS
+  private def sfdxScratchOrgAlias
 
-  private def SFDX_NEW_PACKAGE
+  private def sfdxNewPackage
 
-  private def SFDX_NEW_PACKAGE_VERSION
+  private def sfdxNewPackageVersion
 
-  private def SFDX_NEW_PACKAGE_VERSION_ID
+  private def sfdxNewPackageVersionId
 
   private def installationKeys
 
@@ -59,7 +59,7 @@ class SfdxProjectBuilder implements Serializable {
   private def stageToStopBuildAt = 99
 
   // the parsed contents of the SFDX project's configuration
-  private def SFDX_PROJECT
+  private def sfdxPackage
 
   SfdxProjectBuilder(def jenkinsFileScript) {
     _ = jenkinsFileScript
@@ -94,7 +94,7 @@ class SfdxProjectBuilder implements Serializable {
   public SfdxProjectBuilder setScratchOrgDefFile(def scratchOrgDefFile) {
     if ( ! scratchOrgDefFile.empty ) {
        _.echo("SfdxProjectBuilder Parameter : scratchOrgDefFile has been set to ${scratchOrgDefFile}")
-       this.SFDX_SCRATCH_ORG_DEF_FILE = scratchOrgDefFile
+       this.sfdxScratchOrgDefinitionFile = scratchOrgDefFile
     }
     return this
   }
@@ -333,7 +333,7 @@ class SfdxProjectBuilder implements Serializable {
     
     installRequiredCLIPlugins()
     // setup this build's unique artifact directory
-    _.sh "mkdir -p ${RUN_ARTIFACT_DIR}"
+    _.sh "mkdir -p ${this.workingArtifactDirectory}"
 
     readAndParseSFDXProjectFile()
     authenticateToDevHub()
@@ -572,8 +572,8 @@ class SfdxProjectBuilder implements Serializable {
   }
 
   private void initializeBuildScriptVariables() {
-    RUN_ARTIFACT_DIR = "target/${_.env.BUILD_NUMBER}"
-    SFDX_SCRATCH_ORG_ALIAS = "bluesphere-${_.env.BUILD_TAG.replaceAll("/", "_").replaceAll(" ","_")}"
+    this.workingArtifactDirectory = "target/${_.env.BUILD_NUMBER}"
+    this.sfdxScratchOrgAlias = "bluesphere-${_.env.BUILD_TAG.replaceAll("/", "_").replaceAll(" ","_")}"
     if ( _.env.TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_MAIN_AND_NULL_THE_SAME != null ) {
       this.dependencyBuildsBranchMasterMainAndNullAreTheSame = _.env.TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_MAIN_AND_NULL_THE_SAME.toBoolean()
     }
@@ -602,7 +602,7 @@ class SfdxProjectBuilder implements Serializable {
 
   private void readAndParseSFDXProjectFile() {
     _.echo('Deserialize the sfdx-project.json ')
-    SFDX_PROJECT = jsonParse( _.readFile('sfdx-project.json') )
+    this.sfdxPackage = jsonParse( _.readFile('sfdx-project.json') )
   }
 
   private void authenticateToDevHub() {
@@ -644,7 +644,7 @@ class SfdxProjectBuilder implements Serializable {
   private void createScratchOrg() {
     _.echo('Creating scratch org')
 
-    def commandScriptString = "sfdx force:org:create --definitionfile ${this.SFDX_SCRATCH_ORG_DEF_FILE} --json --durationdays 1 --setalias ${SFDX_SCRATCH_ORG_ALIAS} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME} --wait 30"
+    def commandScriptString = "sfdx force:org:create --definitionfile ${this.sfdxScratchOrgDefinitionFile} --json --durationdays 1 --setalias ${this.sfdxScratchOrgAlias} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME} --wait 30"
 
     def response
 
@@ -685,9 +685,9 @@ class SfdxProjectBuilder implements Serializable {
   private void deleteScratchOrg() {
     if (this.scratchOrgWasCreated && this.scratchOrgShouldBeDeleted) {
       _.echo('Deleting scratch org')
-      def rc = _.sh returnStatus: true, script: "sfdx force:org:delete --noprompt --targetusername ${SFDX_SCRATCH_ORG_ALIAS} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
+      def rc = _.sh returnStatus: true, script: "sfdx force:org:delete --noprompt --targetusername ${this.sfdxScratchOrgAlias} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
       if (rc != 0) { 
-        _.error "deletion of scratch org ${SFDX_SCRATCH_ORG_ALIAS} failed"
+        _.error "deletion of scratch org ${this.sfdxScratchOrgAlias} failed"
       }
     }
   }
@@ -720,7 +720,7 @@ class SfdxProjectBuilder implements Serializable {
     //   _.echo('complete condition false')
     // }
 
-    def commandScriptString = "sfdx toolbox:package:dependencies:install --wait 240 --targetusername ${SFDX_SCRATCH_ORG_ALIAS} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME} --json"
+    def commandScriptString = "sfdx toolbox:package:dependencies:install --wait 240 --targetusername ${this.sfdxScratchOrgAlias} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME} --json"
     
     if ( (_.env.BRANCH_NAME != 'master' && _.env.BRANCH_NAME != 'main') || ( (_.env.BRANCH_NAME == 'master' || _.env.BRANCH_NAME == 'main') && !this.dependencyBuildsBranchMasterMainAndNullAreTheSame ) ) {
       commandScriptString = commandScriptString + " --branch ${_.env.BRANCH_NAME}"
@@ -771,7 +771,7 @@ class SfdxProjectBuilder implements Serializable {
 
   private void compileCode() {
     _.echo("Push To Scratch Org And Compile")
-    def rmsg = _.sh returnStdout: true, script: "sfdx force:source:push --json --targetusername ${SFDX_SCRATCH_ORG_ALIAS}"
+    def rmsg = _.sh returnStdout: true, script: "sfdx force:source:push --json --targetusername ${this.sfdxScratchOrgAlias}"
     // printf rmsg
 
     def response = jsonParse( rmsg )
@@ -788,18 +788,18 @@ class SfdxProjectBuilder implements Serializable {
       def rmsg 
       
       try {
-        rmsg = _.sh returnStdout: true, label: 'Executing force:apex:test:run...', script: "sfdx force:apex:test:run --testlevel RunLocalTests --outputdir ${RUN_ARTIFACT_DIR} --resultformat tap --codecoverage --wait 60 --json --targetusername ${SFDX_SCRATCH_ORG_ALIAS}"
+        rmsg = _.sh returnStdout: true, label: 'Executing force:apex:test:run...', script: "sfdx force:apex:test:run --testlevel RunLocalTests --outputdir ${this.workingArtifactDirectory} --resultformat tap --codecoverage --wait 60 --json --targetusername ${this.sfdxScratchOrgAlias}"
       }
       catch (ex) {
         _.echo(ex.getMessage())
         _.echo('Restarting unit test run')
         // remove the test files from the previous run
-        _.fileOperations([_.folderDeleteOperation( RUN_ARTIFACT_DIR ), _.folderCreateOperation( RUN_ARTIFACT_DIR )])
+        _.fileOperations([_.folderDeleteOperation( this.workingArtifactDirectory ), _.folderCreateOperation( this.workingArtifactDirectory )])
 
         // execute all unit tests a second time.  There is a bug with snapshots and CMDT-based 
         //      Dependency injection and Apex Unit Tests.  The workaround is to simply
         //      re-run the unit tests again.
-        rmsg = _.sh returnStdout: true, label: 'Executing force:apex:test:run...', script: "sfdx force:apex:test:run --testlevel RunLocalTests --outputdir ${RUN_ARTIFACT_DIR} --resultformat junit --codecoverage --wait 60 --json --targetusername ${SFDX_SCRATCH_ORG_ALIAS}"
+        rmsg = _.sh returnStdout: true, label: 'Executing force:apex:test:run...', script: "sfdx force:apex:test:run --testlevel RunLocalTests --outputdir ${this.workingArtifactDirectory} --resultformat junit --codecoverage --wait 60 --json --targetusername ${this.sfdxScratchOrgAlias}"
       }
       finally {
         collectTestResults()
@@ -817,7 +817,7 @@ class SfdxProjectBuilder implements Serializable {
 
   private void collectTestResults() {
     _.echo( "Collect All Test Results")
-    _.junit keepLongStdio: true, testResults: "${RUN_ARTIFACT_DIR}/**/*-junit.xml"
+    _.junit keepLongStdio: true, testResults: "${this.workingArtifactDirectory}/**/*-junit.xml"
   }
 
   private void packageTheProject() {
@@ -832,25 +832,25 @@ class SfdxProjectBuilder implements Serializable {
     def pathToUseForPackageVersionCreation
 
     // What is the default package and what is its directory?
-    for ( packageDirectory in SFDX_PROJECT.packageDirectories ) {
+    for ( packageDirectory in this.sfdxPackage.packageDirectories ) {
       _.echo("packageDirectory == ${packageDirectory}")
       if ( packageDirectory.default ) {
           _.echo("packageDirectory is default")
           pathToUseForPackageVersionCreation = packageDirectory.path 
 
           if (packageDirectory.package == null) {
-            // there is no package specified in the SFDX_PROJECT.  Simple exit out of this method
+            // there is no package specified in the this.sfdxPackage.  Simple exit out of this method
             _.echo('No package information configured on this project.')
             return
           }
 
-          SFDX_NEW_PACKAGE = this.resolveAliasToId( packageDirectory.package, SFDX_PROJECT )
+          this.sfdxNewPackage = this.resolveAliasToId( packageDirectory.package, this.sfdxPackage )
           break 
       }
     }
 
-    if ( SFDX_NEW_PACKAGE == null ) {
-      _.error  "unable to determine SFDX_NEW_PACKAGE in stage:package"
+    if ( this.sfdxNewPackage == null ) {
+      _.error  "unable to determine this.sfdxNewPackage in stage:package"
     }
 
     if ( pathToUseForPackageVersionCreation == null ) {
@@ -884,18 +884,18 @@ class SfdxProjectBuilder implements Serializable {
         _.error "package version creation has failed -- ${packageVersionCreationResponse.result.Error}"
     } else {
 
-        SFDX_NEW_PACKAGE_VERSION = packageVersionCreationResponse.result
+        this.sfdxNewPackageVersion = packageVersionCreationResponse.result
 
-        if( SFDX_NEW_PACKAGE_VERSION.Status != 'Success') {
+        if( this.sfdxNewPackageVersion.Status != 'Success') {
             // The package version creation is still underway
             def packageVersionCreationCheckResponseResult = ''
 
             _.timeout(360) {
                 _.waitUntil {
                     // script {
-                        // use the SFDX_NEW_PACKAGE_VERSION.Id for this command verses SFDX_NEW_PACKAGE_VERSION_ID because we are yet
+                        // use the this.sfdxNewPackageVersion.Id for this command verses this.sfdxNewPackageVersionId because we are yet
                         //  certain that the package was created correctly
-                        rmsg = _.sh returnStdout: true, script: "sfdx force:package:version:create:report --packagecreaterequestid ${SFDX_NEW_PACKAGE_VERSION.Id} --json --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
+                        rmsg = _.sh returnStdout: true, script: "sfdx force:package:version:create:report --packagecreaterequestid ${this.sfdxNewPackageVersion.Id} --json --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
                         // printf rmsg
 
                         def packageVersionCreationCheckResponse = jsonParse(rmsg) 
@@ -908,24 +908,24 @@ class SfdxProjectBuilder implements Serializable {
 
                         // The JSON "result" is currently an array.  That is a SFDX bug -- W-4621618
                         // Refer to Salesforce DX Success Community post for details https://success.salesforce.com/0D53A00003OTsAD
-                        SFDX_NEW_PACKAGE_VERSION = packageVersionCreationCheckResponse.result[0]
+                        this.sfdxNewPackageVersion = packageVersionCreationCheckResponse.result[0]
                         
-                        if ( packageVersionCreationCheckResponse.status != 0 || SFDX_NEW_PACKAGE_VERSION.Status == 'Error' ) {
+                        if ( packageVersionCreationCheckResponse.status != 0 || this.sfdxNewPackageVersion.Status == 'Error' ) {
                           _.echo ("packageVersionCreationCheckResponse == ${packageVersionCreationCheckResponse}")
-                          _.error "force:package:version:create:report failed -- ${SFDX_NEW_PACKAGE_VERSION.Error}"
+                          _.error "force:package:version:create:report failed -- ${this.sfdxNewPackageVersion.Error}"
                         }
 
                         def isPackageVersionCreationCompleted
 
-                        // _.echo ( "SFDX_NEW_PACKAGE_VERSION.Status == ${SFDX_NEW_PACKAGE_VERSION.Status}" )
+                        // _.echo ( "this.sfdxNewPackageVersion.Status == ${this.sfdxNewPackageVersion.Status}" )
                         
                         if ( packageVersionCreationCheckResponse.status == 0 
-                            && SFDX_NEW_PACKAGE_VERSION.Status == "Success") {
+                            && this.sfdxNewPackageVersion.Status == "Success") {
                             isPackageVersionCreationCompleted = true 
                         } else {
                             isPackageVersionCreationCompleted = false 
                         }
-                        _.echo( "Current status == ${SFDX_NEW_PACKAGE_VERSION.Status}")
+                        _.echo( "Current status == ${this.sfdxNewPackageVersion.Status}")
 
                         return isPackageVersionCreationCompleted
                     // } // script
@@ -939,14 +939,14 @@ class SfdxProjectBuilder implements Serializable {
     // failure point is probably in this area
     // _.echo( "packageVersionCreationResponse == ${packageVersionCreationResponse}")
 
-    SFDX_NEW_PACKAGE_VERSION_ID = SFDX_NEW_PACKAGE_VERSION.SubscriberPackageVersionId
+    this.sfdxNewPackageVersionId = this.sfdxNewPackageVersion.SubscriberPackageVersionId
 
     // tagging the build
     tagTheBuild()
 
-    // _.echo( "SFDX_NEW_PACKAGE_VERSION == ${SFDX_NEW_PACKAGE_VERSION}")
+    // _.echo( "this.sfdxNewPackageVersion == ${this.sfdxNewPackageVersion}")
 
-    _.echo( "SFDX_NEW_PACKAGE_VERSION_ID == ${SFDX_NEW_PACKAGE_VERSION_ID}")
+    _.echo( "this.sfdxNewPackageVersionId == ${this.sfdxNewPackageVersionId}")
   }
 
   private void tagTheBuild() {
@@ -965,7 +965,7 @@ class SfdxProjectBuilder implements Serializable {
     _.echo("finding all package versions dependencies and recording them for the build")
 
     // Get the list of package versions that are currently installed in the default scratch org
-    def rmsg = _.sh returnStdout: true, script: "sfdx force:package:installed:list --json --targetusername ${SFDX_SCRATCH_ORG_ALIAS}"
+    def rmsg = _.sh returnStdout: true, script: "sfdx force:package:installed:list --json --targetusername ${this.sfdxScratchOrgAlias}"
     def allPackageVersionsInstalledInScratchOrg = jsonParse(rmsg).result
 
     // Get the complete list of package versions that are currently available in the DevHub
@@ -986,25 +986,25 @@ class SfdxProjectBuilder implements Serializable {
 
     // This is where the new package version that was just created will be captured as an artifact for Jenkins
     // this will be where the fingerprints of the build are created and then stored in Jenkins
-    if ( SFDX_NEW_PACKAGE_VERSION_ID != null ) {
+    if ( this.sfdxNewPackageVersionId != null ) {
 
         // then a package was created.  Record its finger prints
         _.echo("finding all package versions for package ids found")
-        rmsg = _.sh returnStdout: true, script: "sfdx force:package:version:list --packages ${SFDX_NEW_PACKAGE} --json --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
+        rmsg = _.sh returnStdout: true, script: "sfdx force:package:version:list --packages ${this.sfdxNewPackage} --json --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
         //printf rmsg
 
         def response = jsonParse( rmsg )
         
         def allPackageVersionsAvailable = response.result
 
-        // loop through all allPackageVersionsAvailable until you find the new one with the SFDX_NEW_PACKAGE_VERSION_ID
+        // loop through all allPackageVersionsAvailable until you find the new one with the this.sfdxNewPackageVersionId
         for ( packageVersionAvailable in allPackageVersionsAvailable ) {
             _.echo ("packageVersionAvailable == ${packageVersionAvailable}")
-            _.echo ("SFDX_NEW_PACKAGE == ${SFDX_NEW_PACKAGE}")
+            _.echo ("this.sfdxNewPackage == ${this.sfdxNewPackage}")
             _.echo ("packageVersionAvailable.Package2Id == ${packageVersionAvailable.Package2Id}")
-            _.echo ("SFDX_NEW_PACKAGE_VERSION_ID == ${SFDX_NEW_PACKAGE_VERSION_ID}")
+            _.echo ("this.sfdxNewPackageVersionId == ${this.sfdxNewPackageVersionId}")
             _.echo ("packageVersionAvailable.SubscriberPackageVersionId == ${packageVersionAvailable.SubscriberPackageVersionId}")
-            if ( SFDX_NEW_PACKAGE == packageVersionAvailable.Package2Id && SFDX_NEW_PACKAGE_VERSION_ID == packageVersionAvailable.SubscriberPackageVersionId) {
+            if ( this.sfdxNewPackage == packageVersionAvailable.Package2Id && this.sfdxNewPackageVersionId == packageVersionAvailable.SubscriberPackageVersionId) {
                 _.echo ("found a match")
                 recordPackageVersionArtifact( packageVersionAvailable )
                 break
@@ -1012,7 +1012,7 @@ class SfdxProjectBuilder implements Serializable {
         }
     }
     
-    _.archiveArtifacts allowEmptyArchive: true, artifacts: "${RUN_ARTIFACT_DIR}/*.packageVersion", fingerprint: true, onlyIfSuccessful: true
+    _.archiveArtifacts allowEmptyArchive: true, artifacts: "${this.workingArtifactDirectory}/*.packageVersion", fingerprint: true, onlyIfSuccessful: true
   }
 
   // @NonCPS
@@ -1021,24 +1021,24 @@ class SfdxProjectBuilder implements Serializable {
   }
 
   // @NonCPS
-  private String resolveAliasToId( def alias, def SFDX_PROJECT ) {
+  private String resolveAliasToId( def alias, def sfdxPackage ) {
     _.echo("resolveAliasToId starting")
     _.echo("alias == ${alias}")
-    if ( alias.empty || SFDX_PROJECT == null || SFDX_PROJECT.packageAliases == null ) {
+    if ( alias.empty || sfdxPackage == null || sfdxPackage.packageAliases == null ) {
       return null
     }
-    for ( packageAliasKey in SFDX_PROJECT.packageAliases.keySet() ) {
+    for ( packageAliasKey in sfdxPackage.packageAliases.keySet() ) {
         _.echo("packageAliasKey == ${packageAliasKey}")
         // _.echo("packageAlias.containsKey(alias) == ${packageAlias.containsKey(alias)}")
         if ( alias == packageAliasKey ) {
             _.echo ("found a match")
-            return SFDX_PROJECT.packageAliases.get(alias)
+            return sfdxPackage.packageAliases.get(alias)
         }
     }
   }
 
   private void recordPackageVersionArtifact( def packageVersion ) {
-    def fileToFingerprint = "${RUN_ARTIFACT_DIR}/${packageVersion.Package2Name.replaceAll(" ", "_")}-${packageVersion.Package2Id}--v${packageVersion.Version}"
+    def fileToFingerprint = "${this.workingArtifactDirectory}/${packageVersion.Package2Name.replaceAll(" ", "_")}-${packageVersion.Package2Id}--v${packageVersion.Version}"
 
     _.echo("packageVersion == ${packageVersion}")
 
@@ -1115,5 +1115,4 @@ class SfdxProjectBuilder implements Serializable {
       _.echo("DEBUG: ${message}")
     }
   }
-
 }
