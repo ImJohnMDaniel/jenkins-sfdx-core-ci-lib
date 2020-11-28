@@ -720,7 +720,7 @@ class SfdxProjectBuilder implements Serializable {
     //   _.echo('complete condition false')
     // }
 
-    def commandScriptString = "sfdx toolbox:package:dependencies:install --wait 240 --targetusername ${this.sfdxScratchOrgAlias} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME} --json"
+    def commandScriptString = "sfdx toolbox:package:dependencies:install --wait 240 --noprecheck --targetusername ${this.sfdxScratchOrgAlias} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME} --json"
     
     if ( (_.env.BRANCH_NAME != 'master' && _.env.BRANCH_NAME != 'main') || ( (_.env.BRANCH_NAME == 'master' || _.env.BRANCH_NAME == 'main') && !this.dependencyBuildsBranchMasterMainAndNullAreTheSame ) ) {
       commandScriptString = commandScriptString + " --branch ${_.env.BRANCH_NAME}"
