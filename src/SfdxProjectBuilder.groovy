@@ -965,8 +965,24 @@ class SfdxProjectBuilder implements Serializable {
     _.echo("finding all package versions dependencies and recording them for the build")
 
     // Get the list of package versions that are currently installed in the default scratch org
-    def rmsg = _.sh returnStdout: true, script: "sfdx force:package:installed:list --json --targetusername ${this.sfdxScratchOrgAlias}"
-    def allPackageVersionsInstalledInScratchOrg = jsonParse(rmsg).result
+    def rmsg
+    def jsonParsedResponse
+    try {
+      rmsg = _.sh returnStdout: true, script: "sfdx force:package:installed:list --json --targetusername ${this.sfdxScratchOrgAlias}"
+      jsonParsedResponse = jsonParse(rmsg)
+      _.echo("jsonParsedResponse.exitCode == " + jsonParsedResponse.exitCode)
+      _.echo("jsonParsedResponse.name == " + jsonParsedResponse.name)
+      if ( jsonParsedResponse.exitCode == 1 && jsonParsedResponse.name.equals("QUERY_TIMEOUT") ) {
+        _.sleep time: 1, unit: 'MINUTES'
+        rmsg = _.sh returnStdout: true, script: "sfdx force:package:installed:list --json --targetusername ${this.sfdxScratchOrgAlias}"
+        jsonParsedResponse = jsonParse(rmsg)
+      }
+    }
+    catch (ex) {
+      _.echo( ex.getMessage() )
+    }
+
+    def allPackageVersionsInstalledInScratchOrg = jsonParsedResponse.result
 
     // Get the complete list of package versions that are currently available in the DevHub
     rmsg = _.sh returnStdout: true, script: "sfdx force:package:version:list --json --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
