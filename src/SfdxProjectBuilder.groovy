@@ -969,10 +969,14 @@ class SfdxProjectBuilder implements Serializable {
     def jsonParsedResponse
     try {
       rmsg = _.sh returnStdout: true, script: "sfdx force:package:installed:list --json --targetusername ${this.sfdxScratchOrgAlias}"
-      jsonParsedResponse = jsonParse(rmsg)
-      _.echo("jsonParsedResponse.exitCode == " + jsonParsedResponse.exitCode)
-      _.echo("jsonParsedResponse.name == " + jsonParsedResponse.name)
-      if ( jsonParsedResponse.exitCode == 1 && jsonParsedResponse.name.equals("QUERY_TIMEOUT") ) {
+      _.echo( rmsg )
+      if ( rmsg != null ) {
+        jsonParsedResponse = jsonParse(rmsg)
+        _.echo("jsonParsedResponse.exitCode == " + jsonParsedResponse.exitCode)
+        _.echo("jsonParsedResponse.name == " + jsonParsedResponse.name)
+      }
+      if ( rmsg == null || (jsonParsedResponse != null && jsonParsedResponse.exitCode == 1 && jsonParsedResponse.name.equals("QUERY_TIMEOUT") ) ) {
+        _.echo("Sleeping for 2 minutes and will try again")
         _.sleep time: 1, unit: 'MINUTES'
         rmsg = _.sh returnStdout: true, script: "sfdx force:package:installed:list --json --targetusername ${this.sfdxScratchOrgAlias}"
         jsonParsedResponse = jsonParse(rmsg)
@@ -980,6 +984,19 @@ class SfdxProjectBuilder implements Serializable {
     }
     catch (ex) {
       _.echo( ex.getMessage() )
+      _.echo( rmsg )
+      if ( rmsg != null ) {
+        jsonParsedResponse = jsonParse(rmsg)
+        _.echo("jsonParsedResponse.exitCode == " + jsonParsedResponse.exitCode)
+        _.echo("jsonParsedResponse.name == " + jsonParsedResponse.name)
+      }
+      if ( rmsg == null || (jsonParsedResponse != null && jsonParsedResponse.exitCode == 1 && jsonParsedResponse.name.equals("QUERY_TIMEOUT") ) ) {
+        _.echo("Sleeping for 2 minutes and will try again")
+        _.sleep time: 1, unit: 'MINUTES'
+        rmsg = _.sh returnStdout: true, script: "sfdx force:package:installed:list --json --targetusername ${this.sfdxScratchOrgAlias}"
+        jsonParsedResponse = jsonParse(rmsg)
+      }
+
     }
 
     def allPackageVersionsInstalledInScratchOrg = jsonParsedResponse.result
