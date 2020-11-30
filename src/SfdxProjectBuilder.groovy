@@ -404,7 +404,11 @@ class SfdxProjectBuilder implements Serializable {
   }
 
   void artifactRecordingStage() {
-    archiveAllBuildArtifacts()
+    // Disabling this task until Salesforce's release of the #Spring21.  The reason is that there are serious
+    //    issues with the Salesforce CLI "force:package:installed:list" command timing out.  
+    //    As of 11/30/2020, Salesforce says that there is a chance that the fix will arrive early.  When it does
+    //    this feature will be reactivated.
+    // archiveAllBuildArtifacts()
   }
 
   void postSuccess() {
