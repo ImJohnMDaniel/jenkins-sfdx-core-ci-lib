@@ -1154,14 +1154,25 @@ class SfdxProjectBuilder implements Serializable {
     if ( this.upstreamProjectsToTriggerFrom != null ) {
 
       def upstreamProjectName
+      def projectNamesStrings = []
+      def fullStringOfProjectNames 
 
       for ( anUpstreamProjectToTriggerFrom in this.upstreamProjectsToTriggerFrom ) {
         if ( !anUpstreamProjectToTriggerFrom.empty ) {
           upstreamProjectName = (this.upstreamProjectsToTriggerFromPrefix != null ? (this.upstreamProjectsToTriggerFromPrefix + '/') : '') + anUpstreamProjectToTriggerFrom
           // _.echo("adding upstream dependency on project ${anUpstreamProjectToTriggerFrom}")
-          result << _.upstream(	upstreamProjects: upstreamProjectName + "/" + _.env.BRANCH_NAME.replaceAll("/", "%2F"),  threshold: hudson.model.Result.SUCCESS )
+          // result << _.upstream(	upstreamProjects: upstreamProjectName + "/" + _.env.BRANCH_NAME.replaceAll("/", "%2F"),  threshold: hudson.model.Result.SUCCESS )
+
+         
+          projectNamesStrings.add( upstreamProjectName + "/" + _.env.BRANCH_NAME.replaceAll("/", "%2F") )
         }
       } 
+
+      fullStringOfProjectNames = projectNamesStrings.join(',')
+      _.echo('debug of processProjectTriggers')
+      _.echo(fullStringOfProjectNames)
+      result << _.upstream(	upstreamProjects: fullStringOfProjectNames,  threshold: hudson.model.Result.SUCCESS )
+
     }
 
     return result
