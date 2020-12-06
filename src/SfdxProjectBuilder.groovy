@@ -380,6 +380,7 @@ class SfdxProjectBuilder implements Serializable {
   }
 
   void processResourcesStage() {
+    resetAllDependenciesToLatestWherePossible();
     installAllDependencies()
   }
 
@@ -695,6 +696,25 @@ class SfdxProjectBuilder implements Serializable {
       }
     }
   }
+
+  private void resetAllDependenciesToLatestWherePossible() {
+    def commandScriptString = "sfdx toolbox:package:dependencies:manage --updatetolatest --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME} --json"
+
+    if ( (_.env.BRANCH_NAME != 'master' && _.env.BRANCH_NAME != 'main') || ( (_.env.BRANCH_NAME == 'master' || _.env.BRANCH_NAME == 'main') && !this.dependencyBuildsBranchMasterMainAndNullAreTheSame ) ) {
+      commandScriptString = commandScriptString + " --branch ${_.env.BRANCH_NAME}"
+    }
+
+    def rmsg = _.sh returnStdout: true, script: commandScriptString
+
+    def response = jsonParse( rmsg )
+
+    if (response.status != 0) {
+      _.echo rmsg
+      _.error "resetting all dependencies to latest failed -- ${response.message}"
+    }
+
+    _.sleep time: 5, unit: 'SECONDS'
+  } 
 
   private void installAllDependencies() {
     // _.echo("env.BRANCH_NAME == ${_.env.BRANCH_NAME}")
