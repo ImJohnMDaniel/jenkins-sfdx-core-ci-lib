@@ -1169,8 +1169,8 @@ class SfdxProjectBuilder implements Serializable {
       } 
 
       fullStringOfProjectNames = projectNamesStrings.join(',')
-      _.echo('debug of processProjectTriggers')
-      _.echo(fullStringOfProjectNames)
+      debug('processProjectTriggers')
+      debug(fullStringOfProjectNames)
       result << _.upstream(	upstreamProjects: fullStringOfProjectNames,  threshold: hudson.model.Result.SUCCESS )
 
     }
