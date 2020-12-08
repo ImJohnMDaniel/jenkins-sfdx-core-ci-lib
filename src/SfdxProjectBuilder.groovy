@@ -380,7 +380,7 @@ class SfdxProjectBuilder implements Serializable {
   }
 
   void processResourcesStage() {
-    resetAllDependenciesToLatestWherePossible();
+    // resetAllDependenciesToLatestWherePossible();
     installAllDependencies()
   }
 
