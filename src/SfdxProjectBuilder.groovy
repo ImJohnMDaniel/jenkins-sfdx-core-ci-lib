@@ -833,7 +833,7 @@ class SfdxProjectBuilder implements Serializable {
 
     if (this.isCreatingCommunity) {
       _.echo("Creating community ${this.communityName}...")
-      def rmsg = _.sh returnStdout: true, script: "sfdx force:community:create --name ${this.communityName} --urlpathprefix ${this.urlPathPrefix} --templatename ${this.templateName} --json --targetusername ${this.sfdxScratchOrgAlias}"
+      def rmsg = _.sh returnStdout: true, script: "sfdx force:community:create --name \"${this.communityName}\" --urlpathprefix ${this.urlPathPrefix} --templatename \"${this.templateName}\" --json --targetusername ${this.sfdxScratchOrgAlias}"
       
       def response = jsonParse( rmsg )
 
