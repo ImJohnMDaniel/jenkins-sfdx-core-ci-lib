@@ -58,6 +58,12 @@ class SfdxProjectBuilder implements Serializable {
 
   private def stageToStopBuildAt = 99
 
+  // Community related variables
+  private def communityName
+  private def urlPathPrefix
+  private def templateName
+  private boolean isCreatingCommunity = false
+
   // the parsed contents of the SFDX project's configuration
   private def sfdxPackage
 
@@ -170,6 +176,35 @@ class SfdxProjectBuilder implements Serializable {
       this.dockerImageName = dockerImageName
       _.echo("SfdxProjectBuilder Parameter set : Setting docker image to be ${dockerImageName}")
     }
+    return this
+  }
+
+  public SfdxProjectBuilder setupCommunity( String communityName, String urlPathPrefix, String templateName ) {
+    if ( communityName != null || communityName.empty || urlPathPrefix != null || urlPathPrefix.empty || templateName != null || templateName.empty ) {
+      
+      if ( communityName != null || communityName.empty ) {
+        _.echo("SfdxProjectBuilder Parameter ERROR : setupCommunity() method communityName parameter cannot be null.")
+      }
+      if ( urlPathPrefix != null || urlPathPrefix.empty ) {
+        _.echo("SfdxProjectBuilder Parameter ERROR : setupCommunity() method urlPathPrefix parameter cannot be null.")
+      }
+      if ( templateName != null || templateName.empty ) {
+        _.echo("SfdxProjectBuilder Parameter ERROR : setupCommunity() method templateName parameter cannot be null.")
+      }
+      _.error("PARAMETER ERROR")
+    }
+
+    this.communityName = communityName
+    _.echo("SfdxProjectBuilder Parameter set : Setting community name to be ${communityName}")
+    
+    this.urlPathPrefix = urlPathPrefix
+    _.echo("SfdxProjectBuilder Parameter set : Setting community URL path prefix to be ${urlPathPrefix}")
+    
+    this.templateName = templateName
+    _.echo("SfdxProjectBuilder Parameter set : Setting community template name to be ${templateName}")
+
+    this.isCreatingCommunity = true
+
     return this
   }
 
@@ -382,6 +417,7 @@ class SfdxProjectBuilder implements Serializable {
   void processResourcesStage() {
     // resetAllDependenciesToLatestWherePossible();
     installAllDependencies()
+    setupCommunityIfNeeded()
   }
 
   void compileStage() {
@@ -791,6 +827,23 @@ class SfdxProjectBuilder implements Serializable {
       // _.echo ("installing the sfpowerkit plugins")
       // def rmsgSFPowerKitInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install sfpowerkit"
       // _.echo rmsgSFPowerKitInstall
+  }
+
+  private void setupCommunityIfNeeded() {
+
+    if (this.isCreatingCommunity) {
+      _.echo("Creating community ${this.communityName}...")
+      def rmsg = _.sh returnStdout: true, script: "sfdx force:community:create --name ${this.communityName} --urlpathprefix ${this.urlPathPrefix} --templatename ${this.templateName} --json --targetusername ${this.sfdxScratchOrgAlias}"
+      
+      def response = jsonParse( rmsg )
+
+      if (response.status != 0) {
+          _.error "community creation failed -- ${response.message}"
+      }
+
+      // wait some time to allow the community setup to complete
+      _.sleep(45)
+    }
   }
 
   private void compileCode() {
