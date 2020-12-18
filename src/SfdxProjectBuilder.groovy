@@ -180,15 +180,15 @@ class SfdxProjectBuilder implements Serializable {
   }
 
   public SfdxProjectBuilder setupCommunity( String communityName, String urlPathPrefix, String templateName ) {
-    if ( communityName != null || communityName.empty || urlPathPrefix != null || urlPathPrefix.empty || templateName != null || templateName.empty ) {
+    if ( communityName == null || communityName.empty || urlPathPrefix == null || urlPathPrefix.empty || templateName == null || templateName.empty ) {
       
-      if ( communityName != null || communityName.empty ) {
+      if ( communityName == null || communityName.empty ) {
         _.echo("SfdxProjectBuilder Parameter ERROR : setupCommunity() method communityName parameter cannot be null.")
       }
-      if ( urlPathPrefix != null || urlPathPrefix.empty ) {
+      if ( urlPathPrefix == null || urlPathPrefix.empty ) {
         _.echo("SfdxProjectBuilder Parameter ERROR : setupCommunity() method urlPathPrefix parameter cannot be null.")
       }
-      if ( templateName != null || templateName.empty ) {
+      if ( templateName == null || templateName.empty ) {
         _.echo("SfdxProjectBuilder Parameter ERROR : setupCommunity() method templateName parameter cannot be null.")
       }
       _.error("PARAMETER ERROR")
