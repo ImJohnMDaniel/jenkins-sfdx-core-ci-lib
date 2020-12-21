@@ -63,6 +63,7 @@ class SfdxProjectBuilder implements Serializable {
   private def urlPathPrefix
   private def templateName
   private boolean isCreatingCommunity = false
+  private boolean isPublishingCommunity = false
 
   // the parsed contents of the SFDX project's configuration
   private def sfdxPackage
@@ -204,6 +205,21 @@ class SfdxProjectBuilder implements Serializable {
     _.echo("SfdxProjectBuilder Parameter set : Setting community template name to be ${templateName}")
 
     this.isCreatingCommunity = true
+
+    return this
+  }
+
+  public SfdxProjectBuilder publishCommunity( String communityName ) {
+  
+    if ( communityName == null || communityName.empty ) {
+      _.echo("SfdxProjectBuilder Parameter ERROR : publishCommunity() method communityName parameter cannot be null.")
+      _.error("PARAMETER ERROR")
+    }
+    
+    this.communityName = communityName
+    _.echo("SfdxProjectBuilder Parameter set : Setting community name to be ${communityName}")
+    
+    this.isPublishingCommunity = true
 
     return this
   }
@@ -844,6 +860,23 @@ class SfdxProjectBuilder implements Serializable {
       // wait some time to allow the community setup to complete
       _.sleep(45)
     }
+  }
+
+  private void publishCommunityIfNeeded() {
+    if (this.isPublishingCommunity) {
+      _.echo("Publish community ${this.communityName}...")
+      def rmsg = _.sh returnStdout: true, script: "sfdx force:community:publish --name \"${this.communityName}\" --json --targetusername ${this.sfdxScratchOrgAlias}"
+      
+      def response = jsonParse( rmsg )
+
+      if (response.status != 0) {
+          _.error "community publishing failed -- ${response.message}"
+      }
+
+      // wait some time to allow the community publishing to complete
+      _.sleep(45)
+    }
+
   }
 
   private void compileCode() {
