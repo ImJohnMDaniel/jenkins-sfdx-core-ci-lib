@@ -438,6 +438,7 @@ class SfdxProjectBuilder implements Serializable {
 
   void compileStage() {
     compileCode()
+    publishCommunityIfNeeded()
   }
 
   void testStage() {
