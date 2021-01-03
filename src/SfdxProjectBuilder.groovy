@@ -707,9 +707,12 @@ class SfdxProjectBuilder implements Serializable {
     def response
 
     try {
-      def rmsg = _.sh returnStdout: true, script: commandScriptString
-
+      debug('before call to sh command to create org')
+      def rmsg = _.sh returnStatus: true, script: commandScriptString
+      debug('after the call to sh command to create org')
+      debug(rmsg)
       response = jsonParse( rmsg )
+      debug('after the parsing of rmsg')
     }
     catch (ex) {
       _.echo('------------------------------------------------------')
@@ -722,7 +725,10 @@ class SfdxProjectBuilder implements Serializable {
       _.echo(ex.printStackTrace())
       _.error('scratch org creation failed')
     }
-
+    debug('------------------------------------------------------')
+    debug('response == ')
+    debug(response)
+    debug('------------------------------------------------------')
     if (response.status != 0 ) {
       if (response.name.equals('genericTimeoutMessage')) {
         // try one more time to create the scratch org
