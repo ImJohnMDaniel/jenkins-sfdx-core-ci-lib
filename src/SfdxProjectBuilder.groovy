@@ -900,7 +900,7 @@ class SfdxProjectBuilder implements Serializable {
   }
 
   private void executeUnitTests() {
-    if ( findFiles( glob: '**/*Test.cls' ) ) {
+    if ( _.findFiles( glob: '**/*Test.cls' ) ) {
       _.echo( 'Run All Local Apex Tests' )
       _.timeout(time: 120, unit: 'MINUTES') {
         
