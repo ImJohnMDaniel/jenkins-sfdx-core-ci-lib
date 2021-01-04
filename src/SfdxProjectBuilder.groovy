@@ -665,6 +665,10 @@ class SfdxProjectBuilder implements Serializable {
     if ( _.env.UPSTREAM_PROJECT_PREFIX ) {
       this.upstreamProjectsToTriggerFromPrefix = _.env.UPSTREAM_PROJECT_PREFIX
     }
+
+    if ( _.env.DEACTIVATE_SLACK_NOTIFICATIONS_OVERRIDE ) {
+      this.slackNotificationsIsActive = false
+    }
   }
 
   private void readAndParseSFDXProjectFile() {
