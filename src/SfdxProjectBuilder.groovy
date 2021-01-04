@@ -932,6 +932,7 @@ class SfdxProjectBuilder implements Serializable {
         }
         
         // Process all unit test reports
+        debug( rmsg )
         def response = jsonParse( rmsg )
         if (response.status != 0) {
           debug(response)
