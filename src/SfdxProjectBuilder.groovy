@@ -962,8 +962,8 @@ class SfdxProjectBuilder implements Serializable {
     _.junit keepLongStdio: true, testResults: "${this.workingArtifactDirectory}/**/*-junit.xml"
   }
 
-  private void sendTestResultsBySlackIfNeeded() {
-    debug('sendTestResultsBySlackIfNeeded method called')
+  private void sendTestResultsBySlack() {
+    debug('sendTestResultsBySlack method called')
 
     if ( _.findFiles( glob: "${this.workingArtifactDirectory}/**/test-result-707*.json" ) ) {
       sendSlackMessage(
