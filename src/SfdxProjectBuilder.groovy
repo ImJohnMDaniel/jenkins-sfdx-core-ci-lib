@@ -912,6 +912,7 @@ class SfdxProjectBuilder implements Serializable {
         catch (ex) {
           debug('test here 1')
           debug(ex)
+          debug(rmsg)
           debug('exception status is ' + ex.status)
 
           if (ex.status != 100 ) {
