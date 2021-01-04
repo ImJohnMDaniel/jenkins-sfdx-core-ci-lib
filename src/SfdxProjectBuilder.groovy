@@ -545,10 +545,19 @@ class SfdxProjectBuilder implements Serializable {
   
         def slackResponse
 
-        if ( slackChannelToSendMessageTo ) {
-          slackResponse = _.slackSend channel: "${slackChannelToSendMessageTo}", color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false, replyBroadcast: "${shouldReplyBroadcast}"
+        if ( args.fileToSend ) {
+          if ( slackChannelToSendMessageTo ) {
+            // slackUploadFile channel: 'blue', credentialId: 'slack-steampunklife-bot-token', filePath: '${this.workingArtifactDirectory}/**/test-result-707*.json', initialComment: 'Test Results JSON file'
+            slackResponse = _.slackUploadFile channel: "${slackChannelToSendMessageTo}", initialComment: "${args.message}", filePath: "${args.fileToSend}"
+          } else {
+            slackResponse = _.slackUploadFile initialComment: "${args.message}", filePath: "${args.fileToSend}"
+          }
         } else {
-          slackResponse = _.slackSend color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false, replyBroadcast: "${shouldReplyBroadcast}"
+          if ( slackChannelToSendMessageTo ) {
+            slackResponse = _.slackSend channel: "${slackChannelToSendMessageTo}", color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false, replyBroadcast: "${shouldReplyBroadcast}"
+          } else {
+            slackResponse = _.slackSend color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false, replyBroadcast: "${shouldReplyBroadcast}"
+          }
         }
         debug("slackResponse == ${slackResponse}")
         debug("slackResponse.threadId == ${slackResponse.threadId}")
@@ -921,36 +930,26 @@ class SfdxProjectBuilder implements Serializable {
           }
         }
         catch (ex) {
-          debug('test here 1')
           debug(ex)
-          debug(rmsg)
-          debug('exception status is ' + ex.status)
 
-          if (ex.status != 100 ) {
-            // somehting is wrong
-            _.echo(ex.getMessage())
-            _.echo('Restarting unit test run')
-            // remove the test files from the previous run
-            _.fileOperations([_.folderDeleteOperation( this.workingArtifactDirectory ), _.folderCreateOperation( this.workingArtifactDirectory )])
+          // if (ex.status != 100 ) {
+          //   // somehting is wrong
+          //   _.echo(ex.getMessage())
+          //   _.echo('Restarting unit test run')
+          //   // remove the test files from the previous run
+          //   _.fileOperations([_.folderDeleteOperation( this.workingArtifactDirectory ), _.folderCreateOperation( this.workingArtifactDirectory )])
 
-            // execute all unit tests a second time.  There is a bug with snapshots and CMDT-based 
-            //      Dependency injection and Apex Unit Tests.  The workaround is to simply
-            //      re-run the unit tests again.
-            rmsg = _.sh returnStdout: true, label: 'Executing force:apex:test:run...', script: "sfdx force:apex:test:run --testlevel RunLocalTests --outputdir ${this.workingArtifactDirectory} --resultformat junit --codecoverage --wait 60 --json --targetusername ${this.sfdxScratchOrgAlias}"
-          }
+          //   // execute all unit tests a second time.  There is a bug with snapshots and CMDT-based 
+          //   //      Dependency injection and Apex Unit Tests.  The workaround is to simply
+          //   //      re-run the unit tests again.
+          //   rmsg = _.sh returnStdout: true, label: 'Executing force:apex:test:run...', script: "sfdx force:apex:test:run --testlevel RunLocalTests --outputdir ${this.workingArtifactDirectory} --resultformat junit --codecoverage --wait 60 --json --targetusername ${this.sfdxScratchOrgAlias}"
+          // }
         }
         finally {
           collectTestResults()
-          sendTestResultsBySlackIfNeeded()
-        }
-        
-        // Process all unit test reports
-        debug('test here 2')
-        debug( rmsg )
-        def response = jsonParse( rmsg )
-        if (response.status != 0) {
-          debug(response)
-          _.error "apex test run failed -- ${response.message}"
+          if ( unitTestsHaveFailed ) {
+            sendTestResultsBySlack()
+          }
         }
       }
     } else {
@@ -965,6 +964,16 @@ class SfdxProjectBuilder implements Serializable {
 
   private void sendTestResultsBySlackIfNeeded() {
     debug('sendTestResultsBySlackIfNeeded method called')
+
+    if ( _.findFiles( glob: "${this.workingArtifactDirectory}/**/test-result-707*.json" ) ) {
+      sendSlackMessage(
+        color: 'danger',
+        message: "Apex Unit Test Results",
+        isFooterMessage: true,
+        fileToSend: "${this.workingArtifactDirectory}/**/test-result-707*.json"
+      )
+
+    }
   }
 
   private void packageTheProject() {
