@@ -910,7 +910,7 @@ class SfdxProjectBuilder implements Serializable {
           rmsg = _.sh returnStdout: true, label: 'Executing force:apex:test:run...', script: "sfdx force:apex:test:run --testlevel RunLocalTests --outputdir ${this.workingArtifactDirectory} --resultformat tap --codecoverage --wait 60 --json --targetusername ${this.sfdxScratchOrgAlias}"
         }
         catch (ex) {
-          
+          debug('test here 1')
           debug('exception status is ' + ex.status)
 
           if (ex.status != 100 ) {
@@ -932,6 +932,7 @@ class SfdxProjectBuilder implements Serializable {
         }
         
         // Process all unit test reports
+        debug('test here 2')
         debug( rmsg )
         def response = jsonParse( rmsg )
         if (response.status != 0) {
