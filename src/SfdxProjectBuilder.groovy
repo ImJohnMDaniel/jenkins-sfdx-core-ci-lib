@@ -708,7 +708,7 @@ class SfdxProjectBuilder implements Serializable {
 
     try {
       debug('before call to sh command to create org')
-      def rmsg = _.sh returnStatus: true, script: commandScriptString
+      def rmsg = _.sh returnStdout: true, script: commandScriptString
       debug('after the call to sh command to create org')
       debug(rmsg)
       response = jsonParse( rmsg )
@@ -716,21 +716,18 @@ class SfdxProjectBuilder implements Serializable {
     }
     catch (ex) {
       _.echo('------------------------------------------------------')
+      debug('------------------------------------------------------')
+      debug('response == ')
+      debug(response)
+      debug('------------------------------------------------------')
       _.echo(ex.getMessage())
       _.echo('------------------------------------------------------')
       if (ex.getMessage().contains('OPERATION_TOO_LARGE')) {
         _.echo('exception message contains OPERATION_TOO_LARGE')
         _.echo('------------------------------------------------------')
-      }
-      _.echo(ex.printStackTrace())
-      _.error('scratch org creation failed')
-    }
-    debug('------------------------------------------------------')
-    debug('response == ')
-    debug(response)
-    debug('------------------------------------------------------')
-    if (response.status != 0 ) {
-      if (response.name.equals('genericTimeoutMessage')) {
+        _.echo(ex.printStackTrace())
+        _.error "Failed to create Scratch Org -- ${response.message}"
+      } else if (response.name.equals('genericTimeoutMessage') || response.name.equals('RemoteOrgSignupFailed')) {
         // try one more time to create the scratch org
         _.echo('Original attempt to create scratch org timed out.  Trying to create one again.')
         rmsg = _.sh returnStdout: true, script: commandScriptString
@@ -740,6 +737,7 @@ class SfdxProjectBuilder implements Serializable {
         }
       }
       else {
+        _.echo(ex.printStackTrace())
         _.error "Failed to create Scratch Org -- ${response.message}"
       }
     }
