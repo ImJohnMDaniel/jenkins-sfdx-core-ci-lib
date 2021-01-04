@@ -713,21 +713,24 @@ class SfdxProjectBuilder implements Serializable {
       debug(rmsg)
       response = jsonParse( rmsg )
       debug('after the parsing of rmsg')
-    }
-    catch (ex) {
-      _.echo('------------------------------------------------------')
       debug('------------------------------------------------------')
       debug('response == ')
       debug(response)
       debug('------------------------------------------------------')
-      _.echo(ex.getMessage())
+    }
+    catch (ex) {
       _.echo('------------------------------------------------------')
-      if (ex.getMessage().contains('OPERATION_TOO_LARGE')) {
+      _.echo(ex.status)
+      _.echo(ex.name)
+      _.echo(ex.message)
+      _.echo('------------------------------------------------------')
+      // if (ex.getMessage().contains('OPERATION_TOO_LARGE')) {
+      if (ex.message.contains('OPERATION_TOO_LARGE')) {
         _.echo('exception message contains OPERATION_TOO_LARGE')
         _.echo('------------------------------------------------------')
         _.echo(ex.printStackTrace())
         _.error "Failed to create Scratch Org -- ${response.message}"
-      } else if (response.name.equals('genericTimeoutMessage') || response.name.equals('RemoteOrgSignupFailed')) {
+      } else if (ex.name.equals('genericTimeoutMessage') || ex.name.equals('RemoteOrgSignupFailed')) {
         // try one more time to create the scratch org
         _.echo('Original attempt to create scratch org timed out.  Trying to create one again.')
         rmsg = _.sh returnStdout: true, script: commandScriptString
@@ -906,24 +909,31 @@ class SfdxProjectBuilder implements Serializable {
         rmsg = _.sh returnStdout: true, label: 'Executing force:apex:test:run...', script: "sfdx force:apex:test:run --testlevel RunLocalTests --outputdir ${this.workingArtifactDirectory} --resultformat tap --codecoverage --wait 60 --json --targetusername ${this.sfdxScratchOrgAlias}"
       }
       catch (ex) {
-        _.echo(ex.getMessage())
-        _.echo('Restarting unit test run')
-        // remove the test files from the previous run
-        _.fileOperations([_.folderDeleteOperation( this.workingArtifactDirectory ), _.folderCreateOperation( this.workingArtifactDirectory )])
+        
+        debug('exception status is ' + ex.status)
 
-        // execute all unit tests a second time.  There is a bug with snapshots and CMDT-based 
-        //      Dependency injection and Apex Unit Tests.  The workaround is to simply
-        //      re-run the unit tests again.
-        rmsg = _.sh returnStdout: true, label: 'Executing force:apex:test:run...', script: "sfdx force:apex:test:run --testlevel RunLocalTests --outputdir ${this.workingArtifactDirectory} --resultformat junit --codecoverage --wait 60 --json --targetusername ${this.sfdxScratchOrgAlias}"
+        if (ex.status != 100 ) {
+          // somehting is wrong
+          _.echo(ex.getMessage())
+          _.echo('Restarting unit test run')
+          // remove the test files from the previous run
+          _.fileOperations([_.folderDeleteOperation( this.workingArtifactDirectory ), _.folderCreateOperation( this.workingArtifactDirectory )])
+
+          // execute all unit tests a second time.  There is a bug with snapshots and CMDT-based 
+          //      Dependency injection and Apex Unit Tests.  The workaround is to simply
+          //      re-run the unit tests again.
+          rmsg = _.sh returnStdout: true, label: 'Executing force:apex:test:run...', script: "sfdx force:apex:test:run --testlevel RunLocalTests --outputdir ${this.workingArtifactDirectory} --resultformat junit --codecoverage --wait 60 --json --targetusername ${this.sfdxScratchOrgAlias}"
+        }
       }
       finally {
         collectTestResults()
+        sendTestResultsBySlackIfNeeded()
       }
       
       // Process all unit test reports
       def response = jsonParse( rmsg )
       if (response.status != 0) {
-        _.echo(response)
+        debug(response)
         _.error "apex test run failed -- ${response.message}"
       }
       // } // script tag
@@ -933,6 +943,10 @@ class SfdxProjectBuilder implements Serializable {
   private void collectTestResults() {
     _.echo( "Collect All Test Results")
     _.junit keepLongStdio: true, testResults: "${this.workingArtifactDirectory}/**/*-junit.xml"
+  }
+
+  private void sendTestResultsBySlackIfNeeded() {
+    debug('sendTestResultsBySlackIfNeeded method called')
   }
 
   private void packageTheProject() {
