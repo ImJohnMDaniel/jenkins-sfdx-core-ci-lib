@@ -900,43 +900,46 @@ class SfdxProjectBuilder implements Serializable {
   }
 
   private void executeUnitTests() {
-    _.echo( 'Run All Local Apex Tests' )
-    _.timeout(time: 120, unit: 'MINUTES') {
-      // script {
-      def rmsg 
-      
-      try {
-        rmsg = _.sh returnStdout: true, label: 'Executing force:apex:test:run...', script: "sfdx force:apex:test:run --testlevel RunLocalTests --outputdir ${this.workingArtifactDirectory} --resultformat tap --codecoverage --wait 60 --json --targetusername ${this.sfdxScratchOrgAlias}"
-      }
-      catch (ex) {
+    if ( findFiles( glob: '**/*Test.cls' ) ) {
+      _.echo( 'Run All Local Apex Tests' )
+      _.timeout(time: 120, unit: 'MINUTES') {
         
-        debug('exception status is ' + ex.status)
+        def rmsg 
+        
+        try {
+          rmsg = _.sh returnStdout: true, label: 'Executing force:apex:test:run...', script: "sfdx force:apex:test:run --testlevel RunLocalTests --outputdir ${this.workingArtifactDirectory} --resultformat tap --codecoverage --wait 60 --json --targetusername ${this.sfdxScratchOrgAlias}"
+        }
+        catch (ex) {
+          
+          debug('exception status is ' + ex.status)
 
-        if (ex.status != 100 ) {
-          // somehting is wrong
-          _.echo(ex.getMessage())
-          _.echo('Restarting unit test run')
-          // remove the test files from the previous run
-          _.fileOperations([_.folderDeleteOperation( this.workingArtifactDirectory ), _.folderCreateOperation( this.workingArtifactDirectory )])
+          if (ex.status != 100 ) {
+            // somehting is wrong
+            _.echo(ex.getMessage())
+            _.echo('Restarting unit test run')
+            // remove the test files from the previous run
+            _.fileOperations([_.folderDeleteOperation( this.workingArtifactDirectory ), _.folderCreateOperation( this.workingArtifactDirectory )])
 
-          // execute all unit tests a second time.  There is a bug with snapshots and CMDT-based 
-          //      Dependency injection and Apex Unit Tests.  The workaround is to simply
-          //      re-run the unit tests again.
-          rmsg = _.sh returnStdout: true, label: 'Executing force:apex:test:run...', script: "sfdx force:apex:test:run --testlevel RunLocalTests --outputdir ${this.workingArtifactDirectory} --resultformat junit --codecoverage --wait 60 --json --targetusername ${this.sfdxScratchOrgAlias}"
+            // execute all unit tests a second time.  There is a bug with snapshots and CMDT-based 
+            //      Dependency injection and Apex Unit Tests.  The workaround is to simply
+            //      re-run the unit tests again.
+            rmsg = _.sh returnStdout: true, label: 'Executing force:apex:test:run...', script: "sfdx force:apex:test:run --testlevel RunLocalTests --outputdir ${this.workingArtifactDirectory} --resultformat junit --codecoverage --wait 60 --json --targetusername ${this.sfdxScratchOrgAlias}"
+          }
+        }
+        finally {
+          collectTestResults()
+          sendTestResultsBySlackIfNeeded()
+        }
+        
+        // Process all unit test reports
+        def response = jsonParse( rmsg )
+        if (response.status != 0) {
+          debug(response)
+          _.error "apex test run failed -- ${response.message}"
         }
       }
-      finally {
-        collectTestResults()
-        sendTestResultsBySlackIfNeeded()
-      }
-      
-      // Process all unit test reports
-      def response = jsonParse( rmsg )
-      if (response.status != 0) {
-        debug(response)
-        _.error "apex test run failed -- ${response.message}"
-      }
-      // } // script tag
+    } else {
+      _.echo( 'No local Apex Tests found.' )  
     }
   }
 
