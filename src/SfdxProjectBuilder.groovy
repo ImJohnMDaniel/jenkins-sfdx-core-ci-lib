@@ -994,33 +994,30 @@ class SfdxProjectBuilder implements Serializable {
       // debug("testResults.summary.failing == ${testResults.summary.failing}")
       if ( testResults.summary.failing > 0 ) {
         _.echo( "${testResults.summary.failing} failed tests" )
-      }
 
-      def testFailureDetails = "Apex Unit Tests that failed include:\n\n```"
+        def testFailureDetails = "Apex Unit Tests that failed include:\n\n```"
 
-      testResults.tests.each { test -> 
-        if ( test.Outcome.equals('Fail') ) {
-          testFailureDetails += "${test.FullName}\n"
-          testFailureDetails += "    - stacktrace: ${test.StackTrace}\n"
-          testFailureDetails += "    - message: ${test.Message}\n\n\n"
+        testResults.tests.each { test -> 
+          if ( test.Outcome.equals('Fail') ) {
+            testFailureDetails += "${test.FullName}\n"
+            testFailureDetails += "    - message: ${test.Message}\n"
+            testFailureDetails += "    - stacktrace: ${test.StackTrace}\n\n--------------------------\n"
+          }
         }
+
+        testFailureDetails += "```"
+        // sendSlackMessage(
+        //   color: 'danger',
+        //   message: "Apex Unit Test Results <@here>",
+        //   isFooterMessage: true,
+        //   fileToSend: "${this.workingArtifactDirectory}/**/test-result-707*.json"
+        // )
+        sendSlackMessage(
+          color: 'danger',
+          message: "${testFailureDetails}",
+          isFooterMessage: true
+        )
       }
-
-      testFailureDetails += "```"
-
-
-      // sendSlackMessage(
-      //   color: 'danger',
-      //   message: "Apex Unit Test Results <@here>",
-      //   isFooterMessage: true,
-      //   fileToSend: "${this.workingArtifactDirectory}/**/test-result-707*.json"
-      // )
-      sendSlackMessage(
-        color: 'danger',
-        message: "${testFailureDetails}",
-        isFooterMessage: true
-      )
-
     }
   }
 
