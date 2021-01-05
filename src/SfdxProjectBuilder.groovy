@@ -922,18 +922,21 @@ class SfdxProjectBuilder implements Serializable {
     def rmsg
     try {
       _.echo( _.env.SFDX_JSON_TO_STDOUT )
-      rmsg = _.sh returnStdout: true, script: "sfdx force:source:push --forceoverwrite --json --targetusername ${this.sfdxScratchOrgAlias}"
+      // rmsg = _.sh returnStdout: true, script: "sfdx force:source:push --forceoverwrite --json --targetusername ${this.sfdxScratchOrgAlias}"
 
-      def response = jsonParse( rmsg )
-      debug( response )
+      // def response = jsonParse( rmsg )
+      // debug( response )
 
-      if (response.status != 0) {
-          _.error "push failed -- ${response.message}"
-      }
+      // if (response.status != 0) {
+      //     _.error "push failed -- ${response.message}"
+      // }
+
       // debug( rmsg )
       // if ( rmsg > 0 ) {
       //   _.error('force:source:push failed')
       // }
+
+      _.sh script: "sfdx force:source:push --forceoverwrite --json --targetusername ${this.sfdxScratchOrgAlias} &> force-source-push.json"
 
     }
     catch(ex) {
