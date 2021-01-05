@@ -36,6 +36,8 @@ class SfdxProjectBuilder implements Serializable {
 
   private def slackResponseThreadId
 
+  private def slackResponseTimestamp
+
   private def sendThreadedSlackMessages = true
 
   private def notifyOnSuccessfulBuilds = false 
@@ -567,6 +569,7 @@ class SfdxProjectBuilder implements Serializable {
         if ( this.slackResponseThreadId == null && slackResponse && slackResponse.threadId ) {
           // set the Slack Thread Id for future updates
           this.slackResponseThreadId = slackResponse.threadId
+          this.slackResponseTimestamp = slackResponse.ts
         }
       }
 
@@ -975,7 +978,7 @@ class SfdxProjectBuilder implements Serializable {
     if ( _.findFiles( glob: "${this.workingArtifactDirectory}/**/test-result-707*.json" ) ) {
       sendSlackMessage(
         color: 'danger',
-        message: "Apex Unit Test Results @here",
+        message: "Apex Unit Test Results <@here>",
         isFooterMessage: true,
         fileToSend: "${this.workingArtifactDirectory}/**/test-result-707*.json"
       )
