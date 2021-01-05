@@ -996,7 +996,7 @@ class SfdxProjectBuilder implements Serializable {
         _.echo( "${testResults.summary.failing} failed tests" )
       }
 
-      def testFailureDetails = "Apex Unit Tests that failed include:\n\n"
+      def testFailureDetails = "Apex Unit Tests that failed include:\n\n```"
 
       testResults.tests.each { test -> 
         if ( test.Outcome.equals('Fail') ) {
@@ -1005,6 +1005,8 @@ class SfdxProjectBuilder implements Serializable {
           testFailureDetails += "    - message: ${test.Message}\n\n\n"
         }
       }
+
+      testFailureDetails += "```"
 
 
       // sendSlackMessage(
