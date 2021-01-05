@@ -991,21 +991,32 @@ class SfdxProjectBuilder implements Serializable {
 
       def testResults = _.readJSON file: "${testResultFiles[0].path}", returnPojo: true
 
-      debug("testResults.summary.failing == ${testResults.summary.failing}")
+      // debug("testResults.summary.failing == ${testResults.summary.failing}")
       if ( testResults.summary.failing > 0 ) {
-        debug( "${testResults.summary.failing} failed tests")
+        _.echo( "${testResults.summary.failing} failed tests" )
       }
 
-      testResults.tests.each { test -> 
-        _.echo "${test.FullName} -- ${test.Outcome}"
-      }
+      def testFailureDetails = "Apex Unit Tests that failed include:\n\n"
+
+      testResults.tests.each { test -> (
+        if ( test.Outcome.equals('Fail') ) {
+          testFailureDetails += "${test.FullName}\n"
+          testFailureDetails += "    - stacktrace: ${test.StackTrace}\n"
+          testFailureDetails += "    - message: ${test.Message}\n\n\n"
+        }
+      )}
 
 
+      // sendSlackMessage(
+      //   color: 'danger',
+      //   message: "Apex Unit Test Results <@here>",
+      //   isFooterMessage: true,
+      //   fileToSend: "${this.workingArtifactDirectory}/**/test-result-707*.json"
+      // )
       sendSlackMessage(
         color: 'danger',
-        message: "Apex Unit Test Results <@here>",
-        isFooterMessage: true,
-        fileToSend: "${this.workingArtifactDirectory}/**/test-result-707*.json"
+        message: "${testFailureDetails}",
+        isFooterMessage: true
       )
 
     }
