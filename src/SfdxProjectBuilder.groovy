@@ -499,6 +499,10 @@ class SfdxProjectBuilder implements Serializable {
 
     // temporary workaround pending resolution to this issue https://github.com/forcedotcom/cli/issues/81.  Also, see reference in authenticateToDevHub() method
     _.fileOperations([_.fileDeleteOperation(excludes: '', includes: 'server.key')])
+
+    def userIds = _.slackUserIdsFromCommitters()
+    debug(userIds)
+
   }
 
   private void sendSlackMessage(Map args) {
