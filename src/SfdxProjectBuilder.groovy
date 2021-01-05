@@ -490,7 +490,8 @@ class SfdxProjectBuilder implements Serializable {
       color: 'danger',
       message: "Build failed ${_.env.JOB_NAME} ${_.env.BUILD_NUMBER} (<${_.env.BUILD_URL}|Open>) -- $userIdsString ",
       isFooterMessage: true,
-      isBroadcastingReply: true
+      isBroadcastingReply: true,
+      isNotifyingCommitters: true
     )
 
   }
@@ -516,6 +517,7 @@ class SfdxProjectBuilder implements Serializable {
       def shouldSendMessage = false 
       def slackChannelToSendMessageTo
       def shouldReplyBroadcast = 'false'
+      def shouldNotifyCommitters = 'false'
 
       if ( args.isHeaderMessage && this.sendThreadedSlackMessages) {
       
@@ -544,6 +546,10 @@ class SfdxProjectBuilder implements Serializable {
         slackChannelToSendMessageTo = this.slackResponseThreadId
       }
 
+      if ( args.isNotifyingCommitters ) {
+        shouldNotifyCommitters = 'true'
+      }
+
       debug("shouldSendMessage == ${shouldSendMessage}")
 
       if ( shouldSendMessage ) {
@@ -562,9 +568,9 @@ class SfdxProjectBuilder implements Serializable {
           }
         } else {
           if ( slackChannelToSendMessageTo ) {
-            slackResponse = _.slackSend channel: "${slackChannelToSendMessageTo}", color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false, replyBroadcast: "${shouldReplyBroadcast}"
+            slackResponse = _.slackSend channel: "${slackChannelToSendMessageTo}", color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: "${shouldNotifyCommitters}", replyBroadcast: "${shouldReplyBroadcast}"
           } else {
-            slackResponse = _.slackSend color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: false, replyBroadcast: "${shouldReplyBroadcast}"
+            slackResponse = _.slackSend color: "${args.color}", failOnError: true, message: "${args.message}", notifyCommitters: "${shouldNotifyCommitters}", replyBroadcast: "${shouldReplyBroadcast}"
           }
           debug("slackResponse == ${slackResponse}")
           debug("slackResponse.threadId == ${slackResponse.threadId}")
