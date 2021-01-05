@@ -482,9 +482,13 @@ class SfdxProjectBuilder implements Serializable {
 
     _.currentBuild.result = 'FAILURE'
 
+    def userIds = _.slackUserIdsFromCommitters()
+    def userIdsString = userIds.collect { "<@$it>" }.join(' ')
+    // slackSend(color: "good", message: "$userIdsString Message from Jenkins Pipeline")
+
     sendSlackMessage(
       color: 'danger',
-      message: "Build failed ${_.env.JOB_NAME} ${_.env.BUILD_NUMBER} (<${_.env.BUILD_URL}|Open>)",
+      message: "Build failed ${_.env.JOB_NAME} ${_.env.BUILD_NUMBER} (<${_.env.BUILD_URL}|Open>) -- $userIdsString ",
       isFooterMessage: true,
       isBroadcastingReply: true
     )
