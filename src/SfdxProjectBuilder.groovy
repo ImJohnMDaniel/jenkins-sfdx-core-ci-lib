@@ -266,6 +266,10 @@ class SfdxProjectBuilder implements Serializable {
       // start the pipeline
       _.pipeline {
 
+        _.environment {
+          SFDX_JSON_TO_STDOUT = true
+        }
+
         _.properties([
           // ensure that concurrent builds on the same project is not possible
           _.disableConcurrentBuilds(),
