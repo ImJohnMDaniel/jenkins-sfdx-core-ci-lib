@@ -955,6 +955,7 @@ class SfdxProjectBuilder implements Serializable {
           collectTestResults()
           if ( unitTestsHaveFailed ) {
             sendTestResultsBySlack()
+            _.error('Apex Unit Tests Failed')
           }
         }
       }
@@ -974,7 +975,7 @@ class SfdxProjectBuilder implements Serializable {
     if ( _.findFiles( glob: "${this.workingArtifactDirectory}/**/test-result-707*.json" ) ) {
       sendSlackMessage(
         color: 'danger',
-        message: "Apex Unit Test Results",
+        message: "Apex Unit Test Results @here",
         isFooterMessage: true,
         fileToSend: "${this.workingArtifactDirectory}/**/test-result-707*.json"
       )
