@@ -477,7 +477,9 @@ class SfdxProjectBuilder implements Serializable {
 
   void postFailure(def ex) {
     _.echo(ex.getMessage())
-  
+
+    _.currentBuild.result = 'FAILURE'
+
     sendSlackMessage(
       color: 'danger',
       message: "Build failed ${_.env.JOB_NAME} ${_.env.BUILD_NUMBER} (<${_.env.BUILD_URL}|Open>)",
