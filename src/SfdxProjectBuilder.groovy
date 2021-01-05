@@ -924,7 +924,8 @@ class SfdxProjectBuilder implements Serializable {
   private void compileCode() {
     _.echo("Push To Scratch Org And Compile")
     try {
-      def rmsg = _.sh returnStdout: true, script: "sfdx force:source:push --forceoverwrite --json --targetusername ${this.sfdxScratchOrgAlias}"
+      _.echo( _.env.)
+      def rmsg = _.sh returnStdout: true, script: "sfdx force:source:push --forceoverwrite --json --targetusername ${this.sfdxScratchOrgAlias} &> force-source-push.json"
       // printf rmsg
 
       def response = jsonParse( rmsg )
@@ -937,6 +938,7 @@ class SfdxProjectBuilder implements Serializable {
     catch(ex) {
       debug( 'catch section of force:source:push' )
       debug( ex )
+      _.error( ex )
     } 
     finally {
       debug( 'finally section of force:source:push')
