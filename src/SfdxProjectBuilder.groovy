@@ -460,11 +460,7 @@ class SfdxProjectBuilder implements Serializable {
   }
 
   void artifactRecordingStage() {
-    // Disabling this task until Salesforce's release of the #Spring21.  The reason is that there are serious
-    //    issues with the Salesforce CLI "force:package:installed:list" command timing out.  
-    //    As of 11/30/2020, Salesforce says that there is a chance that the fix will arrive early.  When it does
-    //    this feature will be reactivated.
-    // archiveAllBuildArtifacts()
+    archiveAllBuildArtifacts()
   }
 
   void postSuccess() {
@@ -484,6 +480,8 @@ class SfdxProjectBuilder implements Serializable {
 
     def userIds = _.slackUserIdsFromCommitters()
     def userIdsString = userIds.collect { "<@$it>" }.join(' ')
+    debug("Slack userIds == ${userIds}")
+    debug("Slack userIdsString == ${userIdsString}")
     // slackSend(color: "good", message: "$userIdsString Message from Jenkins Pipeline")
 
     sendSlackMessage(
