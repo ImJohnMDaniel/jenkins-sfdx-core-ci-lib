@@ -943,10 +943,8 @@ class SfdxProjectBuilder implements Serializable {
       debug( 'catch section of force:source:push' )
       debug( ex )
       debug( 'does ex have a status?')
-      debug( ex.status )
-      debug( rmsg )
-      // def response = jsonParse( rmsg )
-      // debug( response )
+      
+      sendCompileResultsBySlack()      
 
       _.error( ex )
     } 
@@ -1003,6 +1001,29 @@ class SfdxProjectBuilder implements Serializable {
     } else {
       _.echo( 'No local Apex Tests found.' )  
     }
+  }
+
+  private void sendCompileResultsBySlack() {
+    debug('sendCompileResultsBySlack method called')
+
+    if ( _.findFiles( glob: "force-source-push.json") ) {
+      def sourcePushResultFile = _.findFiles( glob: "force-source-push.json") 
+      def sourcePushResults = _.readJSON file: "${sourcePushResultFile[0].path}", returnPojo: true
+      def sourcePushFailureDetails = "Metadata that failed to compile:\n\n```"
+
+      sourcePushResults.result.each { result -> {
+        sourcePushFailureDetails += "${result.type} ${result.fullName} -- ${result.error}\n"
+      }}
+
+      sourcePushFailureDetails += "```"
+
+      sendSlackMessage(
+          color: 'danger',
+          message: "${sourcePushFailureDetails}",
+          isFooterMessage: true
+        )
+    }
+
   }
 
   private void collectTestResults() {
