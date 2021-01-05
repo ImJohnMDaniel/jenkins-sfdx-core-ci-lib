@@ -998,13 +998,13 @@ class SfdxProjectBuilder implements Serializable {
 
       def testFailureDetails = "Apex Unit Tests that failed include:\n\n"
 
-      testResults.tests.each { test -> (
+      testResults.tests.each { test -> 
         if ( test.Outcome.equals('Fail') ) {
           testFailureDetails += "${test.FullName}\n"
           testFailureDetails += "    - stacktrace: ${test.StackTrace}\n"
           testFailureDetails += "    - message: ${test.Message}\n\n\n"
         }
-      )}
+      }
 
 
       // sendSlackMessage(
