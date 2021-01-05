@@ -1009,13 +1009,14 @@ class SfdxProjectBuilder implements Serializable {
     if ( _.findFiles( glob: "force-source-push.json") ) {
       def sourcePushResultFile = _.findFiles( glob: "force-source-push.json") 
       def sourcePushResults = _.readJSON file: "${sourcePushResultFile[0].path}", returnPojo: true
-      def sourcePushFailureDetails = "Metadata that failed to compile:\n\n```"
+      // def sourcePushFailureDetails = "Metadata that failed to compile:\n\n```"
+      def sourcePushFailureDetails = "Metadata that failed to compile:\n\n"
 
       sourcePushResults.result.each { result -> 
-        sourcePushFailureDetails += "${result.type} ${result.fullName} -- ${result.error}\n"
+        sourcePushFailureDetails += "* ${result.type} ${result.fullName} -- ${result.error}\n"
       }
 
-      sourcePushFailureDetails += "```"
+      // sourcePushFailureDetails += "```"
 
       sendSlackMessage(
           color: 'danger',
