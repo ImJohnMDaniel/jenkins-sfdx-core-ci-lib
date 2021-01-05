@@ -985,6 +985,10 @@ class SfdxProjectBuilder implements Serializable {
 
     if ( _.findFiles( glob: "${this.workingArtifactDirectory}/**/test-result-707*.json" ) ) {
 
+      def testResultFiles = _.findFiles( glob: "${this.workingArtifactDirectory}/**/test-result-707*.json" )
+      debug(testResultFiles[0].name)
+      debug(testResultFiles[0].path)
+
       def testResults = _.readJSON file: "${this.workingArtifactDirectory}/**/test-result-707*.json", returnPojo: true
 
       debug("testResults.summary.failing == ${testResults.summary.failing}")
