@@ -1011,9 +1011,9 @@ class SfdxProjectBuilder implements Serializable {
       def sourcePushResults = _.readJSON file: "${sourcePushResultFile[0].path}", returnPojo: true
       def sourcePushFailureDetails = "Metadata that failed to compile:\n\n```"
 
-      sourcePushResults.result.each { result -> {
+      sourcePushResults.result.each { result -> 
         sourcePushFailureDetails += "${result.type} ${result.fullName} -- ${result.error}\n"
-      }}
+      }
 
       sourcePushFailureDetails += "```"
 
