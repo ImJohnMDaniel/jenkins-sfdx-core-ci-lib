@@ -450,7 +450,7 @@ class SfdxProjectBuilder implements Serializable {
 
     // _.failFast true // this is part of the declarative syntax.  Is there an equivalent in the scripted model?
     
-    // _.parallel { // not sure why this is not working.  Need to find equivalent in teh scripted model.
+    // _.parallel { // not sure why this is not working.  Need to find equivalent in the scripted model.
       executeUnitTests()
     // } // parallel
   }
