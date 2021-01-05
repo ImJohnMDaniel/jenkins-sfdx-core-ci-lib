@@ -984,6 +984,19 @@ class SfdxProjectBuilder implements Serializable {
     debug('sendTestResultsBySlack method called')
 
     if ( _.findFiles( glob: "${this.workingArtifactDirectory}/**/test-result-707*.json" ) ) {
+
+      def testResults = _.readJSON file: "${this.workingArtifactDirectory}/**/test-result-707*.json", returnPojo: true
+
+      debug("testResults.summary.failing == ${testResults.summary.failing}")
+      if ( testResults.summary.failing > 0 ) {
+        debug( "${testResults.summary.failing} failed tests")
+      }
+
+      testResults.tests.each { test -> 
+        _.echo "${test.FullName} -- ${test.Outcome}"
+      }
+
+
       sendSlackMessage(
         color: 'danger',
         message: "Apex Unit Test Results <@here>",
