@@ -474,6 +474,7 @@ class SfdxProjectBuilder implements Serializable {
   }
 
   void postFailure(def ex) {
+    debug('start of postFailure method')
     _.echo(ex.getMessage())
 
     _.currentBuild.result = 'FAILURE'
@@ -941,7 +942,7 @@ class SfdxProjectBuilder implements Serializable {
     }
     catch(ex) {
       debug( 'catch section of force:source:push' )
-      debug( ex )
+      debug( ex.getMessage() )
       debug( 'does ex have a status?')
       
       sendCompileResultsBySlack()      
@@ -975,7 +976,7 @@ class SfdxProjectBuilder implements Serializable {
           }
         }
         catch (ex) {
-          debug(ex)
+          debug(ex.getMessage())
 
           // if (ex.status != 100 ) {
           //   // somehting is wrong
@@ -1008,6 +1009,7 @@ class SfdxProjectBuilder implements Serializable {
 
     if ( _.findFiles( glob: "force-source-push.json") ) {
       def sourcePushResultFile = _.findFiles( glob: "force-source-push.json") 
+      _.echo(sourcePushResultFile)
       def sourcePushResults = _.readJSON file: "${sourcePushResultFile[0].path}", returnPojo: true
       // def sourcePushFailureDetails = "Metadata that failed to compile:\n\n```"
       def sourcePushFailureDetails = "Metadata that failed to compile:\n\n"
