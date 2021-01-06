@@ -1009,7 +1009,7 @@ class SfdxProjectBuilder implements Serializable {
 
     if ( _.findFiles( glob: "force-source-push.json") ) {
       def sourcePushResultFile = _.findFiles( glob: "force-source-push.json") 
-      _.echo(sourcePushResultFile)
+      // _.echo(sourcePushResultFile) // doing this produces an exception
       def sourcePushResults = _.readJSON file: "${sourcePushResultFile[0].path}", returnPojo: true
       // def sourcePushFailureDetails = "Metadata that failed to compile:\n\n```"
       def sourcePushFailureDetails = "Metadata that failed to compile:\n\n"
