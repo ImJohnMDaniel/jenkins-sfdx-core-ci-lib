@@ -942,10 +942,13 @@ class SfdxProjectBuilder implements Serializable {
     }
     catch(ex) {
       debug( 'catch section of force:source:push' )
-      debug( ex.getMessage() )
-      debug( 'does ex have a status?')
+      // debug( ex.getMessage() )
+      // debug( 'does ex have a status?')
+
+      // check if force-source-push.json exists
+        // read the file as a JSON file
       
-//      sendCompileResultsBySlack()      
+      processForceSourcePushFailure()      
 
       _.error( ex )
     } 
@@ -954,10 +957,9 @@ class SfdxProjectBuilder implements Serializable {
     }
   }
 
-  private void sendCompileResultsBySlack() {
-    debug('sendCompileResultsBySlack method called')
+  private void processForceSourcePushFailure() {
+    debug('processForceSourcePushFailure method called')
 
-// What happens when the filesize is zero?
     def forceSourcePushResultsFileExists = _.fileExists 'force-source-push.json'
 
     if ( forceSourcePushResultsFileExists ) {
@@ -971,20 +973,32 @@ class SfdxProjectBuilder implements Serializable {
       def sourcePushResults = jsonParse( _.readFile('force-source-push.json') )
       debug( 'after force-source-push.json file read')
 
-      // def sourcePushFailureDetails = "Metadata that failed to compile:\n\n```"
-      def sourcePushFailureDetails = "Metadata that failed to compile:\n\n"
-      debug('before sourcePushResults.result.each ')
-      sourcePushResults.result.each { result -> 
-        sourcePushFailureDetails += "* ${result.type} ${result.fullName} -- ${result.error}\n"
+      def sourcePushFailureDetails = "Compilaiton stage failed with error : ${sourcePushResults.name}\n\n"
+      
+      if ( 'DeployFailed'.equals(sourcePushResults.name)) {
+        sourcePushFailureDetails += "Metadata that failed to compile:\n\n"
+        debug('before sourcePushResults.result.each ')
+        sourcePushResults.result.each { result -> 
+          sourcePushFailureDetails += "* ${result.type} ${result.fullName} -- ${result.error}\n"
+        }
+        debug('after sourcePushResults.result.each and before sendSlackMessage call')
+      } 
+      else {
+        sourcePushFailureDetails += sourcePushResults.message
       }
-      debug('after sourcePushResults.result.each and before sendSlackMessage call')
+      
       // sourcePushFailureDetails += "```"
+
+      _.echo(sourcePushFailureDetails)
 
       sendSlackMessage(
           color: 'danger',
           message: "${sourcePushFailureDetails}",
           isFooterMessage: true
         )
+    }
+    else {
+      _.echo ('file force-source-push.json not found')
     }
 
   }
