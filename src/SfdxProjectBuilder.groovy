@@ -922,7 +922,7 @@ class SfdxProjectBuilder implements Serializable {
     _.echo("Push To Scratch Org And Compile")
     def rmsg
     try {
-      _.echo( _.env.SFDX_JSON_TO_STDOUT )
+      // _.echo( _.env.SFDX_JSON_TO_STDOUT )
       // rmsg = _.sh returnStdout: true, script: "sfdx force:source:push --forceoverwrite --json --targetusername ${this.sfdxScratchOrgAlias}"
 
       // def response = jsonParse( rmsg )
@@ -945,13 +945,48 @@ class SfdxProjectBuilder implements Serializable {
       debug( ex.getMessage() )
       debug( 'does ex have a status?')
       
-      sendCompileResultsBySlack()      
+//      sendCompileResultsBySlack()      
 
       _.error( ex )
     } 
     finally {
       debug( 'finally section of force:source:push')
     }
+  }
+
+  private void sendCompileResultsBySlack() {
+    debug('sendCompileResultsBySlack method called')
+
+// What happens when the filesize is zero?
+    def forceSourcePushResultsFileExists = _.fileExists 'force-source-push.json'
+
+    if ( forceSourcePushResultsFileExists ) {
+
+      // def sourcePushResultFile = _.findFiles( glob: "force-source-push.json") 
+      
+      // _.echo(sourcePushResultFile) // doing this produces an exception
+      // printf sourcePushResultFile
+      // def sourcePushResults = _.readJSON file: "${sourcePushResultFile[0].path}", returnPojo: true
+      debug( 'before force-source-push.json file read')
+      def sourcePushResults = jsonParse( _.readFile('force-source-push.json') )
+      debug( 'after force-source-push.json file read')
+
+      // def sourcePushFailureDetails = "Metadata that failed to compile:\n\n```"
+      def sourcePushFailureDetails = "Metadata that failed to compile:\n\n"
+      debug('before sourcePushResults.result.each ')
+      sourcePushResults.result.each { result -> 
+        sourcePushFailureDetails += "* ${result.type} ${result.fullName} -- ${result.error}\n"
+      }
+      debug('after sourcePushResults.result.each and before sendSlackMessage call')
+      // sourcePushFailureDetails += "```"
+
+      sendSlackMessage(
+          color: 'danger',
+          message: "${sourcePushFailureDetails}",
+          isFooterMessage: true
+        )
+    }
+
   }
 
   private void executeUnitTests() {
@@ -1002,40 +1037,6 @@ class SfdxProjectBuilder implements Serializable {
     } else {
       _.echo( 'No local Apex Tests found.' )  
     }
-  }
-
-  private void sendCompileResultsBySlack() {
-    debug('sendCompileResultsBySlack method called')
-
-    def forceSourcePushResultsFileExists = _.fileExists 'force-source-push.json'
-
-    if ( forceSourcePushResultsFileExists ) {
-
-      // def sourcePushResultFile = _.findFiles( glob: "force-source-push.json") 
-      
-      // _.echo(sourcePushResultFile) // doing this produces an exception
-      // printf sourcePushResultFile
-      // def sourcePushResults = _.readJSON file: "${sourcePushResultFile[0].path}", returnPojo: true
-      debug( 'before force-source-push.json file read')
-      def sourcePushResults = jsonParse( _.readFile('force-source-push.json') )
-      debug( 'after force-source-push.json file read')
-
-      // def sourcePushFailureDetails = "Metadata that failed to compile:\n\n```"
-      def sourcePushFailureDetails = "Metadata that failed to compile:\n\n"
-      debug('before sourcePushResults.result.each ')
-      sourcePushResults.result.each { result -> 
-        sourcePushFailureDetails += "* ${result.type} ${result.fullName} -- ${result.error}\n"
-      }
-      debug('after sourcePushResults.result.each and before sendSlackMessage call')
-      // sourcePushFailureDetails += "```"
-
-      sendSlackMessage(
-          color: 'danger',
-          message: "${sourcePushFailureDetails}",
-          isFooterMessage: true
-        )
-    }
-
   }
 
   private void collectTestResults() {
