@@ -13,6 +13,8 @@ new SfdxProjectBuilder(this)
         .doNotBuildPackage()
         .setupCommunity( 'Foobar', 'foobar', 'Customer Service' )
         .publishCommunity( 'Foobar' )
+        .setPostDeployScriptExecution('bin/do-something-script') // set this for each script to excute
+        .loadData()
         .alwaysNotifyOnSuccess()
         .setSlackNotificationsOn()
         .preserveScratchOrg()
