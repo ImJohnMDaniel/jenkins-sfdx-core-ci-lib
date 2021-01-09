@@ -1010,17 +1010,23 @@ class SfdxProjectBuilder implements Serializable {
     def forceSourcePushResultsFileExists = _.fileExists 'force-source-push.json'
 
     if ( forceSourcePushResultsFileExists ) {
-      def sourcePushResultFile = _.findFiles( glob: "force-source-push.json") 
+
+      // def sourcePushResultFile = _.findFiles( glob: "force-source-push.json") 
+      
       // _.echo(sourcePushResultFile) // doing this produces an exception
-      printf sourcePushResultFile
-      def sourcePushResults = _.readJSON file: "${sourcePushResultFile[0].path}", returnPojo: true
+      // printf sourcePushResultFile
+      // def sourcePushResults = _.readJSON file: "${sourcePushResultFile[0].path}", returnPojo: true
+      debug( 'before force-source-push.json file read')
+      def sourcePushResults = jsonParse( _.readFile('force-source-push.json') )
+      debug( 'after force-source-push.json file read')
+
       // def sourcePushFailureDetails = "Metadata that failed to compile:\n\n```"
       def sourcePushFailureDetails = "Metadata that failed to compile:\n\n"
-      _.echo('before sourcePushResults.result.each ')
+      debug('before sourcePushResults.result.each ')
       sourcePushResults.result.each { result -> 
         sourcePushFailureDetails += "* ${result.type} ${result.fullName} -- ${result.error}\n"
       }
-      _.echo('after sourcePushResults.result.each and before sendSlackMessage call')
+      debug('after sourcePushResults.result.each and before sendSlackMessage call')
       // sourcePushFailureDetails += "```"
 
       sendSlackMessage(
