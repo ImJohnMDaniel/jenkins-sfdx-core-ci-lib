@@ -48,17 +48,19 @@ class SfdxProjectBuilder implements Serializable {
 
   private def scratchOrgShouldBeDeleted = true
 
-  private def branchesToBuildPackageFromList = ['master', 'main']
+  private def releaseBranchList = ['master', 'main']
 
   private def upstreamProjectsToTriggerFrom = []
 
   private def upstreamProjectsToTriggerFromPrefix
 
-  private boolean dependencyBuildsBranchMasterMainAndNullAreTheSame = true
+  private boolean releaseBranchesShouldBeTreatedAsNull = true
 
   private def numberOfBuildsToKeep = '30'
 
   private def stageToStopBuildAt = 99
+
+  private def buildTagName = _.env.BUILD_TAG.replaceAll(' ','-')
 
   // Community related variables
   private def communityName
@@ -140,6 +142,36 @@ class SfdxProjectBuilder implements Serializable {
       _.error('alwaysBuildPackage() and doNotBuildPackage() cannot both be specified')
     }
     return this
+  }
+
+  public SfdxProjectBuilder designateAsReleaseBranch( def branchName ) {
+
+    if ( branchName != null && !branchName.empty && !this.releaseBranchList.contains(branchName)) {
+      def valueToAdd
+      if ( branchName.contains('*') ) {
+        // branchName is a regex expression
+        // for now this only supports "startsWith"
+        valueToAdd = _.env.BRANCH_NAME.startsWith( branchName.replaceAll('*','') )
+      } else {
+        // branchName is a standard string name
+        valueToAdd = _.env.BRANCH_NAME
+      }
+      _.echo("SfdxProjectBuilder Parameter set : designating ${valueToAdd} as a release branch.")
+      this.releaseBranchList.add( valueToAdd )
+    } else {
+      _.error('designateAsReleaseBranch() value cannot be null')
+    }
+
+    return this
+/*
+******** - Setter == designateAsReleaseBranch('foobar')
+      - sets the value to the this.releaseBranchList
+      - should allow for regex here
+        - How will this be managed?
+          - In the setter method, if it is a regex expression, it should be evaluated against _.env.BRANCH_NAME.  If it is a match, then _.env.BRANCH_NAME should be added to this.releaseBranchList
+          - In the setter method, ignore entries of "master" and "main" because they are already part of this.releaseBranchList
+*/  
+
   }
 
   public SfdxProjectBuilder alwaysNotifyOnSuccess() {
@@ -659,8 +691,11 @@ class SfdxProjectBuilder implements Serializable {
   private void initializeBuildScriptVariables() {
     this.workingArtifactDirectory = "target/${_.env.BUILD_NUMBER}"
     this.sfdxScratchOrgAlias = "bluesphere-${_.env.BUILD_TAG.replaceAll("/", "_").replaceAll(" ","_")}"
+
+// TODO: Change env TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_MAIN_AND_NULL_THE_SAME to be TREAT_RELEASE_BRANCHES_AS_NULL_FOR_DEPENDENCIES_AND_PACKAGE_VERSION_CREATION
+
     if ( _.env.TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_MAIN_AND_NULL_THE_SAME != null ) {
-      this.dependencyBuildsBranchMasterMainAndNullAreTheSame = _.env.TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_MAIN_AND_NULL_THE_SAME.toBoolean()
+      this.releaseBranchesShouldBeTreatedAsNull = _.env.TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_MAIN_AND_NULL_THE_SAME.toBoolean()
     }
     // TODO: Figure out way to use env vars to drive the container configuration
 
@@ -791,7 +826,13 @@ class SfdxProjectBuilder implements Serializable {
   private void resetAllDependenciesToLatestWherePossible() {
     def commandScriptString = "sfdx toolbox:package:dependencies:manage --updatetolatest --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME} --json"
 
-    if ( (_.env.BRANCH_NAME != 'master' && _.env.BRANCH_NAME != 'main') || ( (_.env.BRANCH_NAME == 'master' || _.env.BRANCH_NAME == 'main') && !this.dependencyBuildsBranchMasterMainAndNullAreTheSame ) ) {
+
+// TODO: Make adjustments here as well
+    if ( !this.releaseBranchList.contains(_.env.BRANCH_NAME)
+        || ( this.releaseBranchList.contains(_.env.BRANCH_NAME)
+            && !this.releaseBranchesShouldBeTreatedAsNull ) 
+        ) 
+    {
       commandScriptString = commandScriptString + " --branch ${_.env.BRANCH_NAME}"
     }
 
@@ -809,7 +850,7 @@ class SfdxProjectBuilder implements Serializable {
 
   private void installAllDependencies() {
     // _.echo("env.BRANCH_NAME == ${_.env.BRANCH_NAME}")
-    // _.echo("this.dependencyBuildsBranchMasterMainAndNullAreTheSame == ${this.dependencyBuildsBranchMasterMainAndNullAreTheSame}")
+    // _.echo("this.releaseBranchesShouldBeTreatedAsNull == ${this.releaseBranchesShouldBeTreatedAsNull}")
     // if ( _.env.BRANCH_NAME == 'master' ) {
     //   _.echo('branch_name == master')
     // }
@@ -817,19 +858,19 @@ class SfdxProjectBuilder implements Serializable {
     //   _.echo('branch_name != master')
     // }
 
-    // if ( !this.dependencyBuildsBranchMasterMainAndNullAreTheSame ) {
-    //   _.echo('!this.dependencyBuildsBranchMasterMainAndNullAreTheSame == true')
+    // if ( !this.releaseBranchesShouldBeTreatedAsNull ) {
+    //   _.echo('!this.releaseBranchesShouldBeTreatedAsNull == true')
     // } else {
-    //   _.echo('!this.dependencyBuildsBranchMasterMainAndNullAreTheSame == false')
+    //   _.echo('!this.releaseBranchesShouldBeTreatedAsNull == false')
     // }
 
-    // if ( _.env.BRANCH_NAME == 'master' && ( !this.dependencyBuildsBranchMasterMainAndNullAreTheSame ) ) {
+    // if ( _.env.BRANCH_NAME == 'master' && ( !this.releaseBranchesShouldBeTreatedAsNull ) ) {
     //   _.echo('secondary condition true')
     // } else {
     //   _.echo('secondary condition false')
     // }
 
-    // if ( _.env.BRANCH_NAME != 'master' || ( _.env.BRANCH_NAME == 'master' && !this.dependencyBuildsBranchMasterMainAndNullAreTheSame ) ) {
+    // if ( _.env.BRANCH_NAME != 'master' || ( _.env.BRANCH_NAME == 'master' && !this.releaseBranchesShouldBeTreatedAsNull ) ) {
     //   _.echo('complete condition true')
     // } else {
     //   _.echo('complete condition false')
@@ -837,7 +878,8 @@ class SfdxProjectBuilder implements Serializable {
 
     def commandScriptString = "sfdx toolbox:package:dependencies:install --wait 240 --noprecheck --targetusername ${this.sfdxScratchOrgAlias} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME} --json"
     
-    if ( (_.env.BRANCH_NAME != 'master' && _.env.BRANCH_NAME != 'main') || ( (_.env.BRANCH_NAME == 'master' || _.env.BRANCH_NAME == 'main') && !this.dependencyBuildsBranchMasterMainAndNullAreTheSame ) ) {
+// TODO: Make adjustments here as well
+    if ( !this.releaseBranchList.contains(_.env.BRANCH_NAME) || ( this.releaseBranchList.contains(_.env.BRANCH_NAME) && !this.releaseBranchesShouldBeTreatedAsNull ) ) {
       commandScriptString = commandScriptString + " --branch ${_.env.BRANCH_NAME}"
     }
 
@@ -1100,10 +1142,12 @@ class SfdxProjectBuilder implements Serializable {
   }
 
   private void packageTheProject() {
-    if ( ( ! alwaysBuildPackage 
-          && ! branchesToBuildPackageFromList.contains(_.env.BRANCH_NAME) )
-          || doNotBuildPackage
-          ) {
+    // if " not alwaysBuildPackage and releaseBranchList does not contain current branch name" or "doNotBuildPackage is true"....
+    if ( ( ! this.alwaysBuildPackage 
+              && ! this.releaseBranchList.contains(_.env.BRANCH_NAME) )
+        || this.doNotBuildPackage
+        ) {
+      // then exit out of the packaging process
       return
     }
     _.echo('Starting packaging process')
@@ -1136,12 +1180,61 @@ class SfdxProjectBuilder implements Serializable {
       _.error  "unable to determine pathToUseForPackageVersionCreation in stage:package"
     }
 
-    def commandScriptString = "sfdx force:package:version:create --path ${pathToUseForPackageVersionCreation} --json --codecoverage --tag ${_.env.BUILD_TAG.replaceAll(' ','-')} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
+    // def commandScriptString = "sfdx force:package:version:create --path ${pathToUseForPackageVersionCreation} --json --codecoverage --tag ${_.env.BUILD_TAG.replaceAll(' ','-')} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
+
+    def commandScriptString = "sfdx force:package:version:create --path ${pathToUseForPackageVersionCreation} --json --codecoverage --tag ${this.buildTagName} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
+
+/*
+    GOAL: FEATURE: treat “rc/*” branches the same as “main” for package version builds
+
+    There are at least two questions:
+    - What branches should automatically build packages on?
+      --- variable  this.branchesToBuildPackageFromList
+    - What branches should be considered "release branches" and thus should have the branch tag as null during the package:version:create phase?
+      --- new variable this.releaseBranchList
+XXXXXXXX -- private def this.releaseBranchList == this.branchesToBuildPackageFromList
+    
+    
+XXXXXXXX Change current "releaseBranchesShouldBeTreatedAsNull" variable to be "releaseBranchesShouldBeTreatedAsNull"
+
+    "release branches" is subset of "branches to always build package from"
+    
+
+XXXXXXXX There should be a flag to set that says "release branches should have package version create branch set to null"
+    - 
+
+    Default branches include "main" and "master"
+    - How do I include other branches?
+      - JenkinsFile setter? *****
+      - sfdx-project.json attribute?
+        - this would only have relevance with the toolbox plugin
+XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
+      - sets the value to the this.releaseBranchList
+      - should allow for regex here
+        - How will this be managed?
+          - In the setter method, if it is a regex expression, it should be evaluated against _.env.BRANCH_NAME.  If it is a match, then _.env.BRANCH_NAME should be added to this.releaseBranchList
+          - In the setter method, ignore entries of "master" and "main" because they are already part of this.releaseBranchList
+    
+
+*/
 
     // use the branch command flag only when the branch is not "master" or when it is "master" and the environment is not set to operate as "master == null"
-    if ( (_.env.BRANCH_NAME != 'master' && _.env.BRANCH_NAME != 'main') || ( (_.env.BRANCH_NAME == 'master' || _.env.BRANCH_NAME == 'main') && !this.dependencyBuildsBranchMasterMainAndNullAreTheSame ) ) {
+    // if ( (_.env.BRANCH_NAME != 'master' && _.env.BRANCH_NAME != 'main') || ( (_.env.BRANCH_NAME == 'master' || _.env.BRANCH_NAME == 'main') && !this.releaseBranchesShouldBeTreatedAsNull ) ) {
+    //   commandScriptString = commandScriptString + " --branch ${_.env.BRANCH_NAME}"
+    // }
+
+    if ( !this.releaseBranchList.contains(_.env.BRANCH_NAME)
+       || ( this.releaseBranchList.contains(_.env.BRANCH_NAME)
+          && !this.releaseBranchesShouldBeTreatedAsNull 
+          ) 
+        ) 
+    {
+      debug( 'using the branch name for the package version create' )
       commandScriptString = commandScriptString + " --branch ${_.env.BRANCH_NAME}"
+    } else {
+      debug( 'NOT USING branch name for the package version create' )
     }
+
 
     if ( this.packageInstallationKey == null ) {
       commandScriptString = commandScriptString + ' --installationkeybypass'
@@ -1152,11 +1245,8 @@ class SfdxProjectBuilder implements Serializable {
     _.echo ("commandScriptString == ${commandScriptString}")
 
     def rmsg = _.sh returnStdout: true, script: commandScriptString
-    // printf rmsg
 
     def packageVersionCreationResponse = jsonParse(rmsg)
-
-    // _.echo ("packageVersionCreationResponse == ${packageVersionCreationResponse}")
 
     if ( packageVersionCreationResponse.status != 0 ) {
         _.echo( packageVersionCreationResponse )
