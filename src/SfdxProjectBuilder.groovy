@@ -60,7 +60,7 @@ class SfdxProjectBuilder implements Serializable {
 
   private def stageToStopBuildAt = 99
 
-  private def buildTagName = _.env.BUILD_TAG.replaceAll(' ','-')
+  private def buildTagName 
 
   // Community related variables
   private def communityName
@@ -74,6 +74,7 @@ class SfdxProjectBuilder implements Serializable {
 
   SfdxProjectBuilder(def jenkinsFileScript) {
     _ = jenkinsFileScript
+    this.buildTagName = _.env.BUILD_TAG.replaceAll(' ','-')
   }
 
   public void execute() {
