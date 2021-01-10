@@ -1516,8 +1516,13 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
           // _.echo("adding upstream dependency on project ${anUpstreamProjectToTriggerFrom}")
           // result << _.upstream(	upstreamProjects: upstreamProjectName + "/" + _.env.BRANCH_NAME.replaceAll("/", "%2F"),  threshold: hudson.model.Result.SUCCESS )
 
-         
-          projectNamesStrings.add( upstreamProjectName + "/" + _.env.BRANCH_NAME.replaceAll("/", "%2F") )
+          if ( anUpstreamProjectToTriggerFrom.contains('/') ) {
+            // ...then the anUpstreamProjectToTriggerFrom specifies both the project and the branch
+            projectNamesStrings.add( upstreamProjectName )
+          } else {
+            // ...the anUpstreamProjectToTriggerFrom specifies just the branch and the env.BRANCH_NAME needs to be appended.
+            projectNamesStrings.add( upstreamProjectName + "/" + _.env.BRANCH_NAME.replaceAll("/", "%2F") )
+          }
         }
       } 
 
