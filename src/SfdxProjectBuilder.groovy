@@ -162,6 +162,9 @@ class SfdxProjectBuilder implements Serializable {
       if ( valueToAdd ) {
         _.echo("SfdxProjectBuilder Parameter set : designating ${valueToAdd} as a release branch.")
         this.releaseBranchList.add( valueToAdd )
+      } else {
+        // echoing this out just for announcement even though it doesn't resolve to a real branch
+        _.echo("SfdxProjectBuilder Parameter set : designating ${branchName} as a release branch.")
       }
     } else {
       _.error('designateAsReleaseBranch() value cannot be null')
