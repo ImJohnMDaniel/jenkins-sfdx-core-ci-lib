@@ -152,7 +152,7 @@ class SfdxProjectBuilder implements Serializable {
       if ( branchName.contains('*') ) {
         // branchName is a regex expression
         // for now this only supports "startsWith"
-        valueToAdd = _.env.BRANCH_NAME.startsWith( branchName.replaceAll('*','') )
+        valueToAdd = _.env.BRANCH_NAME.startsWith( branchName.replaceAll('\*','') )
       } else {
         // branchName is a standard string name
         valueToAdd = _.env.BRANCH_NAME
