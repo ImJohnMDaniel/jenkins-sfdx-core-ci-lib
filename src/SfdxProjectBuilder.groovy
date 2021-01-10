@@ -700,10 +700,10 @@ class SfdxProjectBuilder implements Serializable {
     this.workingArtifactDirectory = "target/${_.env.BUILD_NUMBER}"
     this.sfdxScratchOrgAlias = "bluesphere-${_.env.BUILD_TAG.replaceAll("/", "_").replaceAll(" ","_")}"
 
-// TODO: Change env TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_MAIN_AND_NULL_THE_SAME to be TREAT_RELEASE_BRANCHES_AS_NULL_FOR_DEPENDENCIES_AND_PACKAGE_VERSION_CREATION
+// TODO: Change env TREAT_RELEASE_BRANCHES_AS_NULL_FOR_DEPENDENCIES_AND_PACKAGE_VERSION_CREATION to be TREAT_RELEASE_BRANCHES_AS_NULL_FOR_DEPENDENCIES_AND_PACKAGE_VERSION_CREATION
 
-    if ( _.env.TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_MAIN_AND_NULL_THE_SAME != null ) {
-      this.releaseBranchesShouldBeTreatedAsNull = _.env.TREAT_DEPENDENCY_BUILDS_BRANCH_MASTER_MAIN_AND_NULL_THE_SAME.toBoolean()
+    if ( _.env.TREAT_RELEASE_BRANCHES_AS_NULL_FOR_DEPENDENCIES_AND_PACKAGE_VERSION_CREATION != null ) {
+      this.releaseBranchesShouldBeTreatedAsNull = _.env.TREAT_RELEASE_BRANCHES_AS_NULL_FOR_DEPENDENCIES_AND_PACKAGE_VERSION_CREATION.toBoolean()
     }
     // TODO: Figure out way to use env vars to drive the container configuration
 
