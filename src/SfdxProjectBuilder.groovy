@@ -1138,6 +1138,7 @@ class SfdxProjectBuilder implements Serializable {
             isFooterMessage: true
           )
         }
+        debug( 'end of catch section of toolbox:apex:codecoverage:check' )
 
         _.error( ex )
       }
