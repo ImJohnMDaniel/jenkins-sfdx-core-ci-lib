@@ -145,6 +145,19 @@ class SfdxProjectBuilder implements Serializable {
     return this
   }
 
+  public SfdxProjectBuilder doNotBuildPackageFromMasterMainBranches() {
+    _.echo('SfdxProjectBuilder Parameter set : No package will be built form MASTER or MAIN code branhces.  Overrides all other considerations.')
+
+    def index = 0;
+
+    this.releaseBranchList.each { value ->
+      debug( value )
+      index++
+    }
+
+    return this
+  }
+
   public SfdxProjectBuilder designateAsReleaseBranch( def branchName ) {
 
     if ( branchName != null && !branchName.empty && !this.releaseBranchList.contains(branchName)) {
