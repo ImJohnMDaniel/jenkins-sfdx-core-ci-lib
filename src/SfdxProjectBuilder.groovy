@@ -1119,6 +1119,7 @@ class SfdxProjectBuilder implements Serializable {
       } 
       catch(ex) {
         debug( 'catch section of toolbox:apex:codecoverage:check' )
+        debug( "${ex.name}")
 
         if ( ex.name && 'CODE_COVERAGE_INSUFFICIENT'.equals(ex.name)) {
           def evaluationResults = _.readJSON file: "${this.workingArtifactDirectory}/toolbox-apex-codecoverage-check.json", returnPojo: true
