@@ -491,7 +491,8 @@ class SfdxProjectBuilder implements Serializable {
     // _.failFast true // this is part of the declarative syntax.  Is there an equivalent in the scripted model?
     
     // _.parallel { // not sure why this is not working.  Need to find equivalent in the scripted model.
-      executeUnitTests()
+    executeUnitTests()
+    evaluateTestResults()
     // } // parallel
   }
 
@@ -917,9 +918,13 @@ class SfdxProjectBuilder implements Serializable {
   }
 
   private void installRequiredCLIPlugins() {
-      _.echo ("installing the toolbox plugins")
-      def rmsgToolboxInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install @dx-cli-toolbox/sfdx-toolbox-package-utils"
-      _.echo rmsgToolboxInstall
+      _.echo ("installing the @dx-cli-toolbox/sfdx-toolbox-package-utils plugin")
+      def rmsgToolboxPackageUtilsInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install @dx-cli-toolbox/sfdx-toolbox-package-utils"
+      _.echo rmsgToolboxPackageUtilsInstall
+
+      _.echo ("installing the @dx-cli-toolbox/sfdx-toolbox-utils plugin")
+      def rmsgToolboxUtilsInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install @dx-cli-toolbox/sfdx-toolbox-utils"
+      _.echo rmsgToolboxUtilsInstall
 
       // _.echo ("installing the sfdmu plugins")
       // def rmsgSFDMUInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install sfdmu"
@@ -1100,6 +1105,22 @@ class SfdxProjectBuilder implements Serializable {
       }
     } else {
       _.echo( 'No local Apex Tests found.' )  
+    }
+  }
+
+  private void evaluateTestResults() {
+    debug('evaluateTestResults method called')
+    if ( _.findFiles( glob: "${this.workingArtifactDirectory}/**/test-result-707*.json" ) ) {
+      def testResultFiles = _.findFiles( glob: "${this.workingArtifactDirectory}/**/test-result-707*.json" )
+
+      try {
+        // evaluate the test results
+        _.sh returnStatus: true, script: "sfdx toolbox:apex:codecoverage:check --json -f ${testResultFiles[0].path}"
+      } 
+      catch(ex) {
+        debug( 'catch section of force:source:push' )
+        _.error( ex )
+      }
     }
   }
 
