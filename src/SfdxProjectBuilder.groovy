@@ -992,7 +992,7 @@ class SfdxProjectBuilder implements Serializable {
       //   _.error('force:source:push failed')
       // }
 
-      _.sh script: "sfdx force:source:push --forceoverwrite --json --targetusername ${this.sfdxScratchOrgAlias} > force-source-push.json"
+      _.sh script: "sfdx force:source:push --forceoverwrite --json --targetusername ${this.sfdxScratchOrgAlias} > ${this.workingArtifactDirectory}/force-source-push.json"
 
     }
     catch(ex) {
@@ -1015,17 +1015,17 @@ class SfdxProjectBuilder implements Serializable {
   private void processForceSourcePushFailure() {
     debug('processForceSourcePushFailure method called')
 
-    def forceSourcePushResultsFileExists = _.fileExists 'force-source-push.json'
+    def forceSourcePushResultsFileExists = _.fileExists "${this.workingArtifactDirectory}/force-source-push.json"
 
     if ( forceSourcePushResultsFileExists ) {
 
-      // def sourcePushResultFile = _.findFiles( glob: "force-source-push.json") 
+      // def sourcePushResultFile = _.findFiles( glob: "${this.workingArtifactDirectory}/force-source-push.json") 
       
       // _.echo(sourcePushResultFile) // doing this produces an exception
       // printf sourcePushResultFile
       // def sourcePushResults = _.readJSON file: "${sourcePushResultFile[0].path}", returnPojo: true
       debug( 'before force-source-push.json file read')
-      def sourcePushResults = jsonParse( _.readFile('force-source-push.json') )
+      def sourcePushResults = jsonParse( _.readFile("${this.workingArtifactDirectory}/force-source-push.json") )
       debug( 'after force-source-push.json file read')
 
       def sourcePushFailureDetails = "Compilaiton stage failed with error : ${sourcePushResults.name}\n\n"
@@ -1115,7 +1115,7 @@ class SfdxProjectBuilder implements Serializable {
 
       try {
         // evaluate the test results
-        _.sh returnStatus: true, script: "sfdx toolbox:apex:codecoverage:check --json -f ${testResultFiles[0].path} > toolbox-apex-codecoverage-check.json"
+        _.sh returnStatus: true, script: "sfdx toolbox:apex:codecoverage:check --json -f ${testResultFiles[0].path} > ${this.workingArtifactDirectory}/toolbox-apex-codecoverage-check.json"
       } 
       catch(ex) {
         debug( 'catch section of force:source:push' )
