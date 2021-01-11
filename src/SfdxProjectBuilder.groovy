@@ -1116,6 +1116,40 @@ class SfdxProjectBuilder implements Serializable {
       try {
         // evaluate the test results
         _.sh script: "sfdx toolbox:apex:codecoverage:check --json -f ${testResultFiles[0].path} > ${this.workingArtifactDirectory}/toolbox-apex-codecoverage-check.json"
+
+        def evaluationResults = _.readJSON file: "${this.workingArtifactDirectory}/toolbox-apex-codecoverage-check.json", returnPojo: true
+
+        def evaluateTestResultsMessage = "Code coverage insufficient:\n\n```"
+        def warningSlackMessageShouldBeSent = false 
+
+        if ( evaluationResults.result.coverage.org && !evaluationResults.result.coverage.org.success ) {
+          evaluateTestResultsMessage += "Org Wide Code Coverage insufficient\n"
+          evaluateTestResultsMessage += "    - Required percentage: ${evaluationResults.result.coverage.org.converageRequirementForOrg}\n"
+          evaluateTestResultsMessage += "    - Current percentage: ${evaluationResults.result.coverage.org.coveredPercent}\n\n\n"
+
+          warningSlackMessageShouldBeSent = true
+        }
+
+        if ( evaluationResults.result.coverage.classes && !evaluationResults.result.coverage.classes.success ) {
+          evaluateTestResultsMessage += "Class Code Coverage insufficient\n"
+
+          evaluationResults.result.coverage.classes.classDetailCoverage.each { classDetailInfo -> 
+            if ( !classDetailInfo.success ) {
+              evaluateTestResultsMessage += "    - The code coverage for ${classDetailInfo.name} is ${classDetailInfo.coveredPercent}% and less than the required minimum amount of ${evaluationResults.result.coverage.classes.converageRequirementForClasses}%\n"
+            }
+          }
+
+          warningSlackMessageShouldBeSent = true
+        }
+
+        if ( warningSlackMessageShouldBeSent ) {
+          sendSlackMessage(
+            color: 'yellow',
+            message: "${evaluateTestResultsMessage}",
+            isFooterMessage: true
+          )
+        }
+
       } 
       catch(ex) {
         debug( 'catch section of toolbox:apex:codecoverage:check' )
