@@ -1119,13 +1119,13 @@ class SfdxProjectBuilder implements Serializable {
 
         def evaluationResults = _.readJSON file: "${this.workingArtifactDirectory}/toolbox-apex-codecoverage-check.json", returnPojo: true
 
-        def evaluateTestResultsMessage = "Code coverage insufficient:\n\n```"
+        def evaluateTestResultsMessage = "Code coverage insufficient:\n\n----------------------------------\n"
         def warningSlackMessageShouldBeSent = false 
 
         if ( evaluationResults.result.coverage.org && !evaluationResults.result.coverage.org.success ) {
           evaluateTestResultsMessage += "Org Wide Code Coverage insufficient\n"
           evaluateTestResultsMessage += "    - Required percentage: ${evaluationResults.result.coverage.org.converageRequirementForOrg}\n"
-          evaluateTestResultsMessage += "    - Current percentage: ${evaluationResults.result.coverage.org.coveredPercent}\n\n\n"
+          evaluateTestResultsMessage += "    - Current percentage: ${evaluationResults.result.coverage.org.coveredPercent}\n\n----------------------------------\n"
 
           warningSlackMessageShouldBeSent = true
         }
