@@ -150,10 +150,13 @@ class SfdxProjectBuilder implements Serializable {
 
     def index = 0;
 
+    debug( 'doNotBuildPackageFromMasterMainBranches started')
+    debug( this.releaseBranchList )
     this.releaseBranchList.each { value ->
       debug( value )
       index++
     }
+    debug( 'doNotBuildPackageFromMasterMainBranches finished')
 
     return this
   }
