@@ -1119,25 +1119,24 @@ class SfdxProjectBuilder implements Serializable {
       } 
       catch(ex) {
         debug( 'catch section of toolbox:apex:codecoverage:check' )
-        debug( "${ex.name}")
+        debug( "${ex}")
 
-        if ( ex.name && 'CODE_COVERAGE_INSUFFICIENT'.equals(ex.name)) {
-          def evaluationResults = _.readJSON file: "${this.workingArtifactDirectory}/toolbox-apex-codecoverage-check.json", returnPojo: true
+        def evaluationResults = _.readJSON file: "${this.workingArtifactDirectory}/toolbox-apex-codecoverage-check.json", returnPojo: true
 
-          def evaluateTestResultsMessage = "Code coverage insufficient:\n\n```"
+        def evaluateTestResultsMessage = "Code coverage insufficient:\n\n```"
 
-          evaluationResults.actions.each { requestedAction -> 
-            evaluateTestResultsMessage += "    - ${requestedAction}\n"  
-          }
-
-          evaluateTestResultsMessage += "```"
-
-          sendSlackMessage(
-            color: 'danger',
-            message: "${evaluateTestResultsMessage}",
-            isFooterMessage: true
-          )
+        evaluationResults.actions.each { requestedAction -> 
+          evaluateTestResultsMessage += "    - ${requestedAction}\n"  
         }
+
+        evaluateTestResultsMessage += "```"
+
+        sendSlackMessage(
+          color: 'danger',
+          message: "${evaluateTestResultsMessage}",
+          isFooterMessage: true
+        )
+
         debug( 'end of catch section of toolbox:apex:codecoverage:check' )
 
         _.error( ex )
