@@ -1115,7 +1115,7 @@ class SfdxProjectBuilder implements Serializable {
 
       try {
         // evaluate the test results
-        _.sh returnStatus: true, script: "sfdx toolbox:apex:codecoverage:check --json -f ${testResultFiles[0].path}"
+        _.sh returnStatus: true, script: "sfdx toolbox:apex:codecoverage:check --json -f ${testResultFiles[0].path} > toolbox-apex-codecoverage-check.json"
       } 
       catch(ex) {
         debug( 'catch section of force:source:push' )
