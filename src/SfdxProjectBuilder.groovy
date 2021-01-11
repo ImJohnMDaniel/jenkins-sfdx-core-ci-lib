@@ -154,8 +154,11 @@ class SfdxProjectBuilder implements Serializable {
     debug( this.releaseBranchList )
     this.releaseBranchList.each { value ->
       debug( value )
+      this.releaseBranchList.remove(index);
       index++
     }
+  debug( this.releaseBranchList )
+
     debug( 'doNotBuildPackageFromMasterMainBranches finished')
 
     return this
