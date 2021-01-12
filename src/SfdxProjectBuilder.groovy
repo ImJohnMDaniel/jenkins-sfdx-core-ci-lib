@@ -62,6 +62,8 @@ class SfdxProjectBuilder implements Serializable {
 
   private def buildTagName 
 
+  private def methodDesignateAsReleaseBranchHasNotBeenCalled = true
+
   // Community related variables
   private def communityName
   private def urlPathPrefix
@@ -145,32 +147,19 @@ class SfdxProjectBuilder implements Serializable {
     return this
   }
 
-  public SfdxProjectBuilder doNotBuildPackageFromMasterMainBranches() {
-    _.echo('SfdxProjectBuilder Parameter set : No package will be built form MASTER or MAIN code branhces.  Overrides all other considerations.')
-
-    def remainingBranchList = []
-
-    debug( 'doNotBuildPackageFromMasterMainBranches started')
-    debug( this.releaseBranchList )
-    this.releaseBranchList.each { value ->
-      debug( value )
-      if ( value != 'master' && value != 'main') {
-        remainingBranchList.add(value)
-      }
-    }
-
-    this.releaseBranchList = remainingBranchList
-   
-    debug( this.releaseBranchList )
-
-    debug( 'doNotBuildPackageFromMasterMainBranches finished')
-
-    return this
-  }
-
   public SfdxProjectBuilder designateAsReleaseBranch( def branchName ) {
 
     if ( branchName != null && !branchName.empty && !this.releaseBranchList.contains(branchName)) {
+
+      // if you are designating a different release branch, then you won't want "master" and "main" as the release branches
+      // So remove "master" and "main" from the list.  but be careful doing so because the "designateAsReleaseBranch(string)" method 
+      //  may have been called already, so you don't want to remove previous entries
+      if ( this.methodDesignateAsReleaseBranchHasNotBeenCalled ) {
+        // reset the this.releaseBranchList
+        this.releaseBranchList = []
+        this.methodDesignateAsReleaseBranchHasNotBeenCalled = false
+      }
+
       def valueToAdd
       if ( branchName.contains('*') ) {
         // branchName is a regex expression
