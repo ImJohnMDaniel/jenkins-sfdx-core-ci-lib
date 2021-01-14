@@ -1203,8 +1203,9 @@ class SfdxProjectBuilder implements Serializable {
         if (totalNumberOfCodeCoverageLines > 12) {
           // write the contents of evaluateTestResultsMessage to a file
           // make the file name representative of the build job
+          debug( evaluateTestResultsMessage )
           _.sh "echo ${evaluateTestResultsMessage} >> ${this.workingArtifactDirectory}/evaluateTestResultsMessage.txt"
-
+          debug( 'after echo write to file')
           sendSlackMessage(
             color: 'danger',
             message: "Apex Unit Test Results",
