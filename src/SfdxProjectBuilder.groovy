@@ -1205,13 +1205,13 @@ class SfdxProjectBuilder implements Serializable {
           // make the file name representative of the build job
           debug( evaluateTestResultsMessage )
           _.sh "echo ${evaluateTestResultsMessage} >> ${this.workingArtifactDirectory}/evaluateTestResultsMessage.txt"
-          debug( 'after echo write to file')
-          sendSlackMessage(
-            color: 'danger',
-            message: "Apex Unit Test Results",
-            isFooterMessage: true,
-            fileToSend: "${this.workingArtifactDirectory}/evaluateTestResultsMessage.txt"
-          )
+          // debug( 'after echo write to file')
+          // sendSlackMessage(
+          //   color: 'danger',
+          //   message: "Apex Unit Test Results",
+          //   isFooterMessage: true,
+          //   fileToSend: "${this.workingArtifactDirectory}/evaluateTestResultsMessage.txt"
+          // )
         }
 
         debug( 'end of catch section of toolbox:apex:codecoverage:check' )
