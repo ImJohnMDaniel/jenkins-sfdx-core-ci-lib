@@ -1125,6 +1125,8 @@ class SfdxProjectBuilder implements Serializable {
     if ( _.findFiles( glob: "${this.workingArtifactDirectory}/**/test-result-707*.json" ) ) {
       def testResultFiles = _.findFiles( glob: "${this.workingArtifactDirectory}/**/test-result-707*.json" )
 
+      def totalNumberOfCodeCoverageLines = 0
+
       try {
         // evaluate the test results
         _.sh script: "sfdx toolbox:apex:codecoverage:check --json -f ${testResultFiles[0].path} > ${this.workingArtifactDirectory}/toolbox-apex-codecoverage-check.json"
@@ -1139,15 +1141,19 @@ class SfdxProjectBuilder implements Serializable {
           evaluateTestResultsMessage += "    - Required percentage: ${evaluationResults.result.coverage.org.converageRequirementForOrg}\n"
           evaluateTestResultsMessage += "    - Current percentage: ${evaluationResults.result.coverage.org.coveredPercent}\n\n----------------------------------\n"
 
+          totalNumberOfCodeCoverageLines += 3
+
           warningSlackMessageShouldBeSent = true
         }
 
         if ( evaluationResults.result.coverage.classes && !evaluationResults.result.coverage.classes.success ) {
           evaluateTestResultsMessage += "Class Code Coverage insufficient\n"
+          totalNumberOfCodeCoverageLines += 1 
 
           evaluationResults.result.coverage.classes.classDetailCoverage.each { classDetailInfo -> 
             if ( !classDetailInfo.success ) {
               evaluateTestResultsMessage += "    - The code coverage for ${classDetailInfo.name} is ${classDetailInfo.coveredPercent}% and less than the required minimum amount of ${evaluationResults.result.coverage.classes.converageRequirementForClasses}%\n"
+              totalNumberOfCodeCoverageLines += 1
             }
           }
 
@@ -1160,6 +1166,18 @@ class SfdxProjectBuilder implements Serializable {
             message: "${evaluateTestResultsMessage}",
             isFooterMessage: true
           )
+
+          if (totalNumberOfCodeCoverageLines > 20) {
+            // write the contents of evaluateTestResultsMessage to a file
+            // make the file name representative of the build job
+            _.sh "echo ${evaluateTestResultsMessage} >> evaluateTestResultsMessage.txt"
+            sendSlackMessage(
+              color: 'yellow',
+              message: "Apex Unit Test Results",
+              isFooterMessage: true,
+              fileToSend: "${this.workingArtifactDirectory}/evaluateTestResultsMessage.txt"
+            )
+          }
         }
 
       } 
@@ -1180,6 +1198,19 @@ class SfdxProjectBuilder implements Serializable {
           message: "${evaluateTestResultsMessage}",
           isFooterMessage: true
         )
+
+        if (totalNumberOfCodeCoverageLines > 20) {
+          // write the contents of evaluateTestResultsMessage to a file
+          // make the file name representative of the build job
+          _.sh "echo ${evaluateTestResultsMessage} >> ${this.workingArtifactDirectory}/evaluateTestResultsMessage.txt"
+
+          sendSlackMessage(
+            color: 'danger',
+            message: "Apex Unit Test Results",
+            isFooterMessage: true,
+            fileToSend: "${this.workingArtifactDirectory}/evaluateTestResultsMessage.txt"
+          )
+        }
 
         debug( 'end of catch section of toolbox:apex:codecoverage:check' )
 
