@@ -1189,9 +1189,10 @@ class SfdxProjectBuilder implements Serializable {
 
         def evaluateTestResultsMessage = "Code coverage insufficient:\n\n"
 
-        evaluationResults.actions.each { requestedAction -> 
+        evaluationResults.actions.each { requestedAction -> {
           evaluateTestResultsMessage += "    - ${requestedAction}\n"  
-        }
+          totalNumberOfCodeCoverageLines += 1
+        }}
 
         sendSlackMessage(
           color: 'danger',
