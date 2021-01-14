@@ -1167,10 +1167,10 @@ class SfdxProjectBuilder implements Serializable {
             isFooterMessage: true
           )
 
-          if (totalNumberOfCodeCoverageLines > 15) {
+          if (totalNumberOfCodeCoverageLines > 12) {
             // write the contents of evaluateTestResultsMessage to a file
             // make the file name representative of the build job
-            _.sh "echo ${evaluateTestResultsMessage} >> evaluateTestResultsMessage.txt"
+            _.sh "echo ${evaluateTestResultsMessage} >> ${this.workingArtifactDirectory}/evaluateTestResultsMessage.txt"
             sendSlackMessage(
               color: 'yellow',
               message: "Apex Unit Test Results",
@@ -1199,7 +1199,7 @@ class SfdxProjectBuilder implements Serializable {
           isFooterMessage: true
         )
 
-        if (totalNumberOfCodeCoverageLines > 15) {
+        if (totalNumberOfCodeCoverageLines > 12) {
           // write the contents of evaluateTestResultsMessage to a file
           // make the file name representative of the build job
           _.sh "echo ${evaluateTestResultsMessage} >> ${this.workingArtifactDirectory}/evaluateTestResultsMessage.txt"
