@@ -1167,7 +1167,7 @@ class SfdxProjectBuilder implements Serializable {
             isFooterMessage: true
           )
 
-          if (totalNumberOfCodeCoverageLines > 20) {
+          if (totalNumberOfCodeCoverageLines > 15) {
             // write the contents of evaluateTestResultsMessage to a file
             // make the file name representative of the build job
             _.sh "echo ${evaluateTestResultsMessage} >> evaluateTestResultsMessage.txt"
@@ -1199,7 +1199,7 @@ class SfdxProjectBuilder implements Serializable {
           isFooterMessage: true
         )
 
-        if (totalNumberOfCodeCoverageLines > 20) {
+        if (totalNumberOfCodeCoverageLines > 15) {
           // write the contents of evaluateTestResultsMessage to a file
           // make the file name representative of the build job
           _.sh "echo ${evaluateTestResultsMessage} >> ${this.workingArtifactDirectory}/evaluateTestResultsMessage.txt"
