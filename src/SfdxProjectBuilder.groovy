@@ -435,7 +435,7 @@ class SfdxProjectBuilder implements Serializable {
   }
 
   void initializeStage() {
-    
+    updateSFDXTool()
     installRequiredCLIPlugins()
     // setup this build's unique artifact directory
     _.sh "mkdir -p ${this.workingArtifactDirectory}"
@@ -497,7 +497,7 @@ class SfdxProjectBuilder implements Serializable {
 
   void testStage() {
     // Give the code time to settle down before the unit tests begin
-    _.sleep time: 2, unit: 'MINUTES'
+    // _.sleep time: 2, unit: 'MINUTES'
     // need to a the parallel tage here along with PMD task
 
     // _.failFast true // this is part of the declarative syntax.  Is there an equivalent in the scripted model?
@@ -927,6 +927,13 @@ class SfdxProjectBuilder implements Serializable {
       _.error "package dependency installed failed -- ${response.message}"
     }
     
+  }
+
+  private void updateSFDXTool() {
+      _.echo ("updating the sfdx tool")
+      def rmsgSFDXToolUpdate = _.sh returnStdout: true, script: "sfdx update"
+      _.echo rmsgSFDXToolUpdate
+
   }
 
   private void installRequiredCLIPlugins() {
@@ -1471,7 +1478,7 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
         _.echo("jsonParsedResponse.name == " + jsonParsedResponse.name)
       }
       if ( rmsg == null || (jsonParsedResponse != null && jsonParsedResponse.exitCode == 1 && jsonParsedResponse.name.equals("QUERY_TIMEOUT") ) ) {
-        _.echo("Sleeping for 2 minutes and will try again")
+        _.echo("Sleeping for 1 minutes and will try again")
         _.sleep time: 1, unit: 'MINUTES'
         rmsg = _.sh returnStdout: true, script: "sfdx force:package:installed:list --json --targetusername ${this.sfdxScratchOrgAlias}"
         jsonParsedResponse = jsonParse(rmsg)
@@ -1486,7 +1493,7 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
         _.echo("jsonParsedResponse.name == " + jsonParsedResponse.name)
       }
       if ( rmsg == null || (jsonParsedResponse != null && jsonParsedResponse.exitCode == 1 && jsonParsedResponse.name.equals("QUERY_TIMEOUT") ) ) {
-        _.echo("Sleeping for 2 minutes and will try again")
+        _.echo("Sleeping for 1 minutes and will try again")
         _.sleep time: 1, unit: 'MINUTES'
         rmsg = _.sh returnStdout: true, script: "sfdx force:package:installed:list --json --targetusername ${this.sfdxScratchOrgAlias}"
         jsonParsedResponse = jsonParse(rmsg)
