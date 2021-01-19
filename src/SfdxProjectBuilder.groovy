@@ -1200,10 +1200,10 @@ class SfdxProjectBuilder implements Serializable {
         //   evaluateTestResultsMessage += "    - ${requestedAction}\n"  
         //   totalNumberOfCodeCoverageLines += 1
         // )}
-        
+
         evaluationResults.actions.each { requestedAction ->
           evaluateTestResultsMessage += "    - ${requestedAction}\n"  
-        )}
+        }
 
         sendSlackMessage(
           color: 'danger',
