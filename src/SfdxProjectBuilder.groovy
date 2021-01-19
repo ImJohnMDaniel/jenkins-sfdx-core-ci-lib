@@ -367,7 +367,6 @@ printf 'The specificCause is....'
 printf specificCause
 printf '____________________________________________________________'
 
-/*
       if ( this.stageToStopBuildAt >= 1 ) {
         _.stage('Validate') {
           sendSlackMessage(
@@ -437,7 +436,7 @@ printf '____________________________________________________________'
           artifactRecordingStage()
         } // stage: Artifact Recording
       } 
-*/
+
       postSuccess()
     }
     catch (ex) {
