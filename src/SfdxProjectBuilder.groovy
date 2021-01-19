@@ -357,15 +357,15 @@ class SfdxProjectBuilder implements Serializable {
 
 // Get all Causes for the current build
 def causes = _.currentBuild.getBuildCauses()
-printf 'The causes is....'
-printf causes
-printf '____________________________________________________________'
+debug('The causes is....')
+debug(causes)
+debug('____________________________________________________________')
 // Get a specific Cause type (in this case the user who kicked off the build),
 // if present.
 def specificCause = _.currentBuild.getBuildCauses('hudson.model.Cause$UserIdCause')
-printf 'The specificCause is....'
-printf specificCause
-printf '____________________________________________________________'
+debug('The specificCause is....')
+debug(specificCause)
+debug('____________________________________________________________')
 
       if ( this.stageToStopBuildAt >= 1 ) {
         _.stage('Validate') {
