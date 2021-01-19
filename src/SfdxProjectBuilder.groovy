@@ -435,7 +435,7 @@ class SfdxProjectBuilder implements Serializable {
   }
 
   void initializeStage() {
-    updateSFDXTool()
+    // updateSFDXTool()
     installRequiredCLIPlugins()
     // setup this build's unique artifact directory
     _.sh "mkdir -p ${this.workingArtifactDirectory}"
@@ -497,7 +497,7 @@ class SfdxProjectBuilder implements Serializable {
 
   void testStage() {
     // Give the code time to settle down before the unit tests begin
-    // _.sleep time: 2, unit: 'MINUTES'
+    _.sleep time: 2, unit: 'MINUTES'
     // need to a the parallel tage here along with PMD task
 
     // _.failFast true // this is part of the declarative syntax.  Is there an equivalent in the scripted model?
@@ -929,12 +929,12 @@ class SfdxProjectBuilder implements Serializable {
     
   }
 
-  private void updateSFDXTool() {
-      _.echo ("updating the sfdx tool")
-      def rmsgSFDXToolUpdate = _.sh returnStdout: true, script: "sfdx update"
-      _.echo rmsgSFDXToolUpdate
+  // private void updateSFDXTool() {
+  //     _.echo ("updating the sfdx tool")
+  //     def rmsgSFDXToolUpdate = _.sh returnStdout: true, script: "sfdx update"
+  //     _.echo rmsgSFDXToolUpdate
 
-  }
+  // }
 
   private void installRequiredCLIPlugins() {
       _.echo ("installing the @dx-cli-toolbox/sfdx-toolbox-package-utils plugin")
@@ -1174,17 +1174,17 @@ class SfdxProjectBuilder implements Serializable {
             isFooterMessage: true
           )
 
-          if (totalNumberOfCodeCoverageLines > 12) {
-            // write the contents of evaluateTestResultsMessage to a file
-            // make the file name representative of the build job
-            _.sh "echo ${evaluateTestResultsMessage} >> ${this.workingArtifactDirectory}/evaluateTestResultsMessage.txt"
-            sendSlackMessage(
-              color: 'yellow',
-              message: "Apex Unit Test Results",
-              isFooterMessage: true,
-              fileToSend: "${this.workingArtifactDirectory}/evaluateTestResultsMessage.txt"
-            )
-          }
+          // if (totalNumberOfCodeCoverageLines > 12) {
+          //   // write the contents of evaluateTestResultsMessage to a file
+          //   // make the file name representative of the build job
+          //   _.sh "echo ${evaluateTestResultsMessage} >> ${this.workingArtifactDirectory}/evaluateTestResultsMessage.txt"
+          //   sendSlackMessage(
+          //     color: 'yellow',
+          //     message: "Apex Unit Test Results",
+          //     isFooterMessage: true,
+          //     fileToSend: "${this.workingArtifactDirectory}/evaluateTestResultsMessage.txt"
+          //   )
+          // }
         }
 
       } 
@@ -1196,9 +1196,13 @@ class SfdxProjectBuilder implements Serializable {
 
         def evaluateTestResultsMessage = "Code coverage insufficient:\n\n"
 
-        evaluationResults.actions.each { requestedAction -> (
+        // evaluationResults.actions.each { requestedAction -> (
+        //   evaluateTestResultsMessage += "    - ${requestedAction}\n"  
+        //   totalNumberOfCodeCoverageLines += 1
+        // )}
+        
+        evaluationResults.actions.each { requestedAction ->
           evaluateTestResultsMessage += "    - ${requestedAction}\n"  
-          totalNumberOfCodeCoverageLines += 1
         )}
 
         sendSlackMessage(
@@ -1207,19 +1211,19 @@ class SfdxProjectBuilder implements Serializable {
           isFooterMessage: true
         )
 
-        if (totalNumberOfCodeCoverageLines > 12) {
-          // write the contents of evaluateTestResultsMessage to a file
-          // make the file name representative of the build job
-          debug( evaluateTestResultsMessage )
-          _.sh "echo ${evaluateTestResultsMessage} >> ${this.workingArtifactDirectory}/evaluateTestResultsMessage.txt"
-          // debug( 'after echo write to file')
-          // sendSlackMessage(
-          //   color: 'danger',
-          //   message: "Apex Unit Test Results",
-          //   isFooterMessage: true,
-          //   fileToSend: "${this.workingArtifactDirectory}/evaluateTestResultsMessage.txt"
-          // )
-        }
+        // if (totalNumberOfCodeCoverageLines > 12) {
+        //   // write the contents of evaluateTestResultsMessage to a file
+        //   // make the file name representative of the build job
+        //   debug( evaluateTestResultsMessage )
+        //   _.sh "echo ${evaluateTestResultsMessage} >> ${this.workingArtifactDirectory}/evaluateTestResultsMessage.txt"
+        //   // debug( 'after echo write to file')
+        //   // sendSlackMessage(
+        //   //   color: 'danger',
+        //   //   message: "Apex Unit Test Results",
+        //   //   isFooterMessage: true,
+        //   //   fileToSend: "${this.workingArtifactDirectory}/evaluateTestResultsMessage.txt"
+        //   // )
+        // }
 
         debug( 'end of catch section of toolbox:apex:codecoverage:check' )
 
