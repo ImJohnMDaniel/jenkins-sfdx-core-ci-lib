@@ -354,6 +354,20 @@ class SfdxProjectBuilder implements Serializable {
 
   private void processStages() {
     try {
+
+// Get all Causes for the current build
+def causes = currentBuild.getBuildCauses()
+printf 'The causes is....'
+printf causes
+printf '____________________________________________________________'
+// Get a specific Cause type (in this case the user who kicked off the build),
+// if present.
+def specificCause = currentBuild.getBuildCauses('hudson.model.Cause$UserIdCause')
+printf 'The specificCause is....'
+printf specificCause
+printf '____________________________________________________________'
+
+/*
       if ( this.stageToStopBuildAt >= 1 ) {
         _.stage('Validate') {
           sendSlackMessage(
@@ -423,7 +437,7 @@ class SfdxProjectBuilder implements Serializable {
           artifactRecordingStage()
         } // stage: Artifact Recording
       } 
-
+*/
       postSuccess()
     }
     catch (ex) {
