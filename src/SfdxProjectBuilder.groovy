@@ -973,7 +973,7 @@ class SfdxProjectBuilder implements Serializable {
       _.echo("Publish community ${this.communityName}...")
   
       try {
-        _.sh returnStdout: true, script: "sfdx force:community:publish --name \"${this.communityName}\" --json --targetusername ${this.sfdxScratchOrgAlias}"
+        _.sh script: "sfdx force:community:publish --name \"${this.communityName}\" --json --targetusername ${this.sfdxScratchOrgAlias} > ${this.workingArtifactDirectory}/force-community-publish.json"
         
         // wait some time to allow the community publishing to complete
         _.sleep(45)
@@ -988,6 +988,21 @@ class SfdxProjectBuilder implements Serializable {
             message: "${ex.getMessage()}",
             isFooterMessage: true
           )
+
+        def forceCommunityPublishResultsFileExists = _.fileExists "${this.workingArtifactDirectory}/force-community-publish.json"
+
+        if ( forceCommunityPublishResultsFileExists ) {
+
+          debug( 'before force-community-publish.json file read')
+          def sourcePushResults = jsonParse( _.readFile("${this.workingArtifactDirectory}/force-community-publish.json") )
+          debug( 'after force-community-publish.json file read')
+          sendSlackMessage(
+              color: 'danger',
+              message: "${sourcePushResults}",
+              isFooterMessage: true
+            )
+
+        }
 
         _.error( ex )
       }
