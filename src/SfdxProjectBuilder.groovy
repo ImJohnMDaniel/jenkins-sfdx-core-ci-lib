@@ -971,16 +971,26 @@ class SfdxProjectBuilder implements Serializable {
   private void publishCommunityIfNeeded() {
     if (this.isPublishingCommunity) {
       _.echo("Publish community ${this.communityName}...")
-      def rmsg = _.sh returnStdout: true, script: "sfdx force:community:publish --name \"${this.communityName}\" --json --targetusername ${this.sfdxScratchOrgAlias}"
-      
-      def response = jsonParse( rmsg )
+  
+      try {
+        _.sh returnStdout: true, script: "sfdx force:community:publish --name \"${this.communityName}\" --json --targetusername ${this.sfdxScratchOrgAlias}"
+        
+        // wait some time to allow the community publishing to complete
+        _.sleep(45)
+      } 
+      catch(ex) {
+        debug( 'catch section of force:community:publish' )
 
-      if (response.status != 0) {
-          _.error "community publishing failed -- ${response.message}"
+        _.echo(ex.getMessage())
+
+        sendSlackMessage(
+            color: 'danger',
+            message: "${ex.getMessage()}",
+            isFooterMessage: true
+          )
+
+        _.error( ex )
       }
-
-      // wait some time to allow the community publishing to complete
-      _.sleep(45)
     }
 
   }
