@@ -1029,7 +1029,7 @@ class SfdxProjectBuilder implements Serializable {
       //   _.error('force:source:push failed')
       // }
 
-      _.sh script: "sfdx force:source:push --forceoverwrite --json --targetusername ${this.sfdxScratchOrgAlias} > ${this.workingArtifactDirectory}/force-source-push.json"
+      _.sh script: "sfdx force:source:push --forceoverwrite --json --wait 90 --targetusername ${this.sfdxScratchOrgAlias} > ${this.workingArtifactDirectory}/force-source-push.json"
 
     }
     catch(ex) {
