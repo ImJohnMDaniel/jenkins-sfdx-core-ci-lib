@@ -38,6 +38,10 @@ class SfdxProjectBuilder implements Serializable {
 
   private def slackResponseTimestamp
 
+  private def jiraSite
+
+  private def jiraNotificationIsActive = false
+
   private def sendThreadedSlackMessages = true
 
   private def notifyOnSuccessfulBuilds = false 
@@ -232,6 +236,14 @@ class SfdxProjectBuilder implements Serializable {
       _.echo("SfdxProjectBuilder Parameter set : Setting docker image to be ${dockerImageName}")
     }
     return this
+  }
+
+  public SfdxProjectBuilder setJiraSite( String jiraSite ) {
+    if ( jiraSite != null && !jiraSite.empty ) {
+      this.jiraSite = jiraSite
+      this.jiraNotificationIsActive = true
+      _.echo("SfdxProjectBuilder Parameter set : Setting JIRA site to be ${jiraSite}")
+    }
   }
 
   public SfdxProjectBuilder setupCommunity( String communityName, String urlPathPrefix, String templateName ) {
@@ -430,6 +442,7 @@ class SfdxProjectBuilder implements Serializable {
       postFailure(ex)
     }
     finally {
+      sendJiraBuildInformation()
       postAlways()
     }
   }
@@ -557,6 +570,13 @@ class SfdxProjectBuilder implements Serializable {
     def userIds = _.slackUserIdsFromCommitters()
     debug(userIds)
 
+  }
+
+  void sendJiraBuildInformation() {
+    debug("sendJiraBuildInformation starts")
+    if ( this.jiraNotificationIsActive ) {
+      _.jiraSendBuildInfo site: "${this.jiraSite}"
+    }
   }
 
   private void sendSlackMessage(Map args) {
@@ -743,6 +763,11 @@ class SfdxProjectBuilder implements Serializable {
     if ( _.env.DEACTIVATE_SLACK_NOTIFICATIONS_OVERRIDE ) {
       this.slackNotificationsIsActive = false
     }
+
+    if ( _.env.JIRA_SITE ) {
+      this.jiraSite = _.env.JIRA_SITE 
+      this.jiraNotificationIsActive = true
+    }    
   }
 
   private void readAndParseSFDXProjectFile() {
