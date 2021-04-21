@@ -537,6 +537,27 @@ class SfdxProjectBuilder implements Serializable {
         isFooterMessage: true
       )
     }
+
+    if ( this.sfdxNewPackageVersion != null ) {
+
+      def packageVersionName = this.sfdxNewPackageVersion.Package2Name + '@' + this.sfdxNewPackageVersion.MajorVersion + '.' + this.sfdxNewPackageVersion.MinorVersion + '.' + this.sfdxNewPackageVersion.PatchVersion + '-' + this.sfdxNewPackageVersion.BuildNumber
+
+      if ( this.sfdxNewPackageVersion.Branch != null ) {
+        packageVersionName += '-' + this.sfdxNewPackageVersion.Branch
+      }
+
+      def message = "New package version available: ${packageVersionName} (${this.sfdxNewPackageVersion.SubscriberPackageVersionId})\n" 
+
+      if ( this.sfdxNewPackageVersion.CodeCoverage != null ) {
+        message += "Code coverage for this version is ${this.sfdxNewPackageVersion.CodeCoverage}"
+      }
+      
+      sendSlackMessage(
+        color: 'good',
+        message: message,
+        isFooterMessage: true
+      )
+    }
   }
 
   void postFailure(def ex) {
