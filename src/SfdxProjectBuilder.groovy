@@ -1462,7 +1462,7 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
 
                         _.echo( "packageVersionCreationResponse == ${packageVersionCreationResponse}")
                         _.echo( "packageVersionCreationResponse first result == ${packageVersionCreationCheckResponse.result[0]}")
-                        
+
                         return isPackageVersionCreationCompleted
                     // } // script
                 }
@@ -1479,7 +1479,7 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
     // tagging the build
     tagTheBuild()
 
-    // _.echo( "this.sfdxNewPackageVersion == ${this.sfdxNewPackageVersion}")
+    _.echo( "this.sfdxNewPackageVersion == ${this.sfdxNewPackageVersion}")
 
     _.echo( "this.sfdxNewPackageVersionId == ${this.sfdxNewPackageVersionId}")
   }
