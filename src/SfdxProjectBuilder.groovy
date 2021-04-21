@@ -1209,6 +1209,8 @@ class SfdxProjectBuilder implements Serializable {
         def evaluateTestResultsMessage = "Code coverage insufficient:\n\n----------------------------------\n"
         def warningSlackMessageShouldBeSent = false 
 
+        _.echo("evaluationResults.result.coverage.org.coveredPercent == ${evaluationResults.result.coverage.org.coveredPercent}")
+
         if ( evaluationResults.result.coverage.org && !evaluationResults.result.coverage.org.success ) {
           evaluateTestResultsMessage += "Org Wide Code Coverage insufficient\n"
           evaluateTestResultsMessage += "    - Required percentage: ${evaluationResults.result.coverage.org.converageRequirementForOrg}\n"
