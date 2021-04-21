@@ -24,6 +24,8 @@ class SfdxProjectBuilder implements Serializable {
 
   private def sfdxNewPackageVersionId
 
+  private def packageCodeCoverage
+
   private def installationKeys
 
   private def packageInstallationKey
@@ -552,8 +554,8 @@ class SfdxProjectBuilder implements Serializable {
 
       def message = "New package version available: ${packageVersionName} (${this.sfdxNewPackageVersion.SubscriberPackageVersionId})\n" 
 
-      if ( this.sfdxNewPackageVersion.CodeCoverage != null ) {
-        message += "Code coverage for this version is ${this.sfdxNewPackageVersion.CodeCoverage}"
+      if ( this.packageCodeCoverage != null ) {
+        message += "Code coverage for this version is ${this.packageCodeCoverage}%"
       }
       
       sendSlackMessage(
@@ -1210,6 +1212,8 @@ class SfdxProjectBuilder implements Serializable {
         def warningSlackMessageShouldBeSent = false 
 
         _.echo("evaluationResults.result.coverage.org.coveredPercent == ${evaluationResults.result.coverage.org.coveredPercent}")
+
+        this.packageCodeCoverage = evaluationResults.result.coverage.org.coveredPercent
 
         if ( evaluationResults.result.coverage.org && !evaluationResults.result.coverage.org.success ) {
           evaluateTestResultsMessage += "Org Wide Code Coverage insufficient\n"
