@@ -20,7 +20,11 @@ class SfdxProjectBuilder implements Serializable {
 
   private def sfdxNewPackageVersion
 
+  private def packageVersionCreationResponseResult
+
   private def sfdxNewPackageVersionId
+
+  private def packageCodeCoverage
 
   private def installationKeys
 
@@ -538,6 +542,8 @@ class SfdxProjectBuilder implements Serializable {
       )
     }
 
+    _.echo("this.sfdxNewPackageVersion == ${sfdxNewPackageVersion}")
+
     if ( this.sfdxNewPackageVersion != null ) {
 
       def packageVersionName = this.sfdxNewPackageVersion.Package2Name + '@' + this.sfdxNewPackageVersion.MajorVersion + '.' + this.sfdxNewPackageVersion.MinorVersion + '.' + this.sfdxNewPackageVersion.PatchVersion + '-' + this.sfdxNewPackageVersion.BuildNumber
@@ -548,8 +554,8 @@ class SfdxProjectBuilder implements Serializable {
 
       def message = "New package version available: ${packageVersionName} (${this.sfdxNewPackageVersion.SubscriberPackageVersionId})\n" 
 
-      if ( this.sfdxNewPackageVersion.CodeCoverage != null ) {
-        message += "Code coverage for this version is ${this.sfdxNewPackageVersion.CodeCoverage}"
+      if ( this.packageCodeCoverage != null ) {
+        message += "Code coverage for this version is ${this.packageCodeCoverage}%"
       }
       
       sendSlackMessage(
@@ -1205,6 +1211,10 @@ class SfdxProjectBuilder implements Serializable {
         def evaluateTestResultsMessage = "Code coverage insufficient:\n\n----------------------------------\n"
         def warningSlackMessageShouldBeSent = false 
 
+        _.echo("evaluationResults.result.coverage.org.coveredPercent == ${evaluationResults.result.coverage.org.coveredPercent}")
+
+        this.packageCodeCoverage = evaluationResults.result.coverage.org.coveredPercent
+
         if ( evaluationResults.result.coverage.org && !evaluationResults.result.coverage.org.success ) {
           evaluateTestResultsMessage += "Org Wide Code Coverage insufficient\n"
           evaluateTestResultsMessage += "    - Required percentage: ${evaluationResults.result.coverage.org.converageRequirementForOrg}\n"
@@ -1417,18 +1427,18 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
         _.error "package version creation has failed -- ${packageVersionCreationResponse.result.Error}"
     } else {
 
-        this.sfdxNewPackageVersion = packageVersionCreationResponse.result
+        this.packageVersionCreationResponseResult = packageVersionCreationResponse.result
 
-        if( this.sfdxNewPackageVersion.Status != 'Success') {
+        if( this.packageVersionCreationResponseResult.Status != 'Success') {
             // The package version creation is still underway
             def packageVersionCreationCheckResponseResult = ''
 
             _.timeout(360) {
                 _.waitUntil {
                     // script {
-                        // use the this.sfdxNewPackageVersion.Id for this command verses this.sfdxNewPackageVersionId because we are yet
+                        // use the this.packageVersionCreationResponseResult.Id for this command verses this.sfdxNewPackageVersionId because we are yet
                         //  certain that the package was created correctly
-                        rmsg = _.sh returnStdout: true, script: "sfdx force:package:version:create:report --packagecreaterequestid ${this.sfdxNewPackageVersion.Id} --json --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
+                        rmsg = _.sh returnStdout: true, script: "sfdx force:package:version:create:report --packagecreaterequestid ${this.packageVersionCreationResponseResult.Id} --json --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
                         // printf rmsg
 
                         def packageVersionCreationCheckResponse = jsonParse(rmsg) 
@@ -1441,28 +1451,28 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
 
                         // The JSON "result" is currently an array.  That is a SFDX bug -- W-4621618
                         // Refer to Salesforce DX Success Community post for details https://success.salesforce.com/0D53A00003OTsAD
-                        this.sfdxNewPackageVersion = packageVersionCreationCheckResponse.result[0]
+                        this.packageVersionCreationResponseResult = packageVersionCreationCheckResponse.result[0]
                         
-                        if ( packageVersionCreationCheckResponse.status != 0 || this.sfdxNewPackageVersion.Status == 'Error' ) {
+                        if ( packageVersionCreationCheckResponse.status != 0 || this.packageVersionCreationResponseResult.Status == 'Error' ) {
                           _.echo ("packageVersionCreationCheckResponse == ${packageVersionCreationCheckResponse}")
-                          _.error "force:package:version:create:report failed -- ${this.sfdxNewPackageVersion.Error}"
+                          _.error "force:package:version:create:report failed -- ${this.packageVersionCreationResponseResult.Error}"
                         }
 
                         def isPackageVersionCreationCompleted
 
-                        // _.echo ( "this.sfdxNewPackageVersion.Status == ${this.sfdxNewPackageVersion.Status}" )
+                        // _.echo ( "this.packageVersionCreationResponseResult.Status == ${this.packageVersionCreationResponseResult.Status}" )
                         
                         if ( packageVersionCreationCheckResponse.status == 0 
-                            && this.sfdxNewPackageVersion.Status == "Success") {
+                            && this.packageVersionCreationResponseResult.Status == "Success") {
                             isPackageVersionCreationCompleted = true 
                         } else {
                             isPackageVersionCreationCompleted = false 
                         }
-                        _.echo( "Current status == ${this.sfdxNewPackageVersion.Status}")
+                        _.echo( "Current status == ${this.packageVersionCreationResponseResult.Status}")
 
-                        _.echo( "packageVersionCreationResponse == ${packageVersionCreationResponse}")
-                        _.echo( "packageVersionCreationResponse first result == ${packageVersionCreationCheckResponse.result[0]}")
-                        
+                        // _.echo( "packageVersionCreationResponse == ${packageVersionCreationResponse}")
+                        // _.echo( "packageVersionCreationResponse first result == ${packageVersionCreationCheckResponse.result[0]}")
+
                         return isPackageVersionCreationCompleted
                     // } // script
                 }
@@ -1474,12 +1484,10 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
     _.echo( "Exited the creation/check phase")
     // failure point is probably in this area
 
-    this.sfdxNewPackageVersionId = this.sfdxNewPackageVersion.SubscriberPackageVersionId
+    this.sfdxNewPackageVersionId = this.packageVersionCreationResponseResult.SubscriberPackageVersionId
 
     // tagging the build
     tagTheBuild()
-
-    // _.echo( "this.sfdxNewPackageVersion == ${this.sfdxNewPackageVersion}")
 
     _.echo( "this.sfdxNewPackageVersionId == ${this.sfdxNewPackageVersionId}")
   }
@@ -1575,6 +1583,9 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
             if ( this.sfdxNewPackage == packageVersionAvailable.Package2Id && this.sfdxNewPackageVersionId == packageVersionAvailable.SubscriberPackageVersionId) {
                 _.echo ("found a match")
                 recordPackageVersionArtifact( packageVersionAvailable )
+
+                this.sfdxNewPackageVersion = packageVersionAvailable
+
                 break
             }
         }
