@@ -1470,7 +1470,8 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
     }
     _.echo( "Exited the creation/check phase")
     // failure point is probably in this area
-    // _.echo( "packageVersionCreationResponse == ${packageVersionCreationResponse}")
+    _.echo( "packageVersionCreationResponse == ${packageVersionCreationResponse}")
+    _.echo( "packageVersionCreationResponse first result == ${packageVersionCreationCheckResponse.result[0]}")
 
     this.sfdxNewPackageVersionId = this.sfdxNewPackageVersion.SubscriberPackageVersionId
 
