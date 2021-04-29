@@ -1506,10 +1506,11 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
     }
 
     _.echo ("packageVersionReportResponse == ${packageVersionReportResponse}")
+    _.echo ("packageVersionReportResponse.result == ${packageVersionReportResponse.result}")
+    _.echo ("packageVersionReportResponse.result.CodeCoverage == ${packageVersionReportResponse.result.CodeCoverage}")
+    _.echo ("packageVersionReportResponse.result.CodeCoverage.apexCodeCoveragePercentage == ${packageVersionReportResponse.result.CodeCoverage.apexCodeCoveragePercentage}")
 
-    def packageVersionCreationResponseResult = packageVersionReportResponse.result[0]
-
-    this.packageCodeCoverage = packageVersionCreationResponseResult.CodeCoverage.apexCodeCoveragePercentage
+    this.packageCodeCoverage = packageVersionReportResponse.result.CodeCoverage.apexCodeCoveragePercentage
                         
   }
 
