@@ -1213,7 +1213,7 @@ class SfdxProjectBuilder implements Serializable {
 
         _.echo("evaluationResults.result.coverage.org.coveredPercent == ${evaluationResults.result.coverage.org.coveredPercent}")
 
-        this.packageCodeCoverage = evaluationResults.result.coverage.org.coveredPercent
+        // this.packageCodeCoverage = evaluationResults.result.coverage.org.coveredPercent
 
         if ( evaluationResults.result.coverage.org && !evaluationResults.result.coverage.org.success ) {
           evaluateTestResultsMessage += "Org Wide Code Coverage insufficient\n"
@@ -1490,6 +1490,27 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
     tagTheBuild()
 
     _.echo( "this.sfdxNewPackageVersionId == ${this.sfdxNewPackageVersionId}")
+
+    captureCodeCoverage()
+  }
+
+  private void captureCodeCoverage() {
+    _.echo("Discovering code coverage for sfdxNewPackageVersionId == ${this.sfdxNewPackageVersionId}")
+
+    def rmsg = _.sh returnStdout: true, script: "sfdx force:package:version:report --package ${this.sfdxNewPackageVersionId} --json --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
+    
+    def packageVersionReportResponse = jsonParse(rmsg) 
+
+    if ( packageVersionReportResponse.status != 0 ) {
+      _.error "force:package:version:report failed -- ${packageVersionReportResponse.message}"
+    }
+
+    _.echo ("packageVersionReportResponse == ${packageVersionReportResponse}")
+
+    def packageVersionCreationResponseResult = packageVersionReportResponse.result[0]
+
+    this.packageCodeCoverage = packageVersionCreationResponseResult.CodeCoverage.apexCodeCoveragePercentage
+                        
   }
 
   private void tagTheBuild() {
