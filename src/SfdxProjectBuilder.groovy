@@ -1213,8 +1213,6 @@ class SfdxProjectBuilder implements Serializable {
 
         _.echo("evaluationResults.result.coverage.org.coveredPercent == ${evaluationResults.result.coverage.org.coveredPercent}")
 
-        // this.packageCodeCoverage = evaluationResults.result.coverage.org.coveredPercent
-
         if ( evaluationResults.result.coverage.org && !evaluationResults.result.coverage.org.success ) {
           evaluateTestResultsMessage += "Org Wide Code Coverage insufficient\n"
           evaluateTestResultsMessage += "    - Required percentage: ${evaluationResults.result.coverage.org.converageRequirementForOrg}\n"
