@@ -1708,6 +1708,9 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
     if ( this.dataLoadsToProcess != null ) {
       // asdfasdfasdfasdfasdfasdfasdfasdfasdfasdf
       _.echo ("executeDataLoads is called")
+      for ( aDataLoadToProcess in this.dataLoadsToProcess ) {
+        _.echo ("now processing data load folder '${aDataLoadToProcess}'")
+      }
     }
   }
 
