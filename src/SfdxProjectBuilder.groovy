@@ -524,7 +524,9 @@ class SfdxProjectBuilder implements Serializable {
 
   void testStage() {
     // Give the code time to settle down before the unit tests begin
-    _.sleep time: 2, unit: 'MINUTES'
+
+    // _.sleep time: 2, unit: 'MINUTES'
+
     // need to a the parallel tage here along with PMD task
 
     // _.failFast true // this is part of the declarative syntax.  Is there an equivalent in the scripted model?
