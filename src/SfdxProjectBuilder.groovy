@@ -1707,6 +1707,7 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
   private void executeDataLoads() {
     if ( this.dataLoadsToProcess != null ) {
       // asdfasdfasdfasdfasdfasdfasdfasdfasdfasdf
+      _.echo ("executeDataLoads is called")
     }
   }
 
