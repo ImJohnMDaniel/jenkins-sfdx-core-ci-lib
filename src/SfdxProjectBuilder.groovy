@@ -524,7 +524,7 @@ class SfdxProjectBuilder implements Serializable {
 
   void testStage() {
     // Give the code time to settle down before the unit tests begin
-
+// TODO: Re-enable sleep mode
     // _.sleep time: 2, unit: 'MINUTES'
 
     // need to a the parallel tage here along with PMD task
@@ -534,10 +534,14 @@ class SfdxProjectBuilder implements Serializable {
     // def testingTasks = []
 
     // testingTasks.add(executeDataLoads())
+
+    def edlCommand = executeDataLoads()
+
+    def dutrmCommand = doUnitTestRelatedMethods()
     
     _.parallel(
-      executeDataLoads(),
-      doUnitTestRelatedMethods()
+      edlCommand,
+      dutrmCommand
     ) // parallel
       
     // executeUnitTests()
