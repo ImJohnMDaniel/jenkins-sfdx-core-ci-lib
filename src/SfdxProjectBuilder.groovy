@@ -58,6 +58,8 @@ class SfdxProjectBuilder implements Serializable {
 
   private def releaseBranchList = ['master', 'main']
 
+  private def dataLoadsToProcess = []
+
   private def upstreamProjectsToTriggerFrom = []
 
   private def upstreamProjectsToTriggerFromPrefix
@@ -230,6 +232,14 @@ class SfdxProjectBuilder implements Serializable {
     if ( jenkinsBuildJobName != null && !jenkinsBuildJobName.empty ) {
       this.upstreamProjectsToTriggerFrom.add( jenkinsBuildJobName )
       _.echo("SfdxProjectBuilder Parameter set : Added ${jenkinsBuildJobName} to the upstream project build triggers")
+    }
+    return this
+  }
+
+  public SfdxProjectBuilder setDataLoadFolderToProcess( String dataLoadFolder ) {
+    if ( dataLoadFolder != null && !dataLoadFolder.empty ) {
+      this.dataLoadsToProcess.add( dataLoadFolder )
+      _.echo("SfdxProjectBuilder Parameter set : Added ${dataLoadFolder} to list of data load folders to process")
     }
     return this
   }
@@ -518,11 +528,18 @@ class SfdxProjectBuilder implements Serializable {
     // need to a the parallel tage here along with PMD task
 
     // _.failFast true // this is part of the declarative syntax.  Is there an equivalent in the scripted model?
+
+    // def testingTasks = []
+
+    // testingTasks.add(executeDataLoads())
     
-    // _.parallel { // not sure why this is not working.  Need to find equivalent in the scripted model.
-    executeUnitTests()
-    evaluateTestResults()
-    // } // parallel
+    _.parallel(
+      executeDataLoads(),
+      doUnitTestRelatedMethods()
+    ) // parallel
+      
+    // executeUnitTests()
+    // evaluateTestResults() 
   }
 
   void packageStage() {
@@ -1147,6 +1164,11 @@ class SfdxProjectBuilder implements Serializable {
 
   }
 
+  private void doUnitTestRelatedMethods() {
+    executeUnitTests()
+    evaluateTestResults()
+  }
+
   private void executeUnitTests() {
     if ( _.findFiles( glob: '**/*Test.cls' ) ) {
       _.echo( 'Run All Local Apex Tests' )
@@ -1681,6 +1703,13 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
     // the last line works as the return value
     return result
   }
+
+  private void executeDataLoads() {
+    if ( this.dataLoadsToProcess != null ) {
+      // asdfasdfasdfasdfasdfasdfasdfasdfasdfasdf
+    }
+  }
+
 
           //  THIS DEFINITELY WORKS 
           // _.pipelineTriggers(
