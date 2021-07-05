@@ -535,14 +535,23 @@ class SfdxProjectBuilder implements Serializable {
 
     // testingTasks.add(executeDataLoads())
 
-    def edlCommand = executeDataLoads()
+    // def edlCommand = executeDataLoads()
 
-    def dutrmCommand = doUnitTestRelatedMethods()
+    // def dutrmCommand = doUnitTestRelatedMethods()
     
     _.parallel(
-      edlCommand,
-      dutrmCommand
+      'Dataload Verification': { executeDataLoads() } ,
+      'Unit Tests': { 
+        executeUnitTests()
+        evaluateTestResults() 
+      }
     ) // parallel
+
+    // parallel (
+    //     'gfortran': { build('trunk/build/gfortran') },
+    //     'ifort': { build('trunk/build/ifort') }
+    // )
+
       
     // executeUnitTests()
     // evaluateTestResults() 
