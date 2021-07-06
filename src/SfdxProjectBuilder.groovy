@@ -1022,9 +1022,9 @@ class SfdxProjectBuilder implements Serializable {
       def rmsgToolboxUtilsInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install @dx-cli-toolbox/sfdx-toolbox-utils"
       _.echo rmsgToolboxUtilsInstall
 
-      // _.echo ("installing the sfdmu plugins")
-      // def rmsgSFDMUInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install sfdmu"
-      // _.echo rmsgSFDMUInstall
+      _.echo ("installing the sfdmu plugins")
+      def rmsgSFDMUInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install sfdmu"
+      _.echo rmsgSFDMUInstall
 
       // _.echo ("installing the shane-sfdx-plugins  plugins")
       // def rmsgShaneSFDXPluginInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install shane-sfdx-plugins "
@@ -1721,10 +1721,25 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
 
   private void executeDataLoads() {
     if ( this.dataLoadsToProcess != null ) {
-      // asdfasdfasdfasdfasdfasdfasdfasdfasdfasdf
       _.echo ("executeDataLoads is called")
       for ( aDataLoadToProcess in this.dataLoadsToProcess ) {
         _.echo ("now processing data load folder '${aDataLoadToProcess}'")
+        try {
+          def rmsg =  _.sh returnStdout: true, script: "sfdx sfdmu:run --sourceusername csvfile --path ${aDataLoadToProcess} --targetusername ${this.sfdxScratchOrgAlias} --json"
+          // _.echo('mark C')
+          def response = jsonParse( rmsg )
+          // _.echo('mark D')
+          // _.echo(response)
+          // _.echo('mark E')
+        }
+        catch (ex) {
+          _.echo('------------------------------------------------------')
+          // _.echo('mark F')
+          _.echo(ex.getMessage())
+          // _.echo('mark G')
+          _.echo('------------------------------------------------------')
+          _.error "Failed to load ${aDataLoadToProcess}" 
+        }
       }
     }
   }
