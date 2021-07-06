@@ -1713,7 +1713,8 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
         _.echo ("now processing data load folder '${aDataLoadToProcess}'")
         try {
           // def rmsg =  _.sh returnStatus: true, script: "sfdx sfdmu:run --sourceusername csvfile --path ${aDataLoadToProcess} --targetusername ${this.sfdxScratchOrgAlias} --json --quiet > ${this.workingArtifactDirectory}/sfdmu-response.json"
-          def rmsg =  _.sh returnStatus: true, script: "sfdx sfdmu:run --sourceusername csvfile --path ${aDataLoadToProcess} --targetusername ${this.sfdxScratchOrgAlias} --json --quiet"
+          // def rmsg =  _.sh returnStatus: true, script: "sfdx sfdmu:run --sourceusername csvfile --path ${aDataLoadToProcess} --targetusername ${this.sfdxScratchOrgAlias} --json --quiet"
+          def rmsg =  _.sh returnStdout: true, script: "sfdx sfdmu:run --sourceusername csvfile --path ${aDataLoadToProcess} --targetusername ${this.sfdxScratchOrgAlias} --json --quiet"
           // _.echo('mark C')
 
           _.echo('_______________________________________________________')
