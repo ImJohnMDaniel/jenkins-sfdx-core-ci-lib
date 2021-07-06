@@ -531,14 +531,6 @@ class SfdxProjectBuilder implements Serializable {
 
     // _.failFast true // this is part of the declarative syntax.  Is there an equivalent in the scripted model?
 
-    // def testingTasks = []
-
-    // testingTasks.add(executeDataLoads())
-
-    // def edlCommand = executeDataLoads()
-
-    // def dutrmCommand = doUnitTestRelatedMethods()
-    
     _.parallel(
       'Dataload Verification': { executeDataLoads() } ,
       'Unit Tests': { 
@@ -1177,11 +1169,6 @@ class SfdxProjectBuilder implements Serializable {
       _.echo ('file force-source-push.json not found')
     }
 
-  }
-
-  private void doUnitTestRelatedMethods() {
-    executeUnitTests()
-    evaluateTestResults()
   }
 
   private void executeUnitTests() {
