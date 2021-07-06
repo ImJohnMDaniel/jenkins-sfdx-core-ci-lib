@@ -1721,24 +1721,25 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
           _.echo('before the jsonParse')
           def response = jsonParse( rmsg )
           _.echo('after the jsonParse')
+
+          if ( response.status != 0) {
+            _.error( response )
+          }
+
           // Are any SFDMU report files present?
-          // def missingParentRecordsReport = _.readFile("${aDataLoadToProcess}/MissingParentRecordsReport.csv")
-          File missingParentRecordsReportFile = new File("${aDataLoadToProcess}/MissingParentRecordsReport.csv")
-          _.echo('after the missingParentRecordsReportFile command')
-          printf missingParentRecordsReportFile
-          _.echo('after the missingParentRecordsReportFile print command')
-          if ( missingParentRecordsReportFile.exists() ) {
+          def missingParentRecordsReportFileExists = _.fileExists "${aDataLoadToProcess}/MissingParentRecordsReport.csv"
+
+          if ( missingParentRecordsReportFileExists ) {
             _.echo('missingParentRecordsReportFile exists')
             // sendSlackMessage(
             //   color: 'danger',
             //   message: "${testFailureDetails}",
             //   isFooterMessage: true
             // )
-            throw new Exception("MissingParentRecordsReport.csv report was found")
+            _.error("MissingParentRecordsReport.csv report was found")
           }
 
-          // def csvIssuesReport = _.readFile("${aDataLoadToProcess}/CSVIssuesReport.csv")
-          File csvIssuesReportFile = new File("${aDataLoadToProcess}/CSVIssuesReport.csv")
+          def csvIssuesReportFileExists = _.fileExists "${aDataLoadToProcess}/CSVIssuesReport.csv"
           if ( csvIssuesReportFile.exists() ) {
             _.echo('csvIssuesReportFile exists')
             // sendSlackMessage(
@@ -1746,7 +1747,7 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
             //   message: "${testFailureDetails}",
             //   isFooterMessage: true
             // )
-            throw new Exception("CSVIssuesReport.csv report was found")
+            _.error("CSVIssuesReport.csv report was found")
           }
 
         }
