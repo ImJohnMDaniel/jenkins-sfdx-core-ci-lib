@@ -1740,7 +1740,7 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
           }
 
           def csvIssuesReportFileExists = _.fileExists "${aDataLoadToProcess}/CSVIssuesReport.csv"
-          if ( csvIssuesReportFile.exists() ) {
+          if ( csvIssuesReportFileExists ) {
             _.echo('csvIssuesReportFile exists')
             // sendSlackMessage(
             //   color: 'danger',
