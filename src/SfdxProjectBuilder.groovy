@@ -1721,8 +1721,10 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
           def response = jsonParse( rmsg )
 
           // Are any SFDMU report files present?
-          def missingParentRecordsReport = _.readFile("${aDataLoadToProcess}/MissingParentRecordsReport.csv")
-          if ( missingParentRecordsReport ) {
+          // def missingParentRecordsReport = _.readFile("${aDataLoadToProcess}/MissingParentRecordsReport.csv")
+          File missingParentRecordsReportFile = new File("${aDataLoadToProcess}/MissingParentRecordsReport.csv")
+          if ( missingParentRecordsReportFile.exists() ) {
+            _.echo('missingParentRecordsReportFile exists')
             // sendSlackMessage(
             //   color: 'danger',
             //   message: "${testFailureDetails}",
@@ -1731,8 +1733,10 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
             throw new Exception("MissingParentRecordsReport.csv report was found")
           }
 
-          def csvIssuesReport = _.readFile("${aDataLoadToProcess}/CSVIssuesReport.csv")
-          if ( csvIssuesReport ) {
+          // def csvIssuesReport = _.readFile("${aDataLoadToProcess}/CSVIssuesReport.csv")
+          File csvIssuesReportFile = new File("${aDataLoadToProcess}/CSVIssuesReport.csv")
+          if ( csvIssuesReportFile.exists() ) {
+            _.echo('csvIssuesReportFile exists')
             // sendSlackMessage(
             //   color: 'danger',
             //   message: "${testFailureDetails}",
