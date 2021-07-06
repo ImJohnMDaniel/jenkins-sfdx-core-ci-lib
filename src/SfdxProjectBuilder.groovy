@@ -1718,11 +1718,15 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
           _.echo('raw message returned __________________________________')
           _.echo(rmsg)
           _.echo('_______________________________________________________')
+          _.echo('before the jsonParse')
           def response = jsonParse( rmsg )
-
+          _.echo('after the jsonParse')
           // Are any SFDMU report files present?
           // def missingParentRecordsReport = _.readFile("${aDataLoadToProcess}/MissingParentRecordsReport.csv")
           File missingParentRecordsReportFile = new File("${aDataLoadToProcess}/MissingParentRecordsReport.csv")
+          _.echo('after the missingParentRecordsReportFile command')
+          printf missingParentRecordsReportFile
+          _.echo('after the missingParentRecordsReportFile print command')
           if ( missingParentRecordsReportFile.exists() ) {
             _.echo('missingParentRecordsReportFile exists')
             // sendSlackMessage(
