@@ -1714,6 +1714,11 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
         try {
           def rmsg =  _.sh returnStdout: true, script: "sfdx sfdmu:run --sourceusername csvfile --path ${aDataLoadToProcess} --targetusername ${this.sfdxScratchOrgAlias} --json"
           // _.echo('mark C')
+
+          _.echo('raw message returned __________________________________')
+          _.echo(rmsg)
+          _.echo('_______________________________________________________')
+
           def response = jsonParse( rmsg )
           // _.echo('mark D')
           // _.echo(response)
