@@ -1712,25 +1712,35 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
       for ( aDataLoadToProcess in this.dataLoadsToProcess ) {
         _.echo ("now processing data load folder '${aDataLoadToProcess}'")
         try {
-          // def rmsg =  _.sh returnStatus: true, script: "sfdx sfdmu:run --sourceusername csvfile --path ${aDataLoadToProcess} --targetusername ${this.sfdxScratchOrgAlias} --json --quiet > ${this.workingArtifactDirectory}/sfdmu-response.json"
-          // def rmsg =  _.sh returnStatus: true, script: "sfdx sfdmu:run --sourceusername csvfile --path ${aDataLoadToProcess} --targetusername ${this.sfdxScratchOrgAlias} --json --quiet"
           def rmsg =  _.sh returnStdout: true, script: "sfdx sfdmu:run --sourceusername csvfile --path ${aDataLoadToProcess} --targetusername ${this.sfdxScratchOrgAlias} --json --quiet"
-          // _.echo('mark C')
 
           _.echo('_______________________________________________________')
           _.echo('raw message returned __________________________________')
           _.echo(rmsg)
           _.echo('_______________________________________________________')
-          // _.echo('sfdmu-response.json ___________________________________')
-          // _.echo(this.workingArtifactDirectory}/sfdmu-response.json)
-          // _.echo('_______________________________________________________')
-
-          
-
           def response = jsonParse( rmsg )
-          // _.echo('mark D')
-          // _.echo(response)
-          // _.echo('mark E')
+
+          // Are any SFDMU report files present?
+          def missingParentRecordsReport = _.readFile("${aDataLoadToProcess}/MissingParentRecordsReport.csv")
+          if ( missingParentRecordsReport ) {
+            // sendSlackMessage(
+            //   color: 'danger',
+            //   message: "${testFailureDetails}",
+            //   isFooterMessage: true
+            // )
+            throw new Exception("MissingParentRecordsReport.csv report was found")
+          }
+
+          def csvIssuesReport = _.readFile("${aDataLoadToProcess}/CSVIssuesReport.csv")
+          if ( csvIssuesReport ) {
+            // sendSlackMessage(
+            //   color: 'danger',
+            //   message: "${testFailureDetails}",
+            //   isFooterMessage: true
+            // )
+            throw new Exception("CSVIssuesReport.csv report was found")
+          }
+
         }
         catch (ex) {
           _.echo('------------------------------------------------------')
@@ -1738,9 +1748,16 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
           _.echo(ex.getMessage())
           // _.echo('mark G')
           _.echo('------------------------------------------------------')
+          sendSlackMessage(
+            color: 'danger',
+            message: "Error with data load of ${aDataLoadToProcess} folder. \n\n${ex.getMessage()}",
+            isFooterMessage: true
+          )
           _.error "Failed to load ${aDataLoadToProcess}" 
         }
       }
+    } else {
+      _.echo('No data loads requested')
     }
   }
 
