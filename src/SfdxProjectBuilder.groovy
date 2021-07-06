@@ -1712,7 +1712,7 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
       for ( aDataLoadToProcess in this.dataLoadsToProcess ) {
         _.echo ("now processing data load folder '${aDataLoadToProcess}'")
         try {
-          def rmsg =  _.sh returnStdout: true, script: "sfdx sfdmu:run --sourceusername csvfile --path ${aDataLoadToProcess} --targetusername ${this.sfdxScratchOrgAlias} --json"
+          def rmsg =  _.sh returnStatus: true, script: "sfdx sfdmu:run --sourceusername csvfile --path ${aDataLoadToProcess} --targetusername ${this.sfdxScratchOrgAlias} --json"
           // _.echo('mark C')
 
           _.echo('raw message returned __________________________________')
