@@ -524,10 +524,7 @@ class SfdxProjectBuilder implements Serializable {
 
   void testStage() {
     // Give the code time to settle down before the unit tests begin
-// TODO: Re-enable sleep mode
-    // _.sleep time: 2, unit: 'MINUTES'
-
-    // need to a the parallel tage here along with PMD task
+    _.sleep time: 1, unit: 'MINUTES'
 
     // _.failFast true // this is part of the declarative syntax.  Is there an equivalent in the scripted model?
 
@@ -538,15 +535,6 @@ class SfdxProjectBuilder implements Serializable {
         evaluateTestResults() 
       }
     ) // parallel
-
-    // parallel (
-    //     'gfortran': { build('trunk/build/gfortran') },
-    //     'ifort': { build('trunk/build/ifort') }
-    // )
-
-      
-    // executeUnitTests()
-    // evaluateTestResults() 
   }
 
   void packageStage() {
@@ -1141,7 +1129,7 @@ class SfdxProjectBuilder implements Serializable {
       def sourcePushResults = jsonParse( _.readFile("${this.workingArtifactDirectory}/force-source-push.json") )
       debug( 'after force-source-push.json file read')
 
-      def sourcePushFailureDetails = "Compilaiton stage failed with error : ${sourcePushResults.name}\n\n"
+      def sourcePushFailureDetails = "Compilation stage failed with error : ${sourcePushResults.name}\n\n"
       
       if ( 'DeployFailed'.equals(sourcePushResults.name)) {
         sourcePushFailureDetails += "Metadata that failed to compile:\n\n"
