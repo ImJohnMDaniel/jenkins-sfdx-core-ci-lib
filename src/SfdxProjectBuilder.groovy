@@ -58,6 +58,8 @@ class SfdxProjectBuilder implements Serializable {
 
   private def releaseBranchList = ['master', 'main']
 
+  private def dataLoadsToProcess = []
+
   private def upstreamProjectsToTriggerFrom = []
 
   private def upstreamProjectsToTriggerFromPrefix
@@ -230,6 +232,14 @@ class SfdxProjectBuilder implements Serializable {
     if ( jenkinsBuildJobName != null && !jenkinsBuildJobName.empty ) {
       this.upstreamProjectsToTriggerFrom.add( jenkinsBuildJobName )
       _.echo("SfdxProjectBuilder Parameter set : Added ${jenkinsBuildJobName} to the upstream project build triggers")
+    }
+    return this
+  }
+
+  public SfdxProjectBuilder setDataLoadFolderToProcess( String dataLoadFolder ) {
+    if ( dataLoadFolder != null && !dataLoadFolder.empty ) {
+      this.dataLoadsToProcess.add( dataLoadFolder )
+      _.echo("SfdxProjectBuilder Parameter set : Added ${dataLoadFolder} to list of data load folders to process")
     }
     return this
   }
@@ -514,15 +524,17 @@ class SfdxProjectBuilder implements Serializable {
 
   void testStage() {
     // Give the code time to settle down before the unit tests begin
-    _.sleep time: 2, unit: 'MINUTES'
-    // need to a the parallel tage here along with PMD task
+    _.sleep time: 1, unit: 'MINUTES'
 
     // _.failFast true // this is part of the declarative syntax.  Is there an equivalent in the scripted model?
-    
-    // _.parallel { // not sure why this is not working.  Need to find equivalent in the scripted model.
-    executeUnitTests()
-    evaluateTestResults()
-    // } // parallel
+
+    _.parallel(
+      'Dataload Verification': { executeDataLoads() } ,
+      'Unit Tests': { 
+        executeUnitTests()
+        evaluateTestResults() 
+      }
+    ) // parallel
   }
 
   void packageStage() {
@@ -990,9 +1002,9 @@ class SfdxProjectBuilder implements Serializable {
       def rmsgToolboxUtilsInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install @dx-cli-toolbox/sfdx-toolbox-utils"
       _.echo rmsgToolboxUtilsInstall
 
-      // _.echo ("installing the sfdmu plugins")
-      // def rmsgSFDMUInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install sfdmu"
-      // _.echo rmsgSFDMUInstall
+      _.echo ("installing the sfdmu plugins")
+      def rmsgSFDMUInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install sfdmu"
+      _.echo rmsgSFDMUInstall
 
       // _.echo ("installing the shane-sfdx-plugins  plugins")
       // def rmsgShaneSFDXPluginInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install shane-sfdx-plugins "
@@ -1117,7 +1129,7 @@ class SfdxProjectBuilder implements Serializable {
       def sourcePushResults = jsonParse( _.readFile("${this.workingArtifactDirectory}/force-source-push.json") )
       debug( 'after force-source-push.json file read')
 
-      def sourcePushFailureDetails = "Compilaiton stage failed with error : ${sourcePushResults.name}\n\n"
+      def sourcePushFailureDetails = "Compilation stage failed with error : ${sourcePushResults.name}\n\n"
       
       if ( 'DeployFailed'.equals(sourcePushResults.name)) {
         sourcePushFailureDetails += "Metadata that failed to compile:\n\n"
@@ -1681,6 +1693,71 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
     // the last line works as the return value
     return result
   }
+
+  private void executeDataLoads() {
+    if ( this.dataLoadsToProcess != null ) {
+      _.echo ("executeDataLoads is called")
+      for ( aDataLoadToProcess in this.dataLoadsToProcess ) {
+        _.echo ("now processing data load folder '${aDataLoadToProcess}'")
+        try {
+          def rmsg =  _.sh returnStdout: true, script: "sfdx sfdmu:run --sourceusername csvfile --path ${aDataLoadToProcess} --targetusername ${this.sfdxScratchOrgAlias} --json --quiet"
+
+          _.echo('_______________________________________________________')
+          _.echo('raw message returned __________________________________')
+          _.echo(rmsg)
+          _.echo('_______________________________________________________')
+          _.echo('before the jsonParse')
+          def response = jsonParse( rmsg )
+          _.echo('after the jsonParse')
+
+          if ( response.status != 0) {
+            _.error( response )
+          }
+
+          // Are any SFDMU report files present?
+          def missingParentRecordsReportFileExists = _.fileExists "${aDataLoadToProcess}/MissingParentRecordsReport.csv"
+
+          if ( missingParentRecordsReportFileExists ) {
+            _.echo('missingParentRecordsReportFile exists')
+            // sendSlackMessage(
+            //   color: 'danger',
+            //   message: "${testFailureDetails}",
+            //   isFooterMessage: true
+            // )
+            _.error("MissingParentRecordsReport.csv report was found")
+          }
+
+          def csvIssuesReportFileExists = _.fileExists "${aDataLoadToProcess}/CSVIssuesReport.csv"
+          if ( csvIssuesReportFileExists ) {
+            _.echo('csvIssuesReportFile exists')
+            // sendSlackMessage(
+            //   color: 'danger',
+            //   message: "${testFailureDetails}",
+            //   isFooterMessage: true
+            // )
+            _.error("CSVIssuesReport.csv report was found")
+          }
+
+        }
+        catch (ex) {
+          _.echo('------------------------------------------------------')
+          // _.echo('mark F')
+          _.echo(ex.getMessage())
+          // _.echo('mark G')
+          _.echo('------------------------------------------------------')
+          sendSlackMessage(
+            color: 'danger',
+            message: "Error with data load of ${aDataLoadToProcess} folder. \n\n${ex.getMessage()}",
+            isFooterMessage: true
+          )
+          _.error "Failed to load ${aDataLoadToProcess}" 
+        }
+      }
+    } else {
+      _.echo('No data loads requested')
+    }
+  }
+
 
           //  THIS DEFINITELY WORKS 
           // _.pipelineTriggers(
