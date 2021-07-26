@@ -1364,9 +1364,7 @@ class SfdxProjectBuilder implements Serializable {
       _.error  "unable to determine pathToUseForPackageVersionCreation in stage:package"
     }
 
-    // def commandScriptString = "sfdx force:package:version:create --path ${pathToUseForPackageVersionCreation} --json --codecoverage --tag ${_.env.BUILD_TAG.replaceAll(' ','-')} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
-
-    def commandScriptString = "sfdx force:package:version:create --path ${pathToUseForPackageVersionCreation} --json --codecoverage --tag ${this.buildTagName} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
+    def commandScriptString = "sfdx force:package:version:create --path ${pathToUseForPackageVersionCreation} --json --codecoverage --tag ${env.GIT_COMMIT} --versiondescription ${this.buildTagName} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
 
 /*
     GOAL: FEATURE: treat “rc/*” branches the same as “main” for package version builds
