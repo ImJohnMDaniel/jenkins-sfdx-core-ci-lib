@@ -339,7 +339,8 @@ class SfdxProjectBuilder implements Serializable {
       )
 
       // checkout the main source code for the project.
-      _.checkout _.scm
+      def myCOMMIT_HASH = _.checkout(_.scm).GIT_COMMIT
+      _.echo("myCOMMIT_HASH == ${myCOMMIT_HASH}") 
 
       // start the pipeline
       _.pipeline {
