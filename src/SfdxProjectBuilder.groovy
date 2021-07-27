@@ -72,6 +72,8 @@ class SfdxProjectBuilder implements Serializable {
 
   private def buildTagName 
 
+  private def buildGITCommitHash 
+
   private def methodDesignateAsReleaseBranchHasNotBeenCalled = true
 
   // Community related variables
@@ -339,8 +341,8 @@ class SfdxProjectBuilder implements Serializable {
       )
 
       // checkout the main source code for the project.
-      def myCOMMIT_HASH = _.checkout(_.scm).GIT_COMMIT
-      _.echo("myCOMMIT_HASH == ${myCOMMIT_HASH}") 
+      this.buildGITCommitHash = _.checkout(_.scm).GIT_COMMIT
+      _.echo("buildGITCommitHash == ${this.buildGITCommitHash}") 
 
       // start the pipeline
       _.pipeline {
@@ -1365,7 +1367,7 @@ class SfdxProjectBuilder implements Serializable {
       _.error  "unable to determine pathToUseForPackageVersionCreation in stage:package"
     }
 
-    def commandScriptString = "sfdx force:package:version:create --path ${pathToUseForPackageVersionCreation} --json --codecoverage --tag ${_.env.GIT_COMMIT} --versiondescription ${this.buildTagName} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
+    def commandScriptString = "sfdx force:package:version:create --path ${pathToUseForPackageVersionCreation} --json --codecoverage --tag ${this.buildGITCommitHash} --versiondescription ${this.buildTagName} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
 
 /*
     GOAL: FEATURE: treat “rc/*” branches the same as “main” for package version builds
