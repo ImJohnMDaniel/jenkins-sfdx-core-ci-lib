@@ -1504,6 +1504,7 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
                             message: "${ex.getMessage()}",
                             isFooterMessage: true
                           )
+                          _.error ex
                         }
                         
                         // _.echo( "packageVersionCreationResponse == ${packageVersionCreationResponse}")
