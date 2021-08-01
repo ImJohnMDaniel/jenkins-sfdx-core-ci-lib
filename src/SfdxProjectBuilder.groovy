@@ -1501,7 +1501,7 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
                           )
                           sendSlackMessage(
                             color: '#FFA500',
-                            message: "${ex.getMessage()}",
+                            message: "${ex}",
                             isFooterMessage: true
                           )
                           _.error ex
