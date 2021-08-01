@@ -849,7 +849,6 @@ class SfdxProjectBuilder implements Serializable {
         _.echo('------------------------------------------------------')
         _.error "hub org authorization failed" 
       }
-
     }
   }
 
@@ -1449,38 +1448,64 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
                     // script {
                         // use the this.packageVersionCreationResponseResult.Id for this command verses this.sfdxNewPackageVersionId because we are yet
                         //  certain that the package was created correctly
-                        rmsg = _.sh returnStdout: true, script: "sfdx force:package:version:create:report --packagecreaterequestid ${this.packageVersionCreationResponseResult.Id} --json --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
-                        // printf rmsg
+                        def isPackageVersionCreationCompleted = false
+                        def packageVersionCreationCheckResponse 
+                        try {
+                          rmsg = _.sh returnStdout: true, script: "sfdx force:package:version:create:report --packagecreaterequestid ${this.packageVersionCreationResponseResult.Id} --json --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
+                          // printf rmsg
 
-                        def packageVersionCreationCheckResponse = jsonParse(rmsg) 
+                          packageVersionCreationCheckResponse = jsonParse(rmsg) 
 
-                        if ( packageVersionCreationCheckResponse.status != 0 ) {
-                          _.error "force:package:version:create:report failed -- ${packageVersionCreationCheckResponse.message}"
+                          _.echo ("packageVersionCreationCheckResponse.status == ${packageVersionCreationCheckResponse.status}")
+
+                          if ( packageVersionCreationCheckResponse.status != 0 ) {
+                            _.error "force:package:version:create:report failed -- ${packageVersionCreationCheckResponse.message}"
+                          }
+
+                          // _.echo ("packageVersionCreationCheckResponse == ${packageVersionCreationCheckResponse}")
+
+                          // The JSON "result" is currently an array.  That is a SFDX bug -- W-4621618
+                          // Refer to Salesforce DX Success Community post for details https://success.salesforce.com/0D53A00003OTsAD
+                          this.packageVersionCreationResponseResult = packageVersionCreationCheckResponse.result[0]
+                          
+                          if ( packageVersionCreationCheckResponse.status != 0 || this.packageVersionCreationResponseResult.Status == 'Error' ) {
+                            _.echo ("packageVersionCreationCheckResponse == ${packageVersionCreationCheckResponse}")
+                            _.error "force:package:version:create:report failed -- ${this.packageVersionCreationResponseResult.Error}"
+                          }
+
+
+                          // _.echo ( "this.packageVersionCreationResponseResult.Status == ${this.packageVersionCreationResponseResult.Status}" )
+                          if ( packageVersionCreationCheckResponse.status == 0 
+                              && this.packageVersionCreationResponseResult.Status == "Success") {
+                              isPackageVersionCreationCompleted = true 
+                          }
+                          _.echo( "Current status == ${this.packageVersionCreationResponseResult.Status}")
+
                         }
-
-                        // _.echo ("packageVersionCreationCheckResponse == ${packageVersionCreationCheckResponse}")
-
-                        // The JSON "result" is currently an array.  That is a SFDX bug -- W-4621618
-                        // Refer to Salesforce DX Success Community post for details https://success.salesforce.com/0D53A00003OTsAD
-                        this.packageVersionCreationResponseResult = packageVersionCreationCheckResponse.result[0]
+                        catch (ex) {
+                          _.echo('------------------------------------------------------')
+                          _.echo(ex.getMessage())
+                          _.echo('------------------------------------------------------')
+                          // if ( packageVersionCreationCheckResponse.status != 0 ) {
+                          //   _.error "force:package:version:report failed -- ${packageVersionCreationCheckResponse.message}"
+                          // }
+                          sendSlackMessage(
+                            color: '#FFA500',
+                            message: "${packageVersionCreationCheckResponse}",
+                            isFooterMessage: true
+                          )
+                          sendSlackMessage(
+                            color: '#FFA500',
+                            message: "${ex.getMessage()}",
+                            isFooterMessage: true
+                          )
+                          sendSlackMessage(
+                            color: '#FFA500',
+                            message: "${ex.getMessage()}",
+                            isFooterMessage: true
+                          )
+                        }
                         
-                        if ( packageVersionCreationCheckResponse.status != 0 || this.packageVersionCreationResponseResult.Status == 'Error' ) {
-                          _.echo ("packageVersionCreationCheckResponse == ${packageVersionCreationCheckResponse}")
-                          _.error "force:package:version:create:report failed -- ${this.packageVersionCreationResponseResult.Error}"
-                        }
-
-                        def isPackageVersionCreationCompleted
-
-                        // _.echo ( "this.packageVersionCreationResponseResult.Status == ${this.packageVersionCreationResponseResult.Status}" )
-                        
-                        if ( packageVersionCreationCheckResponse.status == 0 
-                            && this.packageVersionCreationResponseResult.Status == "Success") {
-                            isPackageVersionCreationCompleted = true 
-                        } else {
-                            isPackageVersionCreationCompleted = false 
-                        }
-                        _.echo( "Current status == ${this.packageVersionCreationResponseResult.Status}")
-
                         // _.echo( "packageVersionCreationResponse == ${packageVersionCreationResponse}")
                         // _.echo( "packageVersionCreationResponse first result == ${packageVersionCreationCheckResponse.result[0]}")
 
