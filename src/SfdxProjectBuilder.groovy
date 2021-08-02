@@ -1443,6 +1443,8 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
             // The package version creation is still underway
             def packageVersionCreationCheckResponseResult = ''
 
+            _.echo("To check on package version creation -- sfdx force:package:version:create:report --packagecreaterequestid ${this.packageVersionCreationResponseResult.Id} ")
+
             _.timeout(360) {
                 _.waitUntil {
                     // script {
@@ -1486,6 +1488,12 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
                           _.echo('------------------------------------------------------')
                           _.echo(ex.getMessage())
                           _.echo('------------------------------------------------------')
+
+                          sendSlackMessage(
+                            color: '#FFA500',
+                            message: "Packaging packagecreaterequestid: ${this.packageVersionCreationResponseResult.Id}"
+                          )
+
                           // if ( packageVersionCreationCheckResponse.status != 0 ) {
                           //   _.error "force:package:version:report failed -- ${packageVersionCreationCheckResponse.message}"
                           // }
