@@ -1241,6 +1241,10 @@ class SfdxProjectBuilder implements Serializable {
         try {
           def rmsg =  _.sh returnStdout: true, script: "sfdx force:user:permset:assign --permsetname ${aPermissionSetToAssign} --targetusername ${this.sfdxScratchOrgAlias} --json"
           def response = jsonParse( rmsg )
+
+          _.echo("response object is")
+          _.echo("${response}")
+
           if ( response.status != 0) {
             _.error( response )
           }
