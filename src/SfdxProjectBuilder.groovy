@@ -908,6 +908,16 @@ class SfdxProjectBuilder implements Serializable {
         _.error "deletion of scratch org ${this.sfdxScratchOrgAlias} failed"
       }
     }
+    else if ( this.scratchOrgWasCreated && ! this.scratchOrgShouldBeDeleted ) {
+      // find the scratch org sfdxAuthUrl
+      def rmsg = _.sh returnStdout: true, script: "sfdx force:org:display --verbose --json --targetusername ${this.sfdxScratchOrgAlias}"
+
+      def response = jsonParse( rmsg )
+
+      if (response.status == 0) {
+        _.echo("Scratch sfdxAuthUrl: ${response.result.sfdxAuthUrl}")
+      }
+    }
   }
 
   private void resetAllDependenciesToLatestWherePossible() {
