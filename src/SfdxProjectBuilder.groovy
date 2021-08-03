@@ -60,6 +60,8 @@ class SfdxProjectBuilder implements Serializable {
 
   private def dataLoadsToProcess = []
 
+  private def permissionSetsToAssign = []
+
   private def upstreamProjectsToTriggerFrom = []
 
   private def upstreamProjectsToTriggerFromPrefix
@@ -242,6 +244,14 @@ class SfdxProjectBuilder implements Serializable {
     if ( dataLoadFolder != null && !dataLoadFolder.empty ) {
       this.dataLoadsToProcess.add( dataLoadFolder )
       _.echo("SfdxProjectBuilder Parameter set : Added ${dataLoadFolder} to list of data load folders to process")
+    }
+    return this
+  }
+
+  public SfdxProjectBuilder setPermissionSetToAssign( String permissionSetName ) {
+    if ( permissionSetName != null && !permissionSetName.empty ) {
+      this.permissionSetsToAssign.add( permissionSetName )
+      _.echo("SfdxProjectBuilder Parameter set : Added ${permissionSetName} to list of permission sets to assign")
     }
     return this
   }
@@ -528,6 +538,8 @@ class SfdxProjectBuilder implements Serializable {
   void testStage() {
     // Give the code time to settle down before the unit tests begin
     _.sleep time: 1, unit: 'MINUTES'
+
+    assignPermissionSets()
 
     // _.failFast true // this is part of the declarative syntax.  Is there an equivalent in the scripted model?
 
@@ -1218,6 +1230,36 @@ class SfdxProjectBuilder implements Serializable {
       }
     } else {
       _.echo( 'No local Apex Tests found.' )  
+    }
+  }
+
+  private void assignPermissionSets() {
+    if ( this.permissionSetsToAssign != null ) {
+      _.echo ("assignPermissionSets is called")
+      for ( aPermissionSetToAssign in this.permissionSetsToAssign ) {
+        _.echo ("now assigning permission set '${aPermissionSetToAssign}'")
+        try {
+          def rmsg =  _.sh returnStdout: true, script: "sfdx force:user:permset:assign --permsetname ${aPermissionSetToAssign} --targetusername ${this.sfdxScratchOrgAlias} --json"
+          def response = jsonParse( rmsg )
+          if ( response.status != 0) {
+            _.error( response )
+          }
+          if ( response.failures.size() > 0 ) {
+            _.error( response.failures[0].message )
+          }
+        }
+        catch (ex) {
+          _.echo('------------------------------------------------------')
+          _.echo(ex.getMessage())
+          _.echo('------------------------------------------------------')
+          sendSlackMessage(
+            color: 'danger',
+            message: "Error assigning permission set ${aPermissionSetToAssign}. \n\n${ex.getMessage()}",
+            isFooterMessage: true
+          )
+          _.error "Failed to assigning permission set ${aPermissionSetToAssign}" 
+        }
+      }
     }
   }
 

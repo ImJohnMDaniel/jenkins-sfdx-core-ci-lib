@@ -14,7 +14,8 @@ new SfdxProjectBuilder(this)
         .setupCommunity( 'Foobar', 'foobar', 'Customer Service' )
         .publishCommunity( 'Foobar' )
         .setPostDeployScriptExecution('bin/do-something-script') // set this for each script to execute
-        .loadData()
+        .setDataLoadFolderToProcess('data-folder/folder-of-csv-files-to-load') // uses SFDMU plugin to manage data loads.
+        .setPermissionSetToAssign('permission-set-api-name')
         .alwaysNotifyOnSuccess()
         .designateAsReleaseBranch('release/*') // set this for each branch to designate as a release branch
         .setSlackNotificationsOn()
