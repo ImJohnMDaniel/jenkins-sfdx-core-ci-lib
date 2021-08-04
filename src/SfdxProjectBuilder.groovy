@@ -1248,7 +1248,7 @@ class SfdxProjectBuilder implements Serializable {
           if ( response.status != 0) {
             _.error( response )
           }
-          if ( response.failures.size() > 0 ) {
+          if ( response.failures != null && response.failures.size() > 0 ) {
             _.error( response.failures[0].message )
           }
         }
