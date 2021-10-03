@@ -475,7 +475,12 @@ class SfdxProjectBuilder implements Serializable {
   }
 
   void initializeStage() {
-    
+
+    // record CLI version
+    def rmsg = _.sh returnStdout: true, script: "sfdx version --json"
+    def response = jsonParse( rmsg )
+    _.echo("sfdx version == ${response.cliVersion}")
+
     installRequiredCLIPlugins()
     // setup this build's unique artifact directory
     _.sh "mkdir -p ${this.workingArtifactDirectory}"
