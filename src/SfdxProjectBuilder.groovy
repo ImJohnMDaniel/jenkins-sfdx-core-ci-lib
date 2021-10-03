@@ -478,6 +478,7 @@ class SfdxProjectBuilder implements Serializable {
 
     // record CLI version
     def rmsg = _.sh returnStdout: true, script: "sfdx version --json"
+    _.echo(rmsg)
     def responseMsg = jsonParse( rmsg )
     _.echo(responseMsg)
     _.echo("sfdx version == ${responseMsg.cliVersion}")
