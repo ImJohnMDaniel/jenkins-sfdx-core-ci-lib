@@ -1278,7 +1278,7 @@ class SfdxProjectBuilder implements Serializable {
   private void evaluateTestResults() {
     debug('evaluateTestResults method called')
     if ( _.findFiles( glob: "${this.workingArtifactDirectory}/**/test-result-707*.json", excludes: "*-codecoverage.json") ) {
-      def testResultFiles = _.findFiles( glob: "${this.workingArtifactDirectory}/**/test-result-707*.json" )
+      def testResultFiles = _.findFiles( glob: "${this.workingArtifactDirectory}/**/test-result-707*.json", excludes: "*-codecoverage.json" )
 
       try {
         // evaluate the test results
