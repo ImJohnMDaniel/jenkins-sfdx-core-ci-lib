@@ -1214,6 +1214,8 @@ class SfdxProjectBuilder implements Serializable {
 
           def response = jsonParse( rmsg )
 
+          debug( response.status )
+
           if ( response.status == 0 ) {
             unitTestsHaveFailed = false
           }
@@ -1225,6 +1227,7 @@ class SfdxProjectBuilder implements Serializable {
           }
         }
         catch (ex) {
+          debug('exception from force:apex:test:run')
           debug(ex.getMessage())
 
           // if (ex.status != 100 ) {
@@ -1242,6 +1245,7 @@ class SfdxProjectBuilder implements Serializable {
         }
         finally {
           collectTestResults()
+          debug( "unitTestsHaveFailed == ${unitTestsHaveFailed}")
           if ( unitTestsHaveFailed ) {
             sendTestResultsBySlack()
             _.error('Apex Unit Tests Failed')
