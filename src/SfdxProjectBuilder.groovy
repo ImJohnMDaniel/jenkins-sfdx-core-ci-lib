@@ -1200,7 +1200,7 @@ class SfdxProjectBuilder implements Serializable {
         def unitTestsHaveFailed = false
         
         try {
-          _.echo('before the force:apex:test:run execution')
+          debug('before the force:apex:test:run execution')
           rmsg = _.sh returnStdout: true, label: 'Executing force:apex:test:run...', script: "sfdx force:apex:test:run --testlevel RunLocalTests --outputdir ${this.workingArtifactDirectory} --resultformat tap --codecoverage --wait 60 --json --targetusername ${this.sfdxScratchOrgAlias}"
           // debug( rmsg )
           // if ( rmsg == 0 ) {
@@ -1212,28 +1212,28 @@ class SfdxProjectBuilder implements Serializable {
           // else {
           //   _.error('unexpected error : ' + rmsg)
           // }
-          _.echo('after the force:apex:test:run execution')
+          debug('after the force:apex:test:run execution')
           def response = jsonParse( rmsg )
-          _.echo('after the jsonParse( rmsg ) execution')
+          debug('after the jsonParse( rmsg ) execution')
 
-          _.echo("response.status == ${response.status}")
+          debug("response.status == ${response.status}")
 
           if ( response.status == 0 ) {
-            _.echo('response.status == 0')
+            debug('response.status == 0')
             unitTestsHaveFailed = false
           }
           else if ( response.status == 100 ) {
-            _.echo('response.status == 100')
+            debug('response.status == 100')
             unitTestsHaveFailed = true
           }
           else {
-            _.echo('response.status is something else')
+            debug('response.status is something else')
             _.error('unexpected error : ' + rmsg)
           }
         }
         catch (ex) {
-          _.echo('exception from force:apex:test:run')
-          _.echo(ex.getMessage())
+          debug('exception from force:apex:test:run')
+          debug(ex.getMessage())
           unitTestsHaveFailed = true
 
           // if (ex.status != 100 ) {
@@ -1250,9 +1250,9 @@ class SfdxProjectBuilder implements Serializable {
           // }
         }
         finally {
-          _.echo('beginning of finally')
+          debug('beginning of finally')
           collectTestResults()
-          _.echo( "unitTestsHaveFailed == ${unitTestsHaveFailed}")
+          debug( "unitTestsHaveFailed == ${unitTestsHaveFailed}")
           if ( unitTestsHaveFailed ) {
             sendTestResultsBySlack()
             _.error('Apex Unit Tests Failed')
@@ -1384,7 +1384,7 @@ class SfdxProjectBuilder implements Serializable {
 
       def testResults = _.readJSON file: "${testResultFiles[0].path}", returnPojo: true
 
-      // debug("testResults.summary.failing == ${testResults.summary.failing}")
+      debug("testResults.summary.failing == ${testResults.summary.failing}")
       if ( testResults.summary.failing > 0 ) {
         _.echo( "${testResults.summary.failing} failed tests" )
 
