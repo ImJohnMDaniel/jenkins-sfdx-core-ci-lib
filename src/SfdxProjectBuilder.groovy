@@ -1200,12 +1200,24 @@ class SfdxProjectBuilder implements Serializable {
         def unitTestsHaveFailed = false
         
         try {
-          rmsg = _.sh returnStatus: true, label: 'Executing force:apex:test:run...', script: "sfdx force:apex:test:run --testlevel RunLocalTests --outputdir ${this.workingArtifactDirectory} --resultformat tap --codecoverage --wait 60 --json --targetusername ${this.sfdxScratchOrgAlias}"
-          debug( rmsg )
-          if ( rmsg == 0 ) {
+          rmsg = _.sh returnStdout: true, label: 'Executing force:apex:test:run...', script: "sfdx force:apex:test:run --testlevel RunLocalTests --outputdir ${this.workingArtifactDirectory} --resultformat tap --codecoverage --wait 60 --json --targetusername ${this.sfdxScratchOrgAlias}"
+          // debug( rmsg )
+          // if ( rmsg == 0 ) {
+          //   unitTestsHaveFailed = false
+          // }
+          // else if ( rmsg == 100 ) {
+          //   unitTestsHaveFailed = true
+          // }
+          // else {
+          //   _.error('unexpected error : ' + rmsg)
+          // }
+
+          def response = jsonParse( rmsg )
+
+          if ( response.status == 0 ) {
             unitTestsHaveFailed = false
           }
-          else if ( rmsg == 100 ) {
+          else if ( response.status == 100 ) {
             unitTestsHaveFailed = true
           }
           else {
