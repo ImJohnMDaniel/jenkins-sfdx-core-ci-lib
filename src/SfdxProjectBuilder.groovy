@@ -1232,8 +1232,8 @@ class SfdxProjectBuilder implements Serializable {
           }
         }
         catch (ex) {
-          debug('exception from force:apex:test:run')
-          debug(ex.getMessage())
+          _.echo('exception from force:apex:test:run')
+          _.echo(ex.getMessage())
 
           // if (ex.status != 100 ) {
           //   // somehting is wrong
@@ -1249,8 +1249,9 @@ class SfdxProjectBuilder implements Serializable {
           // }
         }
         finally {
+          _.echo('beginning of finally')
           collectTestResults()
-          debug( "unitTestsHaveFailed == ${unitTestsHaveFailed}")
+          _.echo( "unitTestsHaveFailed == ${unitTestsHaveFailed}")
           if ( unitTestsHaveFailed ) {
             sendTestResultsBySlack()
             _.error('Apex Unit Tests Failed')
