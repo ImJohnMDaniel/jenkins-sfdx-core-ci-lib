@@ -1234,6 +1234,7 @@ class SfdxProjectBuilder implements Serializable {
         catch (ex) {
           _.echo('exception from force:apex:test:run')
           _.echo(ex.getMessage())
+          unitTestsHaveFailed = false
 
           // if (ex.status != 100 ) {
           //   // somehting is wrong
