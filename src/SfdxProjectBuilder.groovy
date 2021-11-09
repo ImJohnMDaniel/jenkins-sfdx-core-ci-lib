@@ -893,9 +893,10 @@ class SfdxProjectBuilder implements Serializable {
     }
     catch (ex) {
       _.echo('------------------------------------------------------')
-      _.echo(ex.status)
-      _.echo(ex.name)
-      _.echo(ex.message)
+      _.echo(ex)
+      // _.echo(ex.status)
+      // _.echo(ex.name)
+      // _.echo(ex.message)
       _.echo('------------------------------------------------------')
       // if (ex.getMessage().contains('OPERATION_TOO_LARGE')) {
       if (ex.message.contains('OPERATION_TOO_LARGE')) {
