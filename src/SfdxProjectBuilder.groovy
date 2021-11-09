@@ -892,7 +892,7 @@ class SfdxProjectBuilder implements Serializable {
       debug('------------------------------------------------------')
     }
     catch (ex) {
-      println ex
+      printf ex
       _.echo('------------------------------------------------------')
       // _.echo(ex)
       // _.echo(ex.status)
