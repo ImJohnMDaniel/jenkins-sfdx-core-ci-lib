@@ -50,6 +50,8 @@ class SfdxProjectBuilder implements Serializable {
 
   private def notifyOnSuccessfulBuilds = false 
 
+  private def notifyOnReleaseBranchBuilds = false
+
   private def slackNotificationsIsActive = false
 
   private def scratchOrgWasCreated = false
@@ -211,6 +213,12 @@ class SfdxProjectBuilder implements Serializable {
   public SfdxProjectBuilder alwaysNotifyOnSuccess() {
     this.notifyOnSuccessfulBuilds = true
     _.echo('SfdxProjectBuilder Parameter set : Notify on successful builds')
+    return this
+  }
+
+  public SfdxProjectBuilder alwaysNotifyOnReleaseBranch() {
+    this.notifyOnReleaseBranchBuilds = true
+    _.echo('SfdxProjectBuilder Parameter set : Notify on successful release branch builds')
     return this
   }
 
@@ -569,7 +577,9 @@ class SfdxProjectBuilder implements Serializable {
   }
 
   void postSuccess() {
-    if ( this.notifyOnSuccessfulBuilds || ( _.currentBuild.previousBuild != null && _.currentBuild.resultIsBetterOrEqualTo( _.currentBuild.previousBuild.currentResult ) ) ) {
+    if ( this.notifyOnSuccessfulBuilds 
+        || ( this.notifyOnReleaseBranchBuilds && this.releaseBranchList.contains(_.env.BRANCH_NAME) )
+        || ( _.currentBuild.previousBuild != null && _.currentBuild.resultIsBetterOrEqualTo( _.currentBuild.previousBuild.currentResult ) ) ) {
       sendSlackMessage(
         color: 'good',
         message: "Build completed ${_.env.JOB_NAME} ${_.env.BUILD_NUMBER} (<${_.env.BUILD_URL}|Open>)",
@@ -945,8 +955,7 @@ class SfdxProjectBuilder implements Serializable {
   private void resetAllDependenciesToLatestWherePossible() {
     def commandScriptString = "sfdx toolbox:package:dependencies:manage --updatetolatest --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME} --json"
 
-
-// TODO: Make adjustments here as well
+    // TODO: Make adjustments here as well
     if ( !this.releaseBranchList.contains(_.env.BRANCH_NAME)
         || ( this.releaseBranchList.contains(_.env.BRANCH_NAME)
             && !this.releaseBranchesShouldBeTreatedAsNull ) 
@@ -997,7 +1006,7 @@ class SfdxProjectBuilder implements Serializable {
 
     def commandScriptString = "sfdx toolbox:package:dependencies:install --wait 240 --noprecheck --targetusername ${this.sfdxScratchOrgAlias} --json"
     
-// TODO: Make adjustments here as well
+    // TODO: Make adjustments here as well
     if ( !this.releaseBranchList.contains(_.env.BRANCH_NAME) || ( this.releaseBranchList.contains(_.env.BRANCH_NAME) && !this.releaseBranchesShouldBeTreatedAsNull ) ) {
       commandScriptString = commandScriptString + " --branch ${_.env.BRANCH_NAME}"
     }
