@@ -14,6 +14,8 @@ class SfdxProjectBuilder implements Serializable {
 
   private def workingArtifactDirectory 
 
+  private boolean usingToolboxProjectUtilsBuildApproach = false
+
   private def sfdxScratchOrgAlias
 
   private def sfdxNewPackage
@@ -126,6 +128,12 @@ class SfdxProjectBuilder implements Serializable {
        _.echo("SfdxProjectBuilder Parameter : scratchOrgDefFile has been set to ${scratchOrgDefFile}")
        this.sfdxScratchOrgDefinitionFile = scratchOrgDefFile
     }
+    return this
+  }
+
+  public SfdxProjectBuilder toolboxProjectUtilsBuildApproachEnabled() {
+    this.usingToolboxProjectUtilsBuildApproach = true;
+    _.echo('SfdxProjectBuilder Parameter set : Using @dx-cli-toolbox/sfdx-toolbox-project-utils CLI plugin build approach.')
     return this
   }
 
@@ -346,11 +354,6 @@ class SfdxProjectBuilder implements Serializable {
     return this
   }
 
-  // vo id setBuildDescription(Map args) {
-  //   jenkinsFileScript.currentBuild.displayName = args.title
-  //   jenkinsFileScript.currentBuild.description = args.description
-  // }
-
   private void processInnerNode() {
       sendSlackMessage(
         color: 'good',
@@ -498,8 +501,22 @@ class SfdxProjectBuilder implements Serializable {
 
     readAndParseSFDXProjectFile()
     authenticateToDevHub()
-    createScratchOrg()
 
+    if ( this.usingToolboxProjectUtilsBuildApproach ) {
+      _.echo('executing toolbox:project:stage:initialization')
+      
+      def commandScriptString = "sfdx toolbox:project:stage:initialization --scope COMPLETE --json --durationdays 1 --setalias ${this.sfdxScratchOrgAlias} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
+
+      if (this.sfdxScratchOrgDefinitionFile) {
+        commandScriptString += " --definitionfile ${this.sfdxScratchOrgDefinitionFile}"
+      }
+      def rc = _.sh returnStatus: true, script: commandScriptString
+      if (rc != 0) { 
+        _.error "toolbox:project:stage:initialization failed"
+      }
+    } else {
+      createScratchOrg()
+    }
   }
 
   void validateStage() {
@@ -508,6 +525,14 @@ class SfdxProjectBuilder implements Serializable {
     isEnvVarPopulatedSFDXDevHubUsername()
     isEnvVarPopulatedSFDXDevHubHost()
     isEnvVarPopulatedJWTCredIdDH()
+
+    if ( this.usingToolboxProjectUtilsBuildApproach ) {
+      _.echo('executing toolbox:project:stage:validation')
+      def rc = _.sh returnStatus: true, script: "sfdx toolbox:project:stage:validation --scope COMPLETE"
+      if (rc != 0) { 
+        _.error "toolbox:project:stage:validation failed"
+      }
+    }
 
     // def rmsg = _.sh returnStdout: true, script: "pwd"
     // _.echo(rmsg)
@@ -542,30 +567,53 @@ class SfdxProjectBuilder implements Serializable {
 
   void processResourcesStage() {
     // resetAllDependenciesToLatestWherePossible();
-    installAllDependencies()
-    setupCommunityIfNeeded()
+    if ( this.usingToolboxProjectUtilsBuildApproach ) {
+      _.echo('executing toolbox:project:stage:processresources')
+      def rc = _.sh returnStatus: true, script: "sfdx toolbox:project:stage:processresources --scope COMPLETE --targetusername ${this.sfdxScratchOrgAlias} --json"
+      if (rc != 0) { 
+        _.error "toolbox:project:stage:processresources failed"
+      }
+    } else {
+      installAllDependencies()
+      setupCommunityIfNeeded()
+    }
   }
 
   void compileStage() {
-    compileCode()
-    publishCommunityIfNeeded()
+    if ( this.usingToolboxProjectUtilsBuildApproach ) {
+      _.echo('executing toolbox:project:stage:compilation')
+      def rc = _.sh returnStatus: true, script: "sfdx toolbox:project:stage:compilation --scope COMPLETE --targetusername ${this.sfdxScratchOrgAlias} --json"
+      if (rc != 0) { 
+        _.error "toolbox:project:stage:compilation failed"
+      }
+    } else {
+      compileCode()
+      publishCommunityIfNeeded()
+    }
   }
 
   void testStage() {
     // Give the code time to settle down before the unit tests begin
     _.sleep time: 1, unit: 'MINUTES'
-
-    assignPermissionSets()
-
-    // _.failFast true // this is part of the declarative syntax.  Is there an equivalent in the scripted model?
-
-    _.parallel(
-      'Dataload Verification': { executeDataLoads() } ,
-      'Unit Tests': { 
-        executeUnitTests()
-        evaluateTestResults() 
+    if ( this.usingToolboxProjectUtilsBuildApproach ) {
+      _.echo('executing toolbox:project:stage:test')
+      def rc = _.sh returnStatus: true, script: "sfdx toolbox:project:stage:test --scope COMPLETE --targetusername ${this.sfdxScratchOrgAlias} --json"
+      if (rc != 0) { 
+        _.error "toolbox:project:stage:test failed"
       }
-    ) // parallel
+    } else {
+      assignPermissionSets()
+
+      // _.failFast true // this is part of the declarative syntax.  Is there an equivalent in the scripted model?
+
+      _.parallel(
+        'Dataload Verification': { executeDataLoads() } ,
+        'Unit Tests': { 
+          executeUnitTests()
+          evaluateTestResults() 
+        }
+      ) // parallel
+    }
   }
 
   void packageStage() {
@@ -1044,6 +1092,10 @@ class SfdxProjectBuilder implements Serializable {
       _.echo ("installing the @dx-cli-toolbox/sfdx-toolbox-utils plugin")
       def rmsgToolboxUtilsInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install @dx-cli-toolbox/sfdx-toolbox-utils"
       _.echo rmsgToolboxUtilsInstall
+
+      _.echo ("installing the @dx-cli-toolbox/sfdx-toolbox-project-utils plugin")
+      def rmsgToolboxProjectUtilsInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install @dx-cli-toolbox/sfdx-toolbox-project-utils"
+      _.echo rmsgToolboxProjectUtilsInstall
 
       _.echo ("installing the sfdmu plugins")
       def rmsgSFDMUInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install sfdmu"
