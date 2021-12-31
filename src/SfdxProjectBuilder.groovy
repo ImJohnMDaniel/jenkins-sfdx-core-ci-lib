@@ -505,7 +505,7 @@ class SfdxProjectBuilder implements Serializable {
     if ( this.usingToolboxProjectUtilsBuildApproach ) {
       _.echo('executing toolbox:project:stage:initialization')
       
-      def commandScriptString = "sfdx toolbox:project:stage:initialization --scope COMPLETE --json --durationdays 1 --setalias ${this.sfdxScratchOrgAlias} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
+      def commandScriptString = "sfdx toolbox:project:stage:initialization --scope COMPLETE --durationdays 1 --setalias ${this.sfdxScratchOrgAlias} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME} --json"
 
       if (this.sfdxScratchOrgDefinitionFile) {
         commandScriptString += " --definitionfile ${this.sfdxScratchOrgDefinitionFile}"
@@ -569,7 +569,7 @@ class SfdxProjectBuilder implements Serializable {
     // resetAllDependenciesToLatestWherePossible();
     if ( this.usingToolboxProjectUtilsBuildApproach ) {
       _.echo('executing toolbox:project:stage:processresources')
-      def rc = _.sh returnStatus: true, script: "sfdx toolbox:project:stage:processresources --scope COMPLETE --targetusername ${this.sfdxScratchOrgAlias} --json"
+      def rc = _.sh returnStatus: true, script: "sfdx toolbox:project:stage:processresources --scope COMPLETE --targetusername ${this.sfdxScratchOrgAlias} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME} --json"
       if (rc != 0) { 
         _.error "toolbox:project:stage:processresources failed"
       }
@@ -582,7 +582,7 @@ class SfdxProjectBuilder implements Serializable {
   void compileStage() {
     if ( this.usingToolboxProjectUtilsBuildApproach ) {
       _.echo('executing toolbox:project:stage:compilation')
-      def rc = _.sh returnStatus: true, script: "sfdx toolbox:project:stage:compilation --scope COMPLETE --targetusername ${this.sfdxScratchOrgAlias} --json"
+      def rc = _.sh returnStatus: true, script: "sfdx toolbox:project:stage:compilation --scope COMPLETE --targetusername ${this.sfdxScratchOrgAlias} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME} --json"
       if (rc != 0) { 
         _.error "toolbox:project:stage:compilation failed"
       }
@@ -597,7 +597,7 @@ class SfdxProjectBuilder implements Serializable {
     _.sleep time: 1, unit: 'MINUTES'
     if ( this.usingToolboxProjectUtilsBuildApproach ) {
       _.echo('executing toolbox:project:stage:test')
-      def rc = _.sh returnStatus: true, script: "sfdx toolbox:project:stage:test --scope COMPLETE --targetusername ${this.sfdxScratchOrgAlias} --json"
+      def rc = _.sh returnStatus: true, script: "sfdx toolbox:project:stage:test --scope COMPLETE --targetusername ${this.sfdxScratchOrgAlias} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME} --json"
       if (rc != 0) { 
         _.error "toolbox:project:stage:test failed"
       }
