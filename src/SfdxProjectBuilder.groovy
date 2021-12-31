@@ -528,7 +528,7 @@ class SfdxProjectBuilder implements Serializable {
 
     if ( this.usingToolboxProjectUtilsBuildApproach ) {
       _.echo('executing toolbox:project:stage:validation')
-      def rc = _.sh returnStatus: true, script: "sfdx toolbox:project:stage:validation --scope COMPLETE"
+      def rc = _.sh returnStatus: true, script: "sfdx toolbox:project:stage:validation --scope COMPLETE --json"
       if (rc != 0) { 
         _.error "toolbox:project:stage:validation failed"
       }
