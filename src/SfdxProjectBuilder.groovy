@@ -2,7 +2,7 @@ class SfdxProjectBuilder implements Serializable {
 
   private final def _ // the member variable that contains the jenkinsFileScript
 
-  private def sfdxScratchOrgDefinitionFile = "config/project-scratch-def.json"
+  private def sfdxScratchOrgDefinitionFile // = "config/project-scratch-def.json"
 
   private def dockerImage
 
