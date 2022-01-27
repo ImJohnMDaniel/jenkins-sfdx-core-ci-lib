@@ -584,9 +584,9 @@ class SfdxProjectBuilder implements Serializable {
   }
 
   void postSuccess() {
-    _.echo("postSuccess desicison point 1 == ${this.notifyOnSuccessfulBuilds}" )
-    _.echo("postSuccess desicison point 2 == ${( this.notifyOnReleaseBranchBuilds && this.releaseBranchList.contains(_.env.BRANCH_NAME) )}" )
-    _.echo("postSuccess desicison point 3 == ${( _.currentBuild.previousBuild != null && _.currentBuild.resultIsBetterOrEqualTo( _.currentBuild.previousBuild.currentResult ) )}" )
+    // _.echo("postSuccess desicison point 1 == ${this.notifyOnSuccessfulBuilds}" )
+    // _.echo("postSuccess desicison point 2 == ${( this.notifyOnReleaseBranchBuilds && this.releaseBranchList.contains(_.env.BRANCH_NAME) )}" )
+    // _.echo("postSuccess desicison point 3 == ${( _.currentBuild.previousBuild != null && _.currentBuild.resultIsBetterOrEqualTo( _.currentBuild.previousBuild.currentResult ) )}" )
     if ( this.notifyOnSuccessfulBuilds 
         || ( this.notifyOnReleaseBranchBuilds && this.releaseBranchList.contains(_.env.BRANCH_NAME) )
         || ( _.currentBuild.previousBuild != null && _.currentBuild.resultIsBetterOrEqualTo( _.currentBuild.previousBuild.currentResult ) ) ) {
