@@ -182,9 +182,12 @@ class SfdxProjectBuilder implements Serializable {
         // for now this only supports "startsWith"
         _.echo("branchName ${branchName} does contain an astericks ")
         if ( _.env.BRANCH_NAME.startsWith( branchName.replaceAll('\\*','') ) ) {
-          _.echo("env.BRANCH_NAME does startWith branchName ${branchName} ")
+          _.echo("env.BRANCH_NAME '${_.env.BRANCH_NAME}' does startWith branchName ${branchName} ")
           valueToAdd = _.env.BRANCH_NAME
+        } else {
+          _.echo("env.BRANCH_NAME '${_.env.BRANCH_NAME}' does NOT startWith branchName ${branchName} ")
         }
+
       } else {
         _.echo("branchName ${branchName} does NOT contain an astericks ")
         // branchName is a standard string name
@@ -581,6 +584,9 @@ class SfdxProjectBuilder implements Serializable {
   }
 
   void postSuccess() {
+    _.echo("postSuccess desicison point 1 == ${this.notifyOnSuccessfulBuilds}" )
+    _.echo("postSuccess desicison point 2 == ${( this.notifyOnReleaseBranchBuilds && this.releaseBranchList.contains(_.env.BRANCH_NAME) )}" )
+    _.echo("postSuccess desicison point 3 == ${( _.currentBuild.previousBuild != null && _.currentBuild.resultIsBetterOrEqualTo( _.currentBuild.previousBuild.currentResult ) )}" )
     if ( this.notifyOnSuccessfulBuilds 
         || ( this.notifyOnReleaseBranchBuilds && this.releaseBranchList.contains(_.env.BRANCH_NAME) )
         || ( _.currentBuild.previousBuild != null && _.currentBuild.resultIsBetterOrEqualTo( _.currentBuild.previousBuild.currentResult ) ) ) {
