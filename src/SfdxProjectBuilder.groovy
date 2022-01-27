@@ -180,13 +180,17 @@ class SfdxProjectBuilder implements Serializable {
       if ( branchName.contains('*') ) {
         // branchName is a regex expression
         // for now this only supports "startsWith"
+        _.echo("branchName ${branchName} does contain an astericks ")
         if ( _.env.BRANCH_NAME.startsWith( branchName.replaceAll('\\*','') ) ) {
+          _.echo("env.BRANCH_NAME does startWith branchName ${branchName} ")
           valueToAdd = _.env.BRANCH_NAME
         }
       } else {
+        _.echo("branchName ${branchName} does NOT contain an astericks ")
         // branchName is a standard string name
         valueToAdd = branchName
       }
+      _.echo("valueToAdd == ${valueToAdd}")
       if ( valueToAdd ) {
         _.echo("SfdxProjectBuilder Parameter set : designating ${valueToAdd} as a release branch.")
         this.releaseBranchList.add( valueToAdd )
