@@ -570,7 +570,7 @@ class SfdxProjectBuilder implements Serializable {
       'Dataload Verification': { executeDataLoads() } ,
       'Unit Tests': { 
         executeUnitTests()
-        evaluateTestResults() 
+        // evaluateTestResults() 
       }
     ) // parallel
   }
