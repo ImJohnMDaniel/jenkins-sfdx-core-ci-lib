@@ -1028,8 +1028,23 @@ class SfdxProjectBuilder implements Serializable {
 
     // _.echo ("commandScriptString == ${commandScriptString}")
     
-    def rmsg = _.sh returnStdout: true, script: commandScriptString
-    _.echo(rmsg)
+    def response 
+
+    try {
+      def rmsg = _.sh returnStdout: true, script: commandScriptString
+      debug(rmsg)
+       def response = jsonParse( rmsg )
+      debug('after the parsing of rmsg')
+      debug('------------------------------------------------------')
+      debug('response == ')
+      debug(response)
+      debug('------------------------------------------------------')
+    }
+    catch (ex) {
+      printf ex
+      _.echo('------------------------------------------------------')
+    }    
+    
     // if ( rmsg.isEmpty() ) {
     //   // then this means that the toolbox plugin has not been installed on this server.
     //   installRequiredCLIPlugins()
@@ -1037,8 +1052,7 @@ class SfdxProjectBuilder implements Serializable {
     //   rmsg = _.sh returnStdout: true, script: commandScriptString
     // }
   
-    def response = jsonParse( rmsg )
-    _.echo(response)
+   
 
     if (response.status != 0) {
       _.echo rmsg
