@@ -1014,7 +1014,7 @@ class SfdxProjectBuilder implements Serializable {
     //   _.echo('complete condition false')
     // }
 
-    def commandScriptString = "sfdx toolbox:package:dependencies:install --wait 240 --noprecheck --targetusername ${this.sfdxScratchOrgAlias} --json"
+    def commandScriptString = "sfdx toolbox:package:dependencies:install --wait 240 --noprecheck --targetusername ${this.sfdxScratchOrgAlias} --json --loglevel=debug"
     
     // TODO: Make adjustments here as well
     if ( !this.releaseBranchList.contains(_.env.BRANCH_NAME) || ( this.releaseBranchList.contains(_.env.BRANCH_NAME) && !this.releaseBranchesShouldBeTreatedAsNull ) ) {
