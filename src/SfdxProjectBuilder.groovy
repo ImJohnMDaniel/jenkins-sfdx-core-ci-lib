@@ -1043,7 +1043,9 @@ class SfdxProjectBuilder implements Serializable {
       debug('------------------------------------------------------')
     }
     catch (ex) {
-      printf ex
+      debug( 'catch section of toolbox:apex:codecoverage:check' )
+      debug( "${ex}")
+      // printf ex
       _.echo('------------------------------------------------------')
     }    
     
