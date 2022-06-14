@@ -1031,9 +1031,11 @@ class SfdxProjectBuilder implements Serializable {
     def response 
 
     try {
+      debug('before call to sh command to install dependencies')
       def rmsg = _.sh returnStdout: true, script: commandScriptString
+      debug('after the call to sh command to install dependencies')
       debug(rmsg)
-       def response = jsonParse( rmsg )
+      response = jsonParse( rmsg )
       debug('after the parsing of rmsg')
       debug('------------------------------------------------------')
       debug('response == ')
