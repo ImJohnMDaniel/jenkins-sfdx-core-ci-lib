@@ -958,6 +958,7 @@ class SfdxProjectBuilder implements Serializable {
 
       if (response.status == 0) {
         _.echo("Scratch sfdxAuthUrl: ${response.result.sfdxAuthUrl}")
+        _.echo("Scratch Org Info: ${response.result}")
       }
     }
   }
@@ -1036,17 +1037,18 @@ class SfdxProjectBuilder implements Serializable {
       debug('after the call to sh command to install dependencies')
       debug(rmsg)
       response = jsonParse( rmsg )
-      debug('after the parsing of rmsg')
-      debug('------------------------------------------------------')
+      debug('after the parsing of rmsg') installAllDependencies
+      debug('-----------------------------------------------------')
       debug('response == ')
       debug(response)
       debug('------------------------------------------------------')
     }
     catch (ex) {
-      debug( 'catch section of toolbox:apex:codecoverage:check' )
+      debug( 'catch section of toolbox:apex:codecoverage:install' )
       debug( "${ex}")
-      // printf ex
-      _.echo('------------------------------------------------------')
+      debug('------------------------------------------------------')
+      printf ex
+      debug('------------------------------------------------------')
     }    
     
     // if ( rmsg.isEmpty() ) {
