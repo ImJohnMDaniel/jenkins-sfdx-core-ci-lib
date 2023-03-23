@@ -1745,7 +1745,7 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
     def allPackageVersionsInstalledInScratchOrg = jsonParsedResponse.result
 
     // Get the complete list of package versions that are currently available in the DevHub
-    rmsg = _.sh returnStdout: true, script: "sfdx package version list --json --target-dev-hub ${_.env.SFDX_DEV_HUB_USERNAME}"
+    rmsg = _.sh returnStdout: true, script: "sfdx package version list --packages ${this.sfdxNewPackage} --json --target-dev-hub ${_.env.SFDX_DEV_HUB_USERNAME}"
     def allPackageVersionsAvailableInDevHub = jsonParse(rmsg).result
 
     def packageVersion
