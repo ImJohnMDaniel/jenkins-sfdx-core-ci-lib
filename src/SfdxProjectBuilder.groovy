@@ -748,7 +748,7 @@ class SfdxProjectBuilder implements Serializable {
     } else {
       _.echo("Slack notifications are currently off")
     }
-    // def rmsg =  _.sh returnStdout: true, script: "sfdx org login jwt --client-id ${_.env.CONNECTED_APP_CONSUMER_KEY_DH} --username ${_.env.SFDX_DEV_HUB_USERNAME} --jwt-key-file server.key --instance-url ${_.env.SFDX_DEV_HUB_HOST} --json"
+    // def rmsg =  _.sh returnStdout: true, script: "sfdx org login jwt --set-default-dev-hub --client-id ${_.env.CONNECTED_APP_CONSUMER_KEY_DH} --username ${_.env.SFDX_DEV_HUB_USERNAME} --jwt-key-file server.key --instance-url ${_.env.SFDX_DEV_HUB_HOST} --json"
     // Potential enhancement -- multi-threaded slack messages
     // def slackResponse = slackSend(channel: "cool-threads", message: "Here is the primary message")
     // slackSend(channel: slackResponse.threadId, message: "Thread reply #1")
@@ -868,13 +868,13 @@ class SfdxProjectBuilder implements Serializable {
         _.echo("Authenticating To Dev Hub...")
         
 
-        // def rc = _.sh returnStatus: true, script: "sfdx org login jwt --client-id ${_.env.CONNECTED_APP_CONSUMER_KEY_DH} --username ${_.env.SFDX_DEV_HUB_USERNAME} --jwt-key-file server.key --instance-url ${_.env.SFDX_DEV_HUB_HOST}"
+        // def rc = _.sh returnStatus: true, script: "sfdx org login jwt --set-default-dev-hub --client-id ${_.env.CONNECTED_APP_CONSUMER_KEY_DH} --username ${_.env.SFDX_DEV_HUB_USERNAME} --jwt-key-file server.key --instance-url ${_.env.SFDX_DEV_HUB_HOST}"
         // if (rc != 0) { 
         //   _.error "hub org authorization failed" 
         // }
 
       try {
-        def rmsg =  _.sh returnStdout: true, script: "sfdx org login jwt --client-id ${_.env.CONNECTED_APP_CONSUMER_KEY_DH} --username ${_.env.SFDX_DEV_HUB_USERNAME} --jwt-key-file server.key --instance-url ${_.env.SFDX_DEV_HUB_HOST} --json"
+        def rmsg =  _.sh returnStdout: true, script: "sfdx org login jwt --set-default-dev-hub --client-id ${_.env.CONNECTED_APP_CONSUMER_KEY_DH} --username ${_.env.SFDX_DEV_HUB_USERNAME} --jwt-key-file server.key --instance-url ${_.env.SFDX_DEV_HUB_HOST} --json"
         // _.echo('mark C')
         def response = jsonParse( rmsg )
         // _.echo('mark D')
@@ -1745,7 +1745,7 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
     def allPackageVersionsInstalledInScratchOrg = jsonParsedResponse.result
 
     // Get the complete list of package versions that are currently available in the DevHub
-    rmsg = _.sh returnStdout: true, script: "sfdx package version list --packages ${this.sfdxNewPackage} --json --target-dev-hub ${_.env.SFDX_DEV_HUB_USERNAME}"
+    rmsg = _.sh returnStdout: true, script: "sfdx package version list --json --target-dev-hub ${_.env.SFDX_DEV_HUB_USERNAME}"
     def allPackageVersionsAvailableInDevHub = jsonParse(rmsg).result
 
     def packageVersion
