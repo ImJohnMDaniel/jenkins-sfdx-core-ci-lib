@@ -748,7 +748,7 @@ class SfdxProjectBuilder implements Serializable {
     } else {
       _.echo("Slack notifications are currently off")
     }
-    // def rmsg =  _.sh returnStdout: true, script: "sfdx force:auth:jwt:grant --clientid ${_.env.CONNECTED_APP_CONSUMER_KEY_DH} --username ${_.env.SFDX_DEV_HUB_USERNAME} --jwtkeyfile server.key --instanceurl ${_.env.SFDX_DEV_HUB_HOST} --json"
+    // def rmsg =  _.sh returnStdout: true, script: "sfdx org login jwt --client-id ${_.env.CONNECTED_APP_CONSUMER_KEY_DH} --username ${_.env.SFDX_DEV_HUB_USERNAME} --jwt-key-file server.key --instance-url ${_.env.SFDX_DEV_HUB_HOST} --json"
     // Potential enhancement -- multi-threaded slack messages
     // def slackResponse = slackSend(channel: "cool-threads", message: "Here is the primary message")
     // slackSend(channel: slackResponse.threadId, message: "Thread reply #1")
@@ -868,13 +868,13 @@ class SfdxProjectBuilder implements Serializable {
         _.echo("Authenticating To Dev Hub...")
         
 
-        // def rc = _.sh returnStatus: true, script: "sfdx force:auth:jwt:grant --clientid ${_.env.CONNECTED_APP_CONSUMER_KEY_DH} --username ${_.env.SFDX_DEV_HUB_USERNAME} --jwtkeyfile server.key --instanceurl ${_.env.SFDX_DEV_HUB_HOST}"
+        // def rc = _.sh returnStatus: true, script: "sfdx org login jwt --client-id ${_.env.CONNECTED_APP_CONSUMER_KEY_DH} --username ${_.env.SFDX_DEV_HUB_USERNAME} --jwt-key-file server.key --instance-url ${_.env.SFDX_DEV_HUB_HOST}"
         // if (rc != 0) { 
         //   _.error "hub org authorization failed" 
         // }
 
       try {
-        def rmsg =  _.sh returnStdout: true, script: "sfdx force:auth:jwt:grant --clientid ${_.env.CONNECTED_APP_CONSUMER_KEY_DH} --username ${_.env.SFDX_DEV_HUB_USERNAME} --jwtkeyfile server.key --instanceurl ${_.env.SFDX_DEV_HUB_HOST} --json"
+        def rmsg =  _.sh returnStdout: true, script: "sfdx org login jwt --client-id ${_.env.CONNECTED_APP_CONSUMER_KEY_DH} --username ${_.env.SFDX_DEV_HUB_USERNAME} --jwt-key-file server.key --instance-url ${_.env.SFDX_DEV_HUB_HOST} --json"
         // _.echo('mark C')
         def response = jsonParse( rmsg )
         // _.echo('mark D')
@@ -895,7 +895,7 @@ class SfdxProjectBuilder implements Serializable {
   private void createScratchOrg() {
     _.echo('Creating scratch org')
 
-    def commandScriptString = "sfdx force:org:create --definitionfile ${this.sfdxScratchOrgDefinitionFile} --json --durationdays 1 --setalias ${this.sfdxScratchOrgAlias} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME} --wait 30"
+    def commandScriptString = "sfdx org create scratch --definition-file ${this.sfdxScratchOrgDefinitionFile} --json --duration-days 1 --alias ${this.sfdxScratchOrgAlias} --target-dev-hub ${_.env.SFDX_DEV_HUB_USERNAME} --wait 30"
 
     def response
 
@@ -945,14 +945,14 @@ class SfdxProjectBuilder implements Serializable {
   private void deleteScratchOrg() {
     if (this.scratchOrgWasCreated && this.scratchOrgShouldBeDeleted) {
       _.echo('Deleting scratch org')
-      def rc = _.sh returnStatus: true, script: "sfdx force:org:delete --noprompt --targetusername ${this.sfdxScratchOrgAlias} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
+      def rc = _.sh returnStatus: true, script: "sfdx org delete scratch --no-prompt --target-org ${this.sfdxScratchOrgAlias}"
       if (rc != 0) { 
         _.error "deletion of scratch org ${this.sfdxScratchOrgAlias} failed"
       }
     }
     else if ( this.scratchOrgWasCreated && ! this.scratchOrgShouldBeDeleted ) {
       // find the scratch org sfdxAuthUrl
-      def rmsg = _.sh returnStdout: true, script: "sfdx force:org:display --verbose --json --targetusername ${this.sfdxScratchOrgAlias}"
+      def rmsg = _.sh returnStdout: true, script: "sfdx org display --verbose --json --target-org ${this.sfdxScratchOrgAlias}"
 
       def response = jsonParse( rmsg )
 
@@ -1093,7 +1093,7 @@ class SfdxProjectBuilder implements Serializable {
 
     if (this.isCreatingCommunity) {
       _.echo("Creating community ${this.communityName}...")
-      def rmsg = _.sh returnStdout: true, script: "sfdx force:community:create --name \"${this.communityName}\" --urlpathprefix ${this.urlPathPrefix} --templatename \"${this.templateName}\" --json --targetusername ${this.sfdxScratchOrgAlias}"
+      def rmsg = _.sh returnStdout: true, script: "sfdx community create --name \"${this.communityName}\" --url-path-prefix ${this.urlPathPrefix} --template-name \"${this.templateName}\" --json --target-org ${this.sfdxScratchOrgAlias}"
       
       def response = jsonParse( rmsg )
 
@@ -1111,13 +1111,13 @@ class SfdxProjectBuilder implements Serializable {
       _.echo("Publish community ${this.communityName}...")
   
       try {
-        _.sh script: "sfdx force:community:publish --name \"${this.communityName}\" --json --targetusername ${this.sfdxScratchOrgAlias} > ${this.workingArtifactDirectory}/force-community-publish.json"
+        _.sh script: "sfdx community publish --name \"${this.communityName}\" --json --target-org ${this.sfdxScratchOrgAlias} > ${this.workingArtifactDirectory}/community-publish.json"
         
         // wait some time to allow the community publishing to complete
         _.sleep(45)
       } 
       catch(ex) {
-        debug( 'catch section of force:community:publish' )
+        debug( 'catch section of community publish' )
 
         _.echo(ex.getMessage())
 
@@ -1127,13 +1127,13 @@ class SfdxProjectBuilder implements Serializable {
             isFooterMessage: true
           )
 
-        def forceCommunityPublishResultsFileExists = _.fileExists "${this.workingArtifactDirectory}/force-community-publish.json"
+        def communityPublishResultsFileExists = _.fileExists "${this.workingArtifactDirectory}/community-publish.json"
 
-        if ( forceCommunityPublishResultsFileExists ) {
+        if ( communityPublishResultsFileExists ) {
 
-          debug( 'before force-community-publish.json file read')
-          def sourcePushResults = jsonParse( _.readFile("${this.workingArtifactDirectory}/force-community-publish.json") )
-          debug( 'after force-community-publish.json file read')
+          debug( 'before community-publish.json file read')
+          def sourcePushResults = jsonParse( _.readFile("${this.workingArtifactDirectory}/community-publish.json") )
+          debug( 'after community-publish.json file read')
           sendSlackMessage(
               color: 'danger',
               message: "${sourcePushResults}",
@@ -1153,7 +1153,7 @@ class SfdxProjectBuilder implements Serializable {
     def rmsg
     try {
       // _.echo( _.env.SFDX_JSON_TO_STDOUT )
-      // rmsg = _.sh returnStdout: true, script: "sfdx force:source:push --forceoverwrite --json --targetusername ${this.sfdxScratchOrgAlias}"
+      // rmsg = _.sh returnStdout: true, script: "sfdx force source push --forceoverwrite --json --targetusername ${this.sfdxScratchOrgAlias}"
 
       // def response = jsonParse( rmsg )
       // debug( response )
@@ -1164,44 +1164,44 @@ class SfdxProjectBuilder implements Serializable {
 
       // debug( rmsg )
       // if ( rmsg > 0 ) {
-      //   _.error('force:source:push failed')
+      //   _.error('force source push failed')
       // }
 
-      _.sh script: "sfdx force:source:push --forceoverwrite --json --wait 90 --targetusername ${this.sfdxScratchOrgAlias} > ${this.workingArtifactDirectory}/force-source-push.json"
+      _.sh script: "sfdx force source push --forceoverwrite --json --wait 90 --targetusername ${this.sfdxScratchOrgAlias} > ${this.workingArtifactDirectory}/source-push.json"
 
     }
     catch(ex) {
-      debug( 'catch section of force:source:push' )
+      debug( 'catch section of force source push' )
       // debug( ex.getMessage() )
       // debug( 'does ex have a status?')
 
-      // check if force-source-push.json exists
+      // check if source-push.json exists
         // read the file as a JSON file
       
-      processForceSourcePushFailure()      
+      processSourcePushFailure()      
 
       _.error( ex )
     } 
     finally {
-      debug( 'finally section of force:source:push')
+      debug( 'finally section of force source push')
     }
   }
 
-  private void processForceSourcePushFailure() {
-    debug('processForceSourcePushFailure method called')
+  private void processSourcePushFailure() {
+    debug('processSourcePushFailure method called')
 
-    def forceSourcePushResultsFileExists = _.fileExists "${this.workingArtifactDirectory}/force-source-push.json"
+    def sourcePushResultsFileExists = _.fileExists "${this.workingArtifactDirectory}/source-push.json"
 
-    if ( forceSourcePushResultsFileExists ) {
+    if ( sourcePushResultsFileExists ) {
 
-      // def sourcePushResultFile = _.findFiles( glob: "${this.workingArtifactDirectory}/force-source-push.json") 
+      // def sourcePushResultFile = _.findFiles( glob: "${this.workingArtifactDirectory}/source-push.json") 
       
       // _.echo(sourcePushResultFile) // doing this produces an exception
       // printf sourcePushResultFile
       // def sourcePushResults = _.readJSON file: "${sourcePushResultFile[0].path}", returnPojo: true
-      debug( 'before force-source-push.json file read')
-      def sourcePushResults = jsonParse( _.readFile("${this.workingArtifactDirectory}/force-source-push.json") )
-      debug( 'after force-source-push.json file read')
+      debug( 'before source-push.json file read')
+      def sourcePushResults = jsonParse( _.readFile("${this.workingArtifactDirectory}/source-push.json") )
+      debug( 'after source-push.json file read')
 
       def sourcePushFailureDetails = "Compilation stage failed with error : ${sourcePushResults.name}\n\n"
       
@@ -1228,7 +1228,7 @@ class SfdxProjectBuilder implements Serializable {
         )
     }
     else {
-      _.echo ('file force-source-push.json not found')
+      _.echo ('file source-push.json not found')
     }
 
   }
@@ -1242,8 +1242,8 @@ class SfdxProjectBuilder implements Serializable {
         def unitTestsHaveFailed = false
         
         try {
-          debug('before the force:apex:test:run execution')
-          rmsg = _.sh returnStdout: true, label: 'Executing force:apex:test:run...', script: "sfdx force:apex:test:run --testlevel RunLocalTests --outputdir ${this.workingArtifactDirectory} --resultformat tap --codecoverage --wait 60 --json --targetusername ${this.sfdxScratchOrgAlias}"
+          debug('before the apex run test execution')
+          rmsg = _.sh returnStdout: true, label: 'Executing apex run test...', script: "sfdx apex run test --test-level RunLocalTests --output-dir ${this.workingArtifactDirectory} --result-format tap --code-coverage --wait 60 --json --target-org ${this.sfdxScratchOrgAlias}"
           // debug( rmsg )
           // if ( rmsg == 0 ) {
           //   unitTestsHaveFailed = false
@@ -1254,7 +1254,7 @@ class SfdxProjectBuilder implements Serializable {
           // else {
           //   _.error('unexpected error : ' + rmsg)
           // }
-          debug('after the force:apex:test:run execution')
+          debug('after the apex run test execution')
           def response = jsonParse( rmsg )
           debug('after the jsonParse( rmsg ) execution')
 
@@ -1274,7 +1274,7 @@ class SfdxProjectBuilder implements Serializable {
           }
         }
         catch (ex) {
-          debug('exception from force:apex:test:run')
+          debug('exception from apex run test')
           debug(ex.getMessage())
           unitTestsHaveFailed = true
 
@@ -1288,7 +1288,7 @@ class SfdxProjectBuilder implements Serializable {
           //   // execute all unit tests a second time.  There is a bug with snapshots and CMDT-based 
           //   //      Dependency injection and Apex Unit Tests.  The workaround is to simply
           //   //      re-run the unit tests again.
-          //   rmsg = _.sh returnStdout: true, label: 'Executing force:apex:test:run...', script: "sfdx force:apex:test:run --testlevel RunLocalTests --outputdir ${this.workingArtifactDirectory} --resultformat junit --codecoverage --wait 60 --json --targetusername ${this.sfdxScratchOrgAlias}"
+          //   rmsg = _.sh returnStdout: true, label: 'Executing apex run test...', script: "sfdx apex run test --test-level RunLocalTests --output-dir ${this.workingArtifactDirectory} --result-format junit --code-coverage --wait 60 --json --target-org ${this.sfdxScratchOrgAlias}"
           // }
         }
         finally {
@@ -1312,7 +1312,7 @@ class SfdxProjectBuilder implements Serializable {
       for ( aPermissionSetToAssign in this.permissionSetsToAssign ) {
         _.echo ("now assigning permission set '${aPermissionSetToAssign}'")
         try {
-          def rmsg =  _.sh returnStdout: true, script: "sfdx force:user:permset:assign --permsetname ${aPermissionSetToAssign} --targetusername ${this.sfdxScratchOrgAlias} --json"
+          def rmsg =  _.sh returnStdout: true, script: "sfdx org assign permset --name ${aPermissionSetToAssign} --target-org ${this.sfdxScratchOrgAlias} --json"
           def response = jsonParse( rmsg )
 
           _.echo("response object is")
@@ -1499,7 +1499,7 @@ class SfdxProjectBuilder implements Serializable {
       _.error  "unable to determine pathToUseForPackageVersionCreation in stage:package"
     }
 
-    def commandScriptString = "sfdx force:package:version:create --path ${pathToUseForPackageVersionCreation} --json --codecoverage --tag ${this.buildGITCommitHash} --versiondescription ${this.buildTagName} --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
+    def commandScriptString = "sfdx package version create --path ${pathToUseForPackageVersionCreation} --json --code-coverage --tag ${this.buildGITCommitHash} --version-description ${this.buildTagName} --target-dev-hub ${_.env.SFDX_DEV_HUB_USERNAME}"
 
 /*
     GOAL: FEATURE: treat “rc/*” branches the same as “main” for package version builds
@@ -1576,7 +1576,7 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
             // The package version creation is still underway
             def packageVersionCreationCheckResponseResult = ''
 
-            _.echo("To check on package version creation -- sfdx force:package:version:create:report --packagecreaterequestid ${this.packageVersionCreationResponseResult.Id} ")
+            _.echo("To check on package version creation -- sfdx package version create report --package-create-request-id ${this.packageVersionCreationResponseResult.Id} ")
 
             _.timeout(360) {
                 _.waitUntil {
@@ -1586,7 +1586,7 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
                         def isPackageVersionCreationCompleted = false
                         def packageVersionCreationCheckResponse 
                         try {
-                          rmsg = _.sh returnStdout: true, script: "sfdx force:package:version:create:report --packagecreaterequestid ${this.packageVersionCreationResponseResult.Id} --json --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
+                          rmsg = _.sh returnStdout: true, script: "sfdx package version create report --package-create-request-id ${this.packageVersionCreationResponseResult.Id} --json --target-dev-hub ${_.env.SFDX_DEV_HUB_USERNAME}"
                           // printf rmsg
 
                           packageVersionCreationCheckResponse = jsonParse(rmsg) 
@@ -1594,7 +1594,7 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
                           _.echo ("packageVersionCreationCheckResponse.status == ${packageVersionCreationCheckResponse.status}")
 
                           if ( packageVersionCreationCheckResponse.status != 0 ) {
-                            _.error "force:package:version:create:report failed -- ${packageVersionCreationCheckResponse.message}"
+                            _.error "package version create report failed -- ${packageVersionCreationCheckResponse.message}"
                           }
 
                           // _.echo ("packageVersionCreationCheckResponse == ${packageVersionCreationCheckResponse}")
@@ -1605,7 +1605,7 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
                           
                           if ( packageVersionCreationCheckResponse.status != 0 || this.packageVersionCreationResponseResult.Status == 'Error' ) {
                             _.echo ("packageVersionCreationCheckResponse == ${packageVersionCreationCheckResponse}")
-                            _.error "force:package:version:create:report failed -- ${this.packageVersionCreationResponseResult.Error}"
+                            _.error "package version create report failed -- ${this.packageVersionCreationResponseResult.Error}"
                           }
 
 
@@ -1628,7 +1628,7 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
                           )
 
                           // if ( packageVersionCreationCheckResponse.status != 0 ) {
-                          //   _.error "force:package:version:report failed -- ${packageVersionCreationCheckResponse.message}"
+                          //   _.error "package version report failed -- ${packageVersionCreationCheckResponse.message}"
                           // }
                           sendSlackMessage(
                             color: '#FFA500',
@@ -1675,12 +1675,12 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
   private void captureCodeCoverage() {
     _.echo("Discovering code coverage for sfdxNewPackageVersionId == ${this.sfdxNewPackageVersionId}")
 
-    def rmsg = _.sh returnStdout: true, script: "sfdx force:package:version:report --package ${this.sfdxNewPackageVersionId} --json --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
+    def rmsg = _.sh returnStdout: true, script: "sfdx package version report --package ${this.sfdxNewPackageVersionId} --json --target-dev-hub ${_.env.SFDX_DEV_HUB_USERNAME}"
     
     def packageVersionReportResponse = jsonParse(rmsg) 
 
     if ( packageVersionReportResponse.status != 0 ) {
-      _.error "force:package:version:report failed -- ${packageVersionReportResponse.message}"
+      _.error "package version report failed -- ${packageVersionReportResponse.message}"
     }
 
     _.echo ("packageVersionReportResponse == ${packageVersionReportResponse}")
@@ -1711,7 +1711,7 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
     def rmsg
     def jsonParsedResponse
     try {
-      rmsg = _.sh returnStdout: true, script: "sfdx force:package:installed:list --json --targetusername ${this.sfdxScratchOrgAlias}"
+      rmsg = _.sh returnStdout: true, script: "sfdx package installed list --json --target-org ${this.sfdxScratchOrgAlias}"
       _.echo( rmsg )
       if ( rmsg != null ) {
         jsonParsedResponse = jsonParse(rmsg)
@@ -1721,7 +1721,7 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
       if ( rmsg == null || (jsonParsedResponse != null && jsonParsedResponse.exitCode == 1 && jsonParsedResponse.name.equals("QUERY_TIMEOUT") ) ) {
         _.echo("Sleeping for 2 minutes and will try again")
         _.sleep time: 1, unit: 'MINUTES'
-        rmsg = _.sh returnStdout: true, script: "sfdx force:package:installed:list --json --targetusername ${this.sfdxScratchOrgAlias}"
+        rmsg = _.sh returnStdout: true, script: "sfdx package installed list --json --target-org ${this.sfdxScratchOrgAlias}"
         jsonParsedResponse = jsonParse(rmsg)
       }
     }
@@ -1736,7 +1736,7 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
       if ( rmsg == null || (jsonParsedResponse != null && jsonParsedResponse.exitCode == 1 && jsonParsedResponse.name.equals("QUERY_TIMEOUT") ) ) {
         _.echo("Sleeping for 2 minutes and will try again")
         _.sleep time: 1, unit: 'MINUTES'
-        rmsg = _.sh returnStdout: true, script: "sfdx force:package:installed:list --json --targetusername ${this.sfdxScratchOrgAlias}"
+        rmsg = _.sh returnStdout: true, script: "sfdx package installed list --json --target-org ${this.sfdxScratchOrgAlias}"
         jsonParsedResponse = jsonParse(rmsg)
       }
 
@@ -1745,7 +1745,7 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
     def allPackageVersionsInstalledInScratchOrg = jsonParsedResponse.result
 
     // Get the complete list of package versions that are currently available in the DevHub
-    rmsg = _.sh returnStdout: true, script: "sfdx force:package:version:list --json --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
+    rmsg = _.sh returnStdout: true, script: "sfdx package version list --json --target-dev-hub ${_.env.SFDX_DEV_HUB_USERNAME}"
     def allPackageVersionsAvailableInDevHub = jsonParse(rmsg).result
 
     def packageVersion
@@ -1766,7 +1766,7 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
 
         // then a package was created.  Record its finger prints
         _.echo("finding all package versions for package ids found")
-        rmsg = _.sh returnStdout: true, script: "sfdx force:package:version:list --packages ${this.sfdxNewPackage} --json --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME}"
+        rmsg = _.sh returnStdout: true, script: "sfdx package version list --packages ${this.sfdxNewPackage} --json --target-dev-hub ${_.env.SFDX_DEV_HUB_USERNAME}"
         //printf rmsg
 
         def response = jsonParse( rmsg )
