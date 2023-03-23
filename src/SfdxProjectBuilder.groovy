@@ -1715,8 +1715,8 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
       _.echo( rmsg )
       if ( rmsg != null ) {
         jsonParsedResponse = jsonParse(rmsg)
-        _.echo("jsonParsedResponse.exitCode == " + jsonParsedResponse.exitCode)
-        _.echo("jsonParsedResponse.name == " + jsonParsedResponse.name)
+        _.echo("jsonParsedResponse.exitCode (A) == " + jsonParsedResponse.exitCode)
+        _.echo("jsonParsedResponse.name (A) == " + jsonParsedResponse.name)
       }
       if ( rmsg == null || (jsonParsedResponse != null && jsonParsedResponse.exitCode == 1 && jsonParsedResponse.name.equals("QUERY_TIMEOUT") ) ) {
         _.echo("Sleeping for 2 minutes and will try again")
@@ -1730,8 +1730,8 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
       _.echo( rmsg )
       if ( rmsg != null ) {
         jsonParsedResponse = jsonParse(rmsg)
-        _.echo("jsonParsedResponse.exitCode == " + jsonParsedResponse.exitCode)
-        _.echo("jsonParsedResponse.name == " + jsonParsedResponse.name)
+        _.echo("jsonParsedResponse.exitCode (B) == " + jsonParsedResponse.exitCode)
+        _.echo("jsonParsedResponse.name (B) == " + jsonParsedResponse.name)
       }
       if ( rmsg == null || (jsonParsedResponse != null && jsonParsedResponse.exitCode == 1 && jsonParsedResponse.name.equals("QUERY_TIMEOUT") ) ) {
         _.echo("Sleeping for 2 minutes and will try again")
