@@ -895,7 +895,7 @@ class SfdxProjectBuilder implements Serializable {
   private void createScratchOrg() {
     _.echo('Creating scratch org')
 
-    def commandScriptString = "sfdx org create scratch --no-track-source --definition-file ${this.sfdxScratchOrgDefinitionFile} --json --duration-days 1 --alias ${this.sfdxScratchOrgAlias} --target-dev-hub ${_.env.SFDX_DEV_HUB_USERNAME} --wait 30"
+    def commandScriptString = "sfdx org create scratch --definition-file ${this.sfdxScratchOrgDefinitionFile} --json --duration-days 1 --alias ${this.sfdxScratchOrgAlias} --target-dev-hub ${_.env.SFDX_DEV_HUB_USERNAME} --wait 30"
 
     def response
 
