@@ -1688,7 +1688,8 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
     // _.echo ("packageVersionReportResponse.result.CodeCoverage == ${packageVersionReportResponse.result.CodeCoverage}")
     // _.echo ("packageVersionReportResponse.result.CodeCoverage.apexCodeCoveragePercentage == ${packageVersionReportResponse.result.CodeCoverage.apexCodeCoveragePercentage}")
 
-    this.packageCodeCoverage = packageVersionReportResponse.result.CodeCoverage.apexCodeCoveragePercentage
+    // this.packageCodeCoverage = packageVersionReportResponse.result.CodeCoverage.apexCodeCoveragePercentage
+    this.packageCodeCoverage = packageVersionReportResponse.result.CodeCoverage
                         
   }
 
