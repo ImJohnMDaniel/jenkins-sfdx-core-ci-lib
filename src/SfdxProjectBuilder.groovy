@@ -90,6 +90,31 @@ class SfdxProjectBuilder implements Serializable {
   // the parsed contents of the SFDX project's configuration
   private def sfdxPackage
 
+  // dynamic property scaffold
+  private String packagingAlias() {
+    if ( _.env.SFDX_PKG_HUB_USERNAME?.trim() && _.env.SFDX_PKG_HUB_HOST?.trim() ) {
+      return _.env.SFDX_PKG_HUB_ALIAS
+    } else {
+      return _.env.SFDX_DEV_HUB_ALIAS
+    }
+  }
+
+  private String packagingHost() {
+    if ( _.env.SFDX_PKG_HUB_USERNAME?.trim() && _.env.SFDX_PKG_HUB_HOST?.trim() ) {
+      return _.env.SFDX_PKG_HUB_HOST
+    } else {
+      return _.env.SFDX_DEV_HUB_HOST
+    }
+  }
+
+  private String packagingUsername() {
+    if ( _.env.SFDX_PKG_HUB_USERNAME?.trim() && _.env.SFDX_PKG_HUB_HOST?.trim() ) {
+      return _.env.SFDX_PKG_HUB_USERNAME
+    } else {
+      return _.env.SFDX_DEV_HUB_USERNAME
+    }
+  }
+
   SfdxProjectBuilder(def jenkinsFileScript) {
     _ = jenkinsFileScript
     this.buildTagName = _.env.BUILD_TAG.replaceAll(' ','-')
@@ -505,6 +530,7 @@ class SfdxProjectBuilder implements Serializable {
 
     readAndParseSFDXProjectFile()
     authenticateToDevHub()
+    authenticateToPackagingDevHub()
     createScratchOrg()
 
   }
@@ -859,8 +885,8 @@ class SfdxProjectBuilder implements Serializable {
 
   private void authenticateToDevHub() {
     _.echo('Authenticate to the Dev Hub ')
-    // _.echo(_.env.JWT_CRED_ID_DH)
-    _.withCredentials( [ _.file( credentialsId: _.env.JWT_CRED_ID_DH, variable: 'jwt_key_file') ] ) {
+    // _.echo(_.env.JWT_KEY_CRED_ID_DH)
+    _.withCredentials( [ _.file( credentialsId: _.env.JWT_KEY_CRED_ID_DH, variable: 'jwt_key_file') ] ) {
         // temporary workaround pending resolution to this issue https://github.com/forcedotcom/cli/issues/81
         _.sh returnStatus: true, script: "cp ${_.jwt_key_file} ./server.key"
         // _.fileOperations([_.fileCopyOperation(excludes: '', flattenFiles: false, includes: _.jwt_key_file, targetLocation: './server.key')])  // some issue with the masking of the file name.  Need to sort it out
@@ -875,6 +901,45 @@ class SfdxProjectBuilder implements Serializable {
 
       try {
         def rmsg =  _.sh returnStdout: true, script: "sfdx org login jwt --set-default-dev-hub --client-id ${_.env.CONNECTED_APP_CONSUMER_KEY_DH} --username ${_.env.SFDX_DEV_HUB_USERNAME} --jwt-key-file server.key --instance-url ${_.env.SFDX_DEV_HUB_HOST} --json"
+        // _.echo('mark C')
+        def response = jsonParse( rmsg )
+        // _.echo('mark D')
+        // _.echo(response)
+        // _.echo('mark E')
+      }
+      catch (ex) {
+        _.echo('------------------------------------------------------')
+        // _.echo('mark F')
+        _.echo(ex.getMessage())
+        // _.echo('mark G')
+        _.echo('------------------------------------------------------')
+        _.error "hub org authorization failed" 
+      }
+    }
+  }
+
+  private void authenticateToPackagingDevHub() {
+    if (!( _.env.SFDX_PKG_HUB_USERNAME?.trim() && _.env.SFDX_PKG_HUB_HOST?.trim() )) {
+      _.echo('Packaging Dev Hub credentials not provided. Skipping authentication.')
+      return
+    }
+    _.echo('Authenticate to the Packaging Dev Hub ')
+    // _.echo(_.env.JWT_KEY_CRED_ID_PH)
+    _.withCredentials( [ _.file( credentialsId: _.env.JWT_KEY_CRED_ID_PH, variable: 'jwt_pkg_key_file') ] ) {
+        // temporary workaround pending resolution to this issue https://github.com/forcedotcom/cli/issues/81
+        _.sh returnStatus: true, script: "cp ${_.jwt_pkg_key_file} ./server.key"
+        // _.fileOperations([_.fileCopyOperation(excludes: '', flattenFiles: false, includes: _.jwt_pkg_key_file, targetLocation: './server.key')])  // some issue with the masking of the file name.  Need to sort it out
+
+        _.echo("Authenticating To Packaging Dev Hub...")
+        
+
+        // def rc = _.sh returnStatus: true, script: "sfdx org login jwt --set-default-dev-hub --client-id ${_.env.CONNECTED_APP_CONSUMER_KEY_PH} --username ${_.env.SFDX_PKG_HUB_USERNAME} --jwt-key-file server.key --instance-url ${_.env.SFDX_PKG_HUB_HOST}"
+        // if (rc != 0) { 
+        //   _.error "hub org authorization failed" 
+        // }
+
+      try {
+        def rmsg =  _.sh returnStdout: true, script: "sfdx org login jwt --set-default-dev-hub --client-id ${_.env.CONNECTED_APP_CONSUMER_KEY_PH} --username ${_.env.SFDX_PKG_HUB_USERNAME} --jwt-key-file server.key --instance-url ${_.env.SFDX_PKG_HUB_HOST} --json"
         // _.echo('mark C')
         def response = jsonParse( rmsg )
         // _.echo('mark D')
@@ -1499,7 +1564,7 @@ class SfdxProjectBuilder implements Serializable {
       _.error  "unable to determine pathToUseForPackageVersionCreation in stage:package"
     }
 
-    def commandScriptString = "sfdx package version create --path ${pathToUseForPackageVersionCreation} --json --code-coverage --tag ${this.buildGITCommitHash} --version-description ${this.buildTagName} --target-dev-hub ${_.env.SFDX_DEV_HUB_USERNAME}"
+    def commandScriptString = "sfdx package version create --path ${pathToUseForPackageVersionCreation} --json --code-coverage --tag ${this.buildGITCommitHash} --version-description ${this.buildTagName} --target-dev-hub ${packagingUsername()}"
 
 /*
     GOAL: FEATURE: treat “rc/*” branches the same as “main” for package version builds
@@ -1586,7 +1651,7 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
                         def isPackageVersionCreationCompleted = false
                         def packageVersionCreationCheckResponse 
                         try {
-                          rmsg = _.sh returnStdout: true, script: "sfdx package version create report --package-create-request-id ${this.packageVersionCreationResponseResult.Id} --json --target-dev-hub ${_.env.SFDX_DEV_HUB_USERNAME}"
+                          rmsg = _.sh returnStdout: true, script: "sfdx package version create report --package-create-request-id ${this.packageVersionCreationResponseResult.Id} --json --target-dev-hub ${packagingUsername()}"
                           // printf rmsg
 
                           packageVersionCreationCheckResponse = jsonParse(rmsg) 
