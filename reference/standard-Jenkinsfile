@@ -14,18 +14,11 @@ pipeline {
         def SFDX_DEV_HUB_USERNAME = "${env.SFDX_DEV_HUB_USERNAME}"
         def SFDX_DEV_HUB_HOST = "${env.SFDX_DEV_HUB_HOST}"
 
-        def SFDX_PKG_HUB_USERNAME = "${env.SFDX_PKG_HUB_USERNAME}"
-        def SFDX_PKG_HUB_HOST = "${env.SFDX_PKG_HUB_HOST}"
-
-        def JWT_KEY_CRED_ID_DH = "${env.JWT_CRED_ID_DH}"
+        def JWT_KEY_CRED_ID = "${env.JWT_CRED_ID_DH}"
         def CONNECTED_APP_CONSUMER_KEY_DH = "${env.CONNECTED_APP_CONSUMER_KEY_DH}"
 
-        def JWT_KEY_CRED_ID_PH = "${env.JWT_CRED_ID_PH}"
-        def CONNECTED_APP_CONSUMER_KEY_PH = "${env.CONNECTED_APP_CONSUMER_KEY_PH}"
-
         def SFDX_SCRATCH_ORG_ALIAS = "bluesphere"
-        def SFDX_DEV_HUB_ALIAS = "StmpnkDevHub"
-        def SFDX_PKG_HUB_ALIAS = "StmpnkPkgHub"
+        def SFDX_DEV_HUB_ALIAS = "RSTKDevHub"
 
         // Tools 
         // def toolbelt = tool 'sfdx'

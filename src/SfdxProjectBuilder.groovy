@@ -91,22 +91,6 @@ class SfdxProjectBuilder implements Serializable {
   private def sfdxPackage
 
   // dynamic property scaffold
-  private String packagingAlias() {
-    if ( _.env.SFDX_PKG_HUB_USERNAME?.trim() && _.env.SFDX_PKG_HUB_HOST?.trim() ) {
-      return _.env.SFDX_PKG_HUB_ALIAS
-    } else {
-      return _.env.SFDX_DEV_HUB_ALIAS
-    }
-  }
-
-  private String packagingHost() {
-    if ( _.env.SFDX_PKG_HUB_USERNAME?.trim() && _.env.SFDX_PKG_HUB_HOST?.trim() ) {
-      return _.env.SFDX_PKG_HUB_HOST
-    } else {
-      return _.env.SFDX_DEV_HUB_HOST
-    }
-  }
-
   private String packagingUsername() {
     if ( _.env.SFDX_PKG_HUB_USERNAME?.trim() && _.env.SFDX_PKG_HUB_HOST?.trim() ) {
       return _.env.SFDX_PKG_HUB_USERNAME
