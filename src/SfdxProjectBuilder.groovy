@@ -515,6 +515,7 @@ class SfdxProjectBuilder implements Serializable {
     isEnvVarPopulatedSFDXDevHubUsername()
     isEnvVarPopulatedSFDXDevHubHost()
     isEnvVarPopulatedJWTCredIdDH()
+    isPassingCodeScan()
 
     // def rmsg = _.sh returnStdout: true, script: "pwd"
     // _.echo(rmsg)
@@ -761,6 +762,24 @@ class SfdxProjectBuilder implements Serializable {
     if ( ! sfdxProjectFileExists ) {
         _.error 'SFDX project file (sfdx-project.json) not found.'
     }
+  }
+
+  private void isPassingCodeScan()
+  {
+    
+    _.echo("running sfdx scanner with default settings, fail on severity >= 2")
+
+    def rmsg
+    def jsonParsedResponse
+      rmsg =_.sh returnStdout: true, script: "sfdx scanner:run --target sfdx-source/ --severity-threshold 2"
+      _.echo( rmsg )
+      jsonParsedResponse = jsonParse(rmsg)
+      _.echo("jsonParsedResponse.exitCode (A) == " + jsonParsedResponse.exitCode)
+      _.echo("jsonParsedResponse.name (A) == " + jsonParsedResponse.name)
+      if (jsonParsedResponse.exitCode != 0){
+        _.error("failed with exit code"  + jsonParsedResponse.exitCode)
+      }
+
   }
 
   private void isEnvVarPopulatedConnectedAppConsumerKeyDH()
@@ -1079,6 +1098,10 @@ class SfdxProjectBuilder implements Serializable {
       _.echo ("installing the sfdmu plugins")
       def rmsgSFDMUInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install sfdmu"
       _.echo rmsgSFDMUInstall
+
+      _.echo ("installing the sfdx-scanner plugin")
+      def rmsgSFDXScannerInstall = _.sh returnStdout: true, script: "echo y | sfdx  @salesforce/sfdx-scanner"
+      _.echo rmsgSFDXScannerInstall
 
       // _.echo ("installing the shane-sfdx-plugins  plugins")
       // def rmsgShaneSFDXPluginInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install shane-sfdx-plugins "
