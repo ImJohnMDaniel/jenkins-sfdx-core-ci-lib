@@ -1100,7 +1100,7 @@ class SfdxProjectBuilder implements Serializable {
       _.echo rmsgSFDMUInstall
 
       _.echo ("installing the sfdx-scanner plugin")
-      def rmsgSFDXScannerInstall = _.sh returnStdout: true, script: "echo y | sfdx pugins:isntall @salesforce/sfdx-scanner"
+      def rmsgSFDXScannerInstall = _.sh returnStdout: true, script: "echo y | sfdx  @salesforce/sfdx-scanner"
       _.echo rmsgSFDXScannerInstall
 
       // _.echo ("installing the shane-sfdx-plugins  plugins")
