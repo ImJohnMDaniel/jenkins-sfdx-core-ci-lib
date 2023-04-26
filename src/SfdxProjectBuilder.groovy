@@ -771,14 +771,18 @@ class SfdxProjectBuilder implements Serializable {
 
     def rmsg
     def jsonParsedResponse
-      rmsg =_.sh returnStdout: true, script: "sfdx scanner:run --target sfdx-source/ --severity-threshold 2"
-      _.echo( rmsg )
-      jsonParsedResponse = jsonParse(rmsg)
-      _.echo("jsonParsedResponse.exitCode (A) == " + jsonParsedResponse.exitCode)
-      _.echo("jsonParsedResponse.name (A) == " + jsonParsedResponse.name)
-      if (jsonParsedResponse.exitCode != 0){
-        _.error("failed with exit code"  + jsonParsedResponse.exitCode)
-      }
+    def defaultThreshold = "2"
+    def defaultTarget = "sfdx-source/"
+    def defaultLogLevel = "warn"
+
+    rmsg =_.sh returnStdout: true, script: "sfdx scanner:run --target ${_.env.JENKINS_SFDX_SCANNER_TARGET ?: 'defaultTarget'} --severity-threshold ${_.env.JENKINS_SFDX_SCANNER_THRESHOLD ?: 'defaultThreshold'} --json --loglevel ${_.env.JENKINS_SFDX_SCANNER_LOGLEVEL ?: 'defaultLogLevel'} --normalize-severity"
+    _.echo( rmsg )
+    jsonParsedResponse = jsonParse(rmsg)
+    _.echo("jsonParsedResponse.exitCode (A) == " + jsonParsedResponse.exitCode)
+    _.echo("jsonParsedResponse.name (A) == " + jsonParsedResponse.name)
+    if (jsonParsedResponse.exitCode != 0){
+      _.error("failed with exit code"  + jsonParsedResponse.exitCode)
+    }
 
   }
 
@@ -1100,7 +1104,7 @@ class SfdxProjectBuilder implements Serializable {
       _.echo rmsgSFDMUInstall
 
       _.echo ("installing the sfdx-scanner plugin")
-      def rmsgSFDXScannerInstall = _.sh returnStdout: true, script: "echo y | sfdx  @salesforce/sfdx-scanner"
+      def rmsgSFDXScannerInstall = _.sh returnStdout: true, script: "echo y | sfdx pugins:isntall @salesforce/sfdx-scanner"
       _.echo rmsgSFDXScannerInstall
 
       // _.echo ("installing the shane-sfdx-plugins  plugins")
