@@ -36,6 +36,8 @@ class SfdxProjectBuilder implements Serializable {
 
   private def doNotBuildPackage = false
 
+  private def doNotRunCodeScanner = false
+
   private def slackChannelName
 
   private def slackResponseThreadId
@@ -79,6 +81,8 @@ class SfdxProjectBuilder implements Serializable {
   private def buildGITCommitHash 
 
   private def methodDesignateAsReleaseBranchHasNotBeenCalled = true
+
+  private def runCodeScanner = false
 
   // Community related variables
   private def communityName
@@ -150,6 +154,15 @@ class SfdxProjectBuilder implements Serializable {
     _.echo('SfdxProjectBuilder Parameter set : Always building a package')
     if ( this.doNotBuildPackage ) {
       _.error('alwaysBuildPackage() and doNotBuildPackage() cannot both be specified')
+    }
+    return this
+  }
+
+  public SfdxProjectBuilder runCodeScanner() {
+    this.runCodeScanner = true
+    _.echo('SFDX Parameter set : Always Run Code Scanner')
+    if ( this.doNotRunCodeScanner ) {
+      _.error('runCodeScanner() and doNotRunCodeScanner() cannot both be specified')
     }
     return this
   }
@@ -515,7 +528,6 @@ class SfdxProjectBuilder implements Serializable {
     isEnvVarPopulatedSFDXDevHubUsername()
     isEnvVarPopulatedSFDXDevHubHost()
     isEnvVarPopulatedJWTCredIdDH()
-    isPassingCodeScan()
 
     // def rmsg = _.sh returnStdout: true, script: "pwd"
     // _.echo(rmsg)
@@ -568,6 +580,7 @@ class SfdxProjectBuilder implements Serializable {
     // _.failFast true // this is part of the declarative syntax.  Is there an equivalent in the scripted model?
 
     _.parallel(
+      'Run SF Scanner' : { isPassingCodeScan() } ,
       'Dataload Verification': { executeDataLoads() } ,
       'Unit Tests': { 
         executeUnitTests()
@@ -1104,7 +1117,7 @@ class SfdxProjectBuilder implements Serializable {
       _.echo rmsgSFDMUInstall
 
       _.echo ("installing the sfdx-scanner plugin")
-      def rmsgSFDXScannerInstall = _.sh returnStdout: true, script: "echo y | sfdx pugins:isntall @salesforce/sfdx-scanner"
+      def rmsgSFDXScannerInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install @salesforce/sfdx-scanner"
       _.echo rmsgSFDXScannerInstall
 
       // _.echo ("installing the shane-sfdx-plugins  plugins")
