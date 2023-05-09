@@ -36,8 +36,6 @@ class SfdxProjectBuilder implements Serializable {
 
   private def doNotBuildPackage = false
 
-  private def doNotRunCodeScanner = false
-
   private def slackChannelName
 
   private def slackResponseThreadId
@@ -82,7 +80,7 @@ class SfdxProjectBuilder implements Serializable {
 
   private def methodDesignateAsReleaseBranchHasNotBeenCalled = true
 
-  private def runCodeScanner = false
+  private def pathToUseForPackageVersionCreation
 
   // Community related variables
   private def communityName
@@ -154,15 +152,6 @@ class SfdxProjectBuilder implements Serializable {
     _.echo('SfdxProjectBuilder Parameter set : Always building a package')
     if ( this.doNotBuildPackage ) {
       _.error('alwaysBuildPackage() and doNotBuildPackage() cannot both be specified')
-    }
-    return this
-  }
-
-  public SfdxProjectBuilder runCodeScanner() {
-    this.runCodeScanner = true
-    _.echo('SFDX Parameter set : Always Run Code Scanner')
-    if ( this.doNotRunCodeScanner ) {
-      _.error('runCodeScanner() and doNotRunCodeScanner() cannot both be specified')
     }
     return this
   }
@@ -417,6 +406,30 @@ class SfdxProjectBuilder implements Serializable {
         }
         
       } // pipeline
+  }
+
+  private string pathToUseForPackageVersionCreation() {
+
+    // What is the default package and what is its directory?
+    if (this.pathToUseForPackageVersionCreation == null) {
+      for ( packageDirectory in this.sfdxPackage.packageDirectories ) {
+        _.echo("packageDirectory == ${packageDirectory}")
+        if ( packageDirectory.default ) {
+            _.echo("packageDirectory is default")
+            this.pathToUseForPackageVersionCreation = packageDirectory.path; 
+
+            if (packageDirectory.package == null) {
+              // there is no package specified in the this.sfdxPackage.  Simple exit out of this method
+              _.echo('No package information configured on this project.')
+              return
+            }
+            
+            this.sfdxNewPackage = this.resolveAliasToId( packageDirectory.package, this.sfdxPackage )
+            break 
+        }
+      }
+    }
+    return this.packageDirectory
   }
 
   private void processStages() {
@@ -780,15 +793,12 @@ class SfdxProjectBuilder implements Serializable {
   private void isPassingCodeScan()
   {
     
-    _.echo("running sfdx scanner with default settings, fail on severity >= 2")
+    _.echo("running sfdx scanner with default settings")
 
     def rmsg
     def jsonParsedResponse
-    def defaultThreshold = "2"
-    def defaultTarget = "sfdx-source/"
-    def defaultLogLevel = "warn"
 
-    rmsg =_.sh returnStdout: true, script: "sfdx scanner:run --target ${_.env.JENKINS_SFDX_SCANNER_TARGET ?: 'defaultTarget'} --severity-threshold ${_.env.JENKINS_SFDX_SCANNER_THRESHOLD ?: 'defaultThreshold'} --json --loglevel ${_.env.JENKINS_SFDX_SCANNER_LOGLEVEL ?: 'defaultLogLevel'} --normalize-severity"
+    rmsg =_.sh returnStdout: true, script: "sfdx scanner:run --target ${pathToUseForPackageVersionCreation()} --json --loglevel warn --normalize-severity"
     _.echo( rmsg )
     jsonParsedResponse = jsonParse(rmsg)
     _.echo("jsonParsedResponse.exitCode (A) == " + jsonParsedResponse.exitCode)
@@ -1117,7 +1127,7 @@ class SfdxProjectBuilder implements Serializable {
       _.echo rmsgSFDMUInstall
 
       _.echo ("installing the sfdx-scanner plugin")
-      def rmsgSFDXScannerInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install @salesforce/sfdx-scanner"
+      def rmsgSFDXScannerInstall = _.sh returnStdout: true, script: "echo y | sfdx pugins:isntall @salesforce/sfdx-scanner"
       _.echo rmsgSFDXScannerInstall
 
       // _.echo ("installing the shane-sfdx-plugins  plugins")
@@ -1511,35 +1521,15 @@ class SfdxProjectBuilder implements Serializable {
     }
     _.echo('Starting packaging process')
 
-    def pathToUseForPackageVersionCreation
-
-    // What is the default package and what is its directory?
-    for ( packageDirectory in this.sfdxPackage.packageDirectories ) {
-      _.echo("packageDirectory == ${packageDirectory}")
-      if ( packageDirectory.default ) {
-          _.echo("packageDirectory is default")
-          pathToUseForPackageVersionCreation = packageDirectory.path 
-
-          if (packageDirectory.package == null) {
-            // there is no package specified in the this.sfdxPackage.  Simple exit out of this method
-            _.echo('No package information configured on this project.')
-            return
-          }
-
-          this.sfdxNewPackage = this.resolveAliasToId( packageDirectory.package, this.sfdxPackage )
-          break 
-      }
-    }
-
     if ( this.sfdxNewPackage == null ) {
       _.error  "unable to determine this.sfdxNewPackage in stage:package"
     }
 
-    if ( pathToUseForPackageVersionCreation == null ) {
+    if ( this.pathToUseForPackageVersionCreation() == null ) {
       _.error  "unable to determine pathToUseForPackageVersionCreation in stage:package"
     }
 
-    def commandScriptString = "sfdx package version create --path ${pathToUseForPackageVersionCreation} --json --code-coverage --tag ${this.buildGITCommitHash} --version-description ${this.buildTagName} --target-dev-hub ${_.env.SFDX_DEV_HUB_USERNAME}"
+    def commandScriptString = "sfdx package version create --path ${pathToUseForPackageVersionCreation()} --json --code-coverage --tag ${this.buildGITCommitHash} --version-description ${this.buildTagName} --target-dev-hub ${_.env.SFDX_DEV_HUB_USERNAME}"
 
 /*
     GOAL: FEATURE: treat “rc/*” branches the same as “main” for package version builds
