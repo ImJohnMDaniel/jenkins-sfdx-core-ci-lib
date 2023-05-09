@@ -80,6 +80,8 @@ class SfdxProjectBuilder implements Serializable {
 
   private def methodDesignateAsReleaseBranchHasNotBeenCalled = true
 
+  private def runCodeScanner = false
+
   private def pathToUseForPackageVersionCreation
 
   // Community related variables
@@ -161,6 +163,24 @@ class SfdxProjectBuilder implements Serializable {
     _.echo('SfdxProjectBuilder Parameter set : No package will be built.  Overrides all other considerations.')
     if ( this.alwaysBuildPackage ) {
       _.error('alwaysBuildPackage() and doNotBuildPackage() cannot both be specified')
+    }
+    return this
+  }  
+
+  public SfdxProjectBuilder doNotRunCodeScanner() {
+    this.doNotRunCodeScanner = true
+    _.echo('SFDX Parameter set : Do Not Run Code Scanner')
+    if ( this.runCodeScanner ) {
+      _.error('runCodeScanner() and doNotRunCodeScanner() cannot both be specified')
+    }
+    return this
+  }  
+
+  public SfdxProjectBuilder runCodeScanner() {
+    this.runCodeScanner = true
+    _.echo('SFDX Parameter set : Always Run Code Scanner')
+    if ( this.doNotRunCodeScanner ) {
+      _.error('runCodeScanner() and doNotRunCodeScanner() cannot both be specified')
     }
     return this
   }
@@ -593,7 +613,7 @@ class SfdxProjectBuilder implements Serializable {
     // _.failFast true // this is part of the declarative syntax.  Is there an equivalent in the scripted model?
 
     _.parallel(
-      'Run SF Scanner' : { isPassingCodeScan() } ,
+      'Run SF Scanner' : { if(runCodeScanner()) isPassingCodeScan() } ,
       'Dataload Verification': { executeDataLoads() } ,
       'Unit Tests': { 
         executeUnitTests()
