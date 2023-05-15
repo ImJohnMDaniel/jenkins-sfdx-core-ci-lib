@@ -428,7 +428,7 @@ class SfdxProjectBuilder implements Serializable {
       } // pipeline
   }
 
-  private string pathToUseForPackageVersionCreation() {
+  def getAndSetPathToUseForPackageVersionCreation() {
 
     // What is the default package and what is its directory?
     if (this.pathToUseForPackageVersionCreation == null) {
@@ -453,6 +453,7 @@ class SfdxProjectBuilder implements Serializable {
   }
 
   private void processStages() {
+    getAndSetPathToUseForPackageVersionCreation();
     try {
       if ( this.stageToStopBuildAt >= 1 ) {
         _.stage('Validate') {
@@ -1541,15 +1542,15 @@ class SfdxProjectBuilder implements Serializable {
     }
     _.echo('Starting packaging process')
 
+    if ( this.getAndSetPathToUseForPackageVersionCreation() == null ) {
+      _.error  "unable to determine pathToUseForPackageVersionCreation in stage:package"
+    }
+
     if ( this.sfdxNewPackage == null ) {
       _.error  "unable to determine this.sfdxNewPackage in stage:package"
     }
 
-    if ( this.pathToUseForPackageVersionCreation() == null ) {
-      _.error  "unable to determine pathToUseForPackageVersionCreation in stage:package"
-    }
-
-    def commandScriptString = "sfdx package version create --path ${pathToUseForPackageVersionCreation()} --json --code-coverage --tag ${this.buildGITCommitHash} --version-description ${this.buildTagName} --target-dev-hub ${_.env.SFDX_DEV_HUB_USERNAME}"
+    def commandScriptString = "sfdx package version create --path ${getAndSetPathToUseForPackageVersionCreation()} --json --code-coverage --tag ${this.buildGITCommitHash} --version-description ${this.buildTagName} --target-dev-hub ${_.env.SFDX_DEV_HUB_USERNAME}"
 
 /*
     GOAL: FEATURE: treat “rc/*” branches the same as “main” for package version builds
