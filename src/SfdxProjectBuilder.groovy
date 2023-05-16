@@ -819,15 +819,15 @@ class SfdxProjectBuilder implements Serializable {
     _.echo("running sfdx scanner with default settings on target ${pathToUseForPackageVersionCreation}")
 
     def rmsg
-    def jsonParsedResponse
+    def scannerJSONResult
 
     rmsg =_.sh returnStdout: true, script: "sfdx scanner:run --target ${pathToUseForPackageVersionCreation} --json --loglevel warn --normalize-severity"
     _.echo( rmsg )
-    jsonParsedResponse = jsonParse(rmsg)
-    _.echo("jsonParsedResponse.exitCode (A) == " + jsonParsedResponse.exitCode)
-    _.echo("jsonParsedResponse.name (A) == " + jsonParsedResponse.name)
-    if (jsonParsedResponse.exitCode != 0){
-      _.error("failed with exit code"  + jsonParsedResponse.exitCode)
+    scannerJSONResult = jsonParse(rmsg)
+    _.echo("sfdx scanner status: " + scannerJSONResult.status
+    _.echo("sfdx scanner result: " + scannerJSONResult.result
+    if (scannerJSONResult.status != 0){
+      _.error("failed with exit code"  + scannerJSONResult.status)
     }
 
   }
