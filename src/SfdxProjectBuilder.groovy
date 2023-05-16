@@ -816,7 +816,7 @@ class SfdxProjectBuilder implements Serializable {
   private void isPassingCodeScan()
   {
     
-    _.echo("running sfdx scanner with default settings")
+    _.echo("running sfdx scanner with default settings on target ${pathToUseForPackageVersionCreation()}")
 
     def rmsg
     def jsonParsedResponse
