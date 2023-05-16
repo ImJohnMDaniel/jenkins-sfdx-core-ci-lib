@@ -82,6 +82,8 @@ class SfdxProjectBuilder implements Serializable {
 
   private def runCodeScanner = false
 
+  private def doNotRunCodeScanner = false
+
   private def pathToUseForPackageVersionCreation
 
   // Community related variables
