@@ -430,7 +430,7 @@ class SfdxProjectBuilder implements Serializable {
       } // pipeline
   }
 
-  def getAndSetPathToUseForPackageVersionCreation() {
+  def setPackageInfoAndReturnDirectory() {
 
     // What is the default package and what is its directory?
     if (this.pathToUseForPackageVersionCreation == null) {
@@ -552,7 +552,7 @@ class SfdxProjectBuilder implements Serializable {
     _.sh "mkdir -p ${this.workingArtifactDirectory}"
 
     readAndParseSFDXProjectFile()
-    getAndSetPathToUseForPackageVersionCreation()
+    setPackageInfoAndReturnDirectory()
     authenticateToDevHub()
     createScratchOrg()
 
@@ -816,12 +816,12 @@ class SfdxProjectBuilder implements Serializable {
   private void isPassingCodeScan()
   {
     
-    _.echo("running sfdx scanner with default settings on target ${pathToUseForPackageVersionCreation()}")
+    _.echo("running sfdx scanner with default settings on target ${pathToUseForPackageVersionCreation}")
 
     def rmsg
     def jsonParsedResponse
 
-    rmsg =_.sh returnStdout: true, script: "sfdx scanner:run --target ${pathToUseForPackageVersionCreation()} --json --loglevel warn --normalize-severity"
+    rmsg =_.sh returnStdout: true, script: "sfdx scanner:run --target ${pathToUseForPackageVersionCreation} --json --loglevel warn --normalize-severity"
     _.echo( rmsg )
     jsonParsedResponse = jsonParse(rmsg)
     _.echo("jsonParsedResponse.exitCode (A) == " + jsonParsedResponse.exitCode)
@@ -1544,7 +1544,7 @@ class SfdxProjectBuilder implements Serializable {
     }
     _.echo('Starting packaging process')
 
-    if ( this.getAndSetPathToUseForPackageVersionCreation() == null ) {
+    if ( this.setPackageInfoAndReturnDirectory() == null ) {
       _.error  "unable to determine pathToUseForPackageVersionCreation in stage:package"
     }
 
@@ -1552,7 +1552,7 @@ class SfdxProjectBuilder implements Serializable {
       _.error  "unable to determine this.sfdxNewPackage in stage:package"
     }
 
-    def commandScriptString = "sfdx package version create --path ${getAndSetPathToUseForPackageVersionCreation()} --json --code-coverage --tag ${this.buildGITCommitHash} --version-description ${this.buildTagName} --target-dev-hub ${_.env.SFDX_DEV_HUB_USERNAME}"
+    def commandScriptString = "sfdx package version create --path ${setPackageInfoAndReturnDirectory()} --json --code-coverage --tag ${this.buildGITCommitHash} --version-description ${this.buildTagName} --target-dev-hub ${_.env.SFDX_DEV_HUB_USERNAME}"
 
 /*
     GOAL: FEATURE: treat “rc/*” branches the same as “main” for package version builds
