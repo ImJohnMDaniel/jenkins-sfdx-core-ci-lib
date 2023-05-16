@@ -453,7 +453,6 @@ class SfdxProjectBuilder implements Serializable {
   }
 
   private void processStages() {
-    getAndSetPathToUseForPackageVersionCreation();
     try {
       if ( this.stageToStopBuildAt >= 1 ) {
         _.stage('Validate') {
@@ -551,6 +550,7 @@ class SfdxProjectBuilder implements Serializable {
     _.sh "mkdir -p ${this.workingArtifactDirectory}"
 
     readAndParseSFDXProjectFile()
+    getAndSetPathToUseForPackageVersionCreation()
     authenticateToDevHub()
     createScratchOrg()
 
