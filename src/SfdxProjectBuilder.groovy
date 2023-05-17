@@ -826,8 +826,35 @@ class SfdxProjectBuilder implements Serializable {
     scannerJSONResult = jsonParse(rmsg)
     _.echo("sfdx scanner status: " + scannerJSONResult.status)
     _.echo("sfdx scanner result: " + scannerJSONResult.result)
-    if (scannerJSONResult.status != 0){
-      _.error("failed with exit code"  + scannerJSONResult.status)
+    
+    def output = new StringBuilder()
+    if (scannerJSONResult.result instanceof List) {
+      
+        output << "Failed with status: ${scannerJSONResult.status}\n"
+
+        scannerJSONResult.result?.each { result ->
+          output << "Engine: ${result.engine}\n"
+          output << "File: ${result.fileName}\n"
+          
+          result.violations?.each { violation ->
+              output << "Violation:\n"
+              output << " Line: ${violation.line}\n"
+              output << " Column: ${violation.column}\n"
+              output << " Rule: ${violation.ruleName}\n"
+              output << " Category: ${violation.category}\n"
+              output << " Message: ${violation.message?.trim()}\n"
+              output << " Severity: ${violation.severity}\n"
+              output << " URL: ${violation.url}\n"
+              output << "\n"
+          }
+          output << "-------------------------------------\n"
+      }
+        sendSlackMessage(
+            color: 'danger',
+            message: "${output}",
+            isFooterMessage: true
+        )      
+        _.error("Failed with status: ${scannerJSONResult.status}")
     }
 
   }
