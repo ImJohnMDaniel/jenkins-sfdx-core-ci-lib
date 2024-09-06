@@ -859,87 +859,76 @@ class SfdxProjectBuilder implements Serializable {
 
   private void authenticateToDevHub() {
     _.echo('Authenticate to the Dev Hub ')
-    // _.echo(_.env.JWT_CRED_ID_DH)
     _.withCredentials( [ _.file( credentialsId: _.env.JWT_CRED_ID_DH, variable: 'jwt_key_file') ] ) {
-        // temporary workaround pending resolution to this issue https://github.com/forcedotcom/cli/issues/81
         _.sh returnStatus: true, script: "cp ${_.jwt_key_file} ./server.key"
-        // _.fileOperations([_.fileCopyOperation(excludes: '', flattenFiles: false, includes: _.jwt_key_file, targetLocation: './server.key')])  // some issue with the masking of the file name.  Need to sort it out
-
         _.echo("Authenticating To Dev Hub...")
         
-
-        // def rc = _.sh returnStatus: true, script: "sfdx org login jwt --set-default-dev-hub --client-id ${_.env.CONNECTED_APP_CONSUMER_KEY_DH} --username ${_.env.SFDX_DEV_HUB_USERNAME} --jwt-key-file server.key --instance-url ${_.env.SFDX_DEV_HUB_HOST}"
-        // if (rc != 0) { 
-        //   _.error "hub org authorization failed" 
-        // }
-
-      try {
-        def rmsg =  _.sh returnStdout: true, script: "sfdx org login jwt --set-default-dev-hub --client-id ${_.env.CONNECTED_APP_CONSUMER_KEY_DH} --username ${_.env.SFDX_DEV_HUB_USERNAME} --jwt-key-file server.key --instance-url ${_.env.SFDX_DEV_HUB_HOST} --json"
-        // _.echo('mark C')
-        def response = jsonParse( rmsg )
-        // _.echo('mark D')
-        // _.echo(response)
-        // _.echo('mark E')
-      }
-      catch (ex) {
-        _.echo('------------------------------------------------------')
-        // _.echo('mark F')
-        _.echo(ex.getMessage())
-        // _.echo('mark G')
-        _.echo('------------------------------------------------------')
-        _.error "hub org authorization failed" 
-      }
+        try {
+          def rmsg =  _.sh returnStdout: true, script: "sfdx org login jwt --set-default-dev-hub --client-id ${_.env.CONNECTED_APP_CONSUMER_KEY_DH} --username ${_.env.SFDX_DEV_HUB_USERNAME} --jwt-key-file server.key --instance-url ${_.env.SFDX_DEV_HUB_HOST} --json"
+          def response = jsonParse( rmsg )
+        }
+        catch (ex) {
+          _.echo('------------------------------------------------------')
+          _.echo(ex.getMessage())
+          _.echo('------------------------------------------------------')
+          _.error "hub org authorization failed" 
+        }
     }
   }
 
   private void createScratchOrg() {
-    _.echo('Creating scratch org')
-
-    def commandScriptString = "sfdx org create scratch --definition-file ${this.sfdxScratchOrgDefinitionFile} --json --duration-days 1 --alias ${this.sfdxScratchOrgAlias} --target-dev-hub ${_.env.SFDX_DEV_HUB_USERNAME} --wait 30"
-
-    def response
-
-    try {
-      debug('before call to sh command to create org')
-      def rmsg = _.sh returnStdout: true, script: commandScriptString
-      debug('after the call to sh command to create org')
-      debug(rmsg)
-      response = jsonParse( rmsg )
-      debug('after the parsing of rmsg')
-      debug('------------------------------------------------------')
-      debug('response == ')
-      debug(response)
-      debug('------------------------------------------------------')
-    }
-    catch (ex) {
-      // printf ex
-      _.echo('------------------------------------------------------')
-      // _.echo(ex)
-      // _.echo(ex.status)
-      // _.echo(ex.name)
-      // _.echo(ex.message)
-      _.echo('------------------------------------------------------')
-      // if (ex.getMessage().contains('OPERATION_TOO_LARGE')) {
-      if (ex.message.contains('OPERATION_TOO_LARGE')) {
-        _.echo('exception message contains OPERATION_TOO_LARGE')
-        _.echo('------------------------------------------------------')
-        _.echo(ex.printStackTrace())
-        _.error "Failed to create Scratch Org -- ${response.message}"
-      } else if (ex.name.equals('genericTimeoutMessage') || ex.name.equals('RemoteOrgSignupFailed')) {
-        // try one more time to create the scratch org
-        _.echo('Original attempt to create scratch org timed out.  Trying to create one again.')
-        rmsg = _.sh returnStdout: true, script: commandScriptString
-        response = jsonParse( rmsg )
-        if ( response.status != 0 ) {
-          _.error "Failed to create Scratch Org -- ${response.message}"
-        }
+      _.echo('Creating scratch org')
+  
+      def commandScriptString = "sfdx org create scratch --definition-file ${this.sfdxScratchOrgDefinitionFile} --json --duration-days 1 --alias ${this.sfdxScratchOrgAlias} --target-dev-hub ${_.env.SFDX_DEV_HUB_USERNAME} --wait 30"
+  
+      def response
+  
+      try {
+          debug('before call to sh command to create org')
+          def rmsg = _.sh returnStdout: true, script: commandScriptString
+          debug('after the call to sh command to create org')
+          debug(rmsg)
+          response = jsonParse(rmsg)
+          debug('after the parsing of rmsg')
+          debug('------------------------------------------------------')
+          debug('response == ')
+          debug(response)
+          debug('------------------------------------------------------')
+  
+          // Push source code to the scratch org
+          _.echo('Pushing source code to the scratch org')
+          def pushResponse = _.sh returnStdout: true, script: "sfdx force:source:push --target-org ${this.sfdxScratchOrgAlias} --json"
+          debug('after the call to sh command to push source code')
+          debug(pushResponse)
+          def pushResult = jsonParse(pushResponse)
+          if (pushResult.status != 0) {
+              _.error "Failed to push source code to Scratch Org -- ${pushResult.message}"
+          }
       }
-      else {
-        _.echo(ex.printStackTrace())
-        _.error "Failed to create Scratch Org -- ${response.message}"
+      catch (ex) {
+          _.echo('------------------------------------------------------')
+          _.echo('Exception occurred while creating scratch org:')
+          _.echo(ex.getMessage())
+          _.echo('------------------------------------------------------')
+          if (ex.message.contains('OPERATION_TOO_LARGE')) {
+              _.echo('exception message contains OPERATION_TOO_LARGE')
+              _.echo('------------------------------------------------------')
+              _.echo(ex.printStackTrace())
+              _.error "Failed to create Scratch Org -- ${response.message}"
+          } else if (ex.name.equals('genericTimeoutMessage') || ex.name.equals('RemoteOrgSignupFailed')) {
+              _.echo('Original attempt to create scratch org timed out.  Trying to create one again.')
+              rmsg = _.sh returnStdout: true, script: commandScriptString
+              response = jsonParse(rmsg)
+              if (response.status != 0) {
+                  _.error "Failed to create Scratch Org -- ${response.message}"
+              }
+          }
+          else {
+              _.echo(ex.printStackTrace())
+              _.error "Failed to create Scratch Org -- ${response.message}"
+          }
       }
-    }
-    this.scratchOrgWasCreated = true
+      this.scratchOrgWasCreated = true
   }
 
   private void deleteScratchOrg() {
@@ -951,9 +940,7 @@ class SfdxProjectBuilder implements Serializable {
       }
     }
     else if ( this.scratchOrgWasCreated && ! this.scratchOrgShouldBeDeleted ) {
-      // find the scratch org sfdxAuthUrl
       def rmsg = _.sh returnStdout: true, script: "sfdx org display --verbose --json --target-org ${this.sfdxScratchOrgAlias}"
-
       def response = jsonParse( rmsg )
 
       if (response.status == 0) {
