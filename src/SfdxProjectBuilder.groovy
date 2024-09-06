@@ -950,6 +950,60 @@ class SfdxProjectBuilder implements Serializable {
     }
   }
 
+    
+   // Runs PMD analysis on code
+   // Checks if PMD is installed before running
+  private void runPmdAnalysis() {
+      _.echo('Running PMD analysis on the source code')
+      
+      // Check if PMD is installed
+      def pmdInstalled = _.sh(script: 'which pmd', returnStatus: true) == 0
+      if (!pmdInstalled) {
+          _.echo('PMD is not installed, install PMD to run the analysis.')
+          return
+      }
+      
+      // Define the PMD command
+      def pmdCommand = "pmd -d '*pathtosource*' -R config/pmd/pmd-ruleset.xml -f xml -r pmd-report.xml"
+      
+      try {
+          // Execute the PMD command
+          def pmdResult = _.sh returnStdout: true, script: pmdCommand
+          _.echo('PMD analysis completed')
+          _.echo(pmdResult)
+      } catch (ex) {
+          // Log the error and terminate with an error
+          _.echo('------------------------------------------------------')
+          _.echo('Exception occurred while running PMD analysis:')
+          _.echo(ex.getMessage())
+          _.echo('------------------------------------------------------')
+          _.error "PMD analysis failed"
+      }
+  }
+
+
+     // Gets the results of the PMD analysis and return it.
+    private String getPmdResults() {
+        _.echo('Retrieving PMD analysis results')
+        
+        // Define the path
+        def reportFilePath = 'pmd-report.xml'
+        
+        try {
+            // Read contents of the PMD report file
+            def reportContent = _.readFile(reportFilePath)
+            _.echo('PMD analysis results retrieved successfully')
+            return reportContent
+        } catch (ex) {
+            // Log the error and terminate with an error
+            _.echo('------------------------------------------------------')
+            _.echo('Exception occurred while retrieving PMD analysis results:')
+            _.echo(ex.getMessage())
+            _.echo('------------------------------------------------------')
+            _.error "Failed to retrieve PMD analysis results"
+        }
+    }
+
   private void resetAllDependenciesToLatestWherePossible() {
     def commandScriptString = "sfdx toolbox:package:dependencies:manage --updatetolatest --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME} --json"
 
