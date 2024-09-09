@@ -857,89 +857,117 @@ class SfdxProjectBuilder implements Serializable {
     this.sfdxPackage = jsonParse( _.readFile('sfdx-project.json') )
   }
 
+    // Method to run automated 508 testing
+    public void runAccessibilityTests(String url) {
+        // Set up WebDriver (assuming ChromeDriver is used)
+        System.setProperty("webdriver.chrome.driver", "/path/to/chromedriver")
+        WebDriver driver = new ChromeDriver()
+        
+        try {
+            // Navigate to the URL
+            driver.get(url)
+            
+            // Inject Axe script into the page
+            String axeScript = new File('path/to/axe.min.js').text
+            ((JavascriptExecutor) driver).executeScript(axeScript)
+            
+            // Execute Axe and get results
+            String script = "return axe.run().then(results => results)"
+            def results = ((JavascriptExecutor) driver).executeScript(script)
+            
+            // Print or log the results
+            println "Accessibility Violations: ${results.violations.size()}"
+            results.violations.each { violation ->
+                println "Violation: ${violation.description}"
+                violation.nodes.each { node ->
+                    println "  Element: ${node.target}"
+                    println "  Failure Summary: ${node.failureSummary}"
+                }
+            }
+        } finally {
+            // Close the browser
+            driver.quit()
+        }
+    }
+
+  public void execute() {
+            // URL to execute
+            String urlToTest = "https://your-salesforce-scratch-org-url.com"
+            runAccessibilityTests(urlToTest)
+  }
+
   private void authenticateToDevHub() {
     _.echo('Authenticate to the Dev Hub ')
-    // _.echo(_.env.JWT_CRED_ID_DH)
     _.withCredentials( [ _.file( credentialsId: _.env.JWT_CRED_ID_DH, variable: 'jwt_key_file') ] ) {
-        // temporary workaround pending resolution to this issue https://github.com/forcedotcom/cli/issues/81
         _.sh returnStatus: true, script: "cp ${_.jwt_key_file} ./server.key"
-        // _.fileOperations([_.fileCopyOperation(excludes: '', flattenFiles: false, includes: _.jwt_key_file, targetLocation: './server.key')])  // some issue with the masking of the file name.  Need to sort it out
-
         _.echo("Authenticating To Dev Hub...")
         
-
-        // def rc = _.sh returnStatus: true, script: "sfdx org login jwt --set-default-dev-hub --client-id ${_.env.CONNECTED_APP_CONSUMER_KEY_DH} --username ${_.env.SFDX_DEV_HUB_USERNAME} --jwt-key-file server.key --instance-url ${_.env.SFDX_DEV_HUB_HOST}"
-        // if (rc != 0) { 
-        //   _.error "hub org authorization failed" 
-        // }
-
-      try {
-        def rmsg =  _.sh returnStdout: true, script: "sfdx org login jwt --set-default-dev-hub --client-id ${_.env.CONNECTED_APP_CONSUMER_KEY_DH} --username ${_.env.SFDX_DEV_HUB_USERNAME} --jwt-key-file server.key --instance-url ${_.env.SFDX_DEV_HUB_HOST} --json"
-        // _.echo('mark C')
-        def response = jsonParse( rmsg )
-        // _.echo('mark D')
-        // _.echo(response)
-        // _.echo('mark E')
-      }
-      catch (ex) {
-        _.echo('------------------------------------------------------')
-        // _.echo('mark F')
-        _.echo(ex.getMessage())
-        // _.echo('mark G')
-        _.echo('------------------------------------------------------')
-        _.error "hub org authorization failed" 
-      }
+        try {
+          def rmsg =  _.sh returnStdout: true, script: "sfdx org login jwt --set-default-dev-hub --client-id ${_.env.CONNECTED_APP_CONSUMER_KEY_DH} --username ${_.env.SFDX_DEV_HUB_USERNAME} --jwt-key-file server.key --instance-url ${_.env.SFDX_DEV_HUB_HOST} --json"
+          def response = jsonParse( rmsg )
+        }
+        catch (ex) {
+          _.echo('------------------------------------------------------')
+          _.echo(ex.getMessage())
+          _.echo('------------------------------------------------------')
+          _.error "hub org authorization failed" 
+        }
     }
   }
 
   private void createScratchOrg() {
-    _.echo('Creating scratch org')
-
-    def commandScriptString = "sfdx org create scratch --definition-file ${this.sfdxScratchOrgDefinitionFile} --json --duration-days 1 --alias ${this.sfdxScratchOrgAlias} --target-dev-hub ${_.env.SFDX_DEV_HUB_USERNAME} --wait 30"
-
-    def response
-
-    try {
-      debug('before call to sh command to create org')
-      def rmsg = _.sh returnStdout: true, script: commandScriptString
-      debug('after the call to sh command to create org')
-      debug(rmsg)
-      response = jsonParse( rmsg )
-      debug('after the parsing of rmsg')
-      debug('------------------------------------------------------')
-      debug('response == ')
-      debug(response)
-      debug('------------------------------------------------------')
-    }
-    catch (ex) {
-      // printf ex
-      _.echo('------------------------------------------------------')
-      // _.echo(ex)
-      // _.echo(ex.status)
-      // _.echo(ex.name)
-      // _.echo(ex.message)
-      _.echo('------------------------------------------------------')
-      // if (ex.getMessage().contains('OPERATION_TOO_LARGE')) {
-      if (ex.message.contains('OPERATION_TOO_LARGE')) {
-        _.echo('exception message contains OPERATION_TOO_LARGE')
-        _.echo('------------------------------------------------------')
-        _.echo(ex.printStackTrace())
-        _.error "Failed to create Scratch Org -- ${response.message}"
-      } else if (ex.name.equals('genericTimeoutMessage') || ex.name.equals('RemoteOrgSignupFailed')) {
-        // try one more time to create the scratch org
-        _.echo('Original attempt to create scratch org timed out.  Trying to create one again.')
-        rmsg = _.sh returnStdout: true, script: commandScriptString
-        response = jsonParse( rmsg )
-        if ( response.status != 0 ) {
-          _.error "Failed to create Scratch Org -- ${response.message}"
-        }
+      _.echo('Creating scratch org')
+  
+      def commandScriptString = "sfdx org create scratch --definition-file ${this.sfdxScratchOrgDefinitionFile} --json --duration-days 1 --alias ${this.sfdxScratchOrgAlias} --target-dev-hub ${_.env.SFDX_DEV_HUB_USERNAME} --wait 30"
+  
+      def response
+  
+      try {
+          debug('before call to sh command to create org')
+          def rmsg = _.sh returnStdout: true, script: commandScriptString
+          debug('after the call to sh command to create org')
+          debug(rmsg)
+          response = jsonParse(rmsg)
+          debug('after the parsing of rmsg')
+          debug('------------------------------------------------------')
+          debug('response == ')
+          debug(response)
+          debug('------------------------------------------------------')
+  
+          // Push source code to the scratch org
+          _.echo('Pushing source code to the scratch org')
+          def pushResponse = _.sh returnStdout: true, script: "sfdx force:source:push --target-org ${this.sfdxScratchOrgAlias} --json"
+          debug('after the call to sh command to push source code')
+          debug(pushResponse)
+          def pushResult = jsonParse(pushResponse)
+          if (pushResult.status != 0) {
+              _.error "Failed to push source code to Scratch Org -- ${pushResult.message}"
+          }
       }
-      else {
-        _.echo(ex.printStackTrace())
-        _.error "Failed to create Scratch Org -- ${response.message}"
+      catch (ex) {
+          _.echo('------------------------------------------------------')
+          _.echo('Exception occurred while creating scratch org:')
+          _.echo(ex.getMessage())
+          _.echo('------------------------------------------------------')
+          if (ex.message.contains('OPERATION_TOO_LARGE')) {
+              _.echo('exception message contains OPERATION_TOO_LARGE')
+              _.echo('------------------------------------------------------')
+              _.echo(ex.printStackTrace())
+              _.error "Failed to create Scratch Org -- ${response.message}"
+          } else if (ex.name.equals('genericTimeoutMessage') || ex.name.equals('RemoteOrgSignupFailed')) {
+              _.echo('Original attempt to create scratch org timed out.  Trying to create one again.')
+              rmsg = _.sh returnStdout: true, script: commandScriptString
+              response = jsonParse(rmsg)
+              if (response.status != 0) {
+                  _.error "Failed to create Scratch Org -- ${response.message}"
+              }
+          }
+          else {
+              _.echo(ex.printStackTrace())
+              _.error "Failed to create Scratch Org -- ${response.message}"
+          }
       }
-    }
-    this.scratchOrgWasCreated = true
+      this.scratchOrgWasCreated = true
   }
 
   private void deleteScratchOrg() {
@@ -951,9 +979,7 @@ class SfdxProjectBuilder implements Serializable {
       }
     }
     else if ( this.scratchOrgWasCreated && ! this.scratchOrgShouldBeDeleted ) {
-      // find the scratch org sfdxAuthUrl
       def rmsg = _.sh returnStdout: true, script: "sfdx org display --verbose --json --target-org ${this.sfdxScratchOrgAlias}"
-
       def response = jsonParse( rmsg )
 
       if (response.status == 0) {
@@ -962,6 +988,60 @@ class SfdxProjectBuilder implements Serializable {
       }
     }
   }
+
+    
+   // Runs PMD analysis on code
+   // Checks if PMD is installed before running
+  private void runPmdAnalysis() {
+      _.echo('Running PMD analysis on the source code')
+      
+      // Check if PMD is installed
+      def pmdInstalled = _.sh(script: 'which pmd', returnStatus: true) == 0
+      if (!pmdInstalled) {
+          _.echo('PMD is not installed, install PMD to run the analysis.')
+          return
+      }
+      
+      // Define the PMD command
+      def pmdCommand = "pmd -d '*pathtosource*' -R config/pmd/pmd-ruleset.xml -f xml -r pmd-report.xml"
+      
+      try {
+          // Execute the PMD command
+          def pmdResult = _.sh returnStdout: true, script: pmdCommand
+          _.echo('PMD analysis completed')
+          _.echo(pmdResult)
+      } catch (ex) {
+          // Log the error and terminate with an error
+          _.echo('------------------------------------------------------')
+          _.echo('Exception occurred while running PMD analysis:')
+          _.echo(ex.getMessage())
+          _.echo('------------------------------------------------------')
+          _.error "PMD analysis failed"
+      }
+  }
+
+
+     // Gets the results of the PMD analysis and return it.
+    private String getPmdResults() {
+        _.echo('Retrieving PMD analysis results')
+        
+        // Define the path
+        def reportFilePath = 'pmd-report.xml'
+        
+        try {
+            // Read contents of the PMD report file
+            def reportContent = _.readFile(reportFilePath)
+            _.echo('PMD analysis results retrieved successfully')
+            return reportContent
+        } catch (ex) {
+            // Log the error and terminate with an error
+            _.echo('------------------------------------------------------')
+            _.echo('Exception occurred while retrieving PMD analysis results:')
+            _.echo(ex.getMessage())
+            _.echo('------------------------------------------------------')
+            _.error "Failed to retrieve PMD analysis results"
+        }
+    }
 
   private void resetAllDependenciesToLatestWherePossible() {
     def commandScriptString = "sfdx toolbox:package:dependencies:manage --updatetolatest --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME} --json"
