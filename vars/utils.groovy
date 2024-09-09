@@ -6,6 +6,11 @@ def jsonParse(def json) {
     new groovy.json.JsonSlurperClassic().parseText(json)
 }
 
+def call()
+{
+    sh "echo Hello World"
+}
+
 // @NonCPS
 def recordPackageVersionArtifact( def packageVersion ) {
     def fileToFingerprint = "${RUN_ARTIFACT_DIR}/${packageVersion.Package2Name}-${packageVersion.Package2Id}--v${packageVersion.Version}"
