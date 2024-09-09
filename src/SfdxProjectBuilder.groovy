@@ -857,6 +857,45 @@ class SfdxProjectBuilder implements Serializable {
     this.sfdxPackage = jsonParse( _.readFile('sfdx-project.json') )
   }
 
+    // Method to run automated 508 testing
+    public void runAccessibilityTests(String url) {
+        // Set up WebDriver (assuming ChromeDriver is used)
+        System.setProperty("webdriver.chrome.driver", "/path/to/chromedriver")
+        WebDriver driver = new ChromeDriver()
+        
+        try {
+            // Navigate to the URL
+            driver.get(url)
+            
+            // Inject Axe script into the page
+            String axeScript = new File('path/to/axe.min.js').text
+            ((JavascriptExecutor) driver).executeScript(axeScript)
+            
+            // Execute Axe and get results
+            String script = "return axe.run().then(results => results)"
+            def results = ((JavascriptExecutor) driver).executeScript(script)
+            
+            // Print or log the results
+            println "Accessibility Violations: ${results.violations.size()}"
+            results.violations.each { violation ->
+                println "Violation: ${violation.description}"
+                violation.nodes.each { node ->
+                    println "  Element: ${node.target}"
+                    println "  Failure Summary: ${node.failureSummary}"
+                }
+            }
+        } finally {
+            // Close the browser
+            driver.quit()
+        }
+    }
+
+  public void execute() {
+            // URL to execute
+            String urlToTest = "https://your-salesforce-scratch-org-url.com"
+            runAccessibilityTests(urlToTest)
+  }
+
   private void authenticateToDevHub() {
     _.echo('Authenticate to the Dev Hub ')
     _.withCredentials( [ _.file( credentialsId: _.env.JWT_CRED_ID_DH, variable: 'jwt_key_file') ] ) {
