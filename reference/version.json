@@ -1,0 +1,5 @@
+{
+    "architecture": "darwin-x64",
+    "cliVersion": "@salesforce/cli/2.61.8",
+    "nodeVersion": "node-v20.17.0"
+}
