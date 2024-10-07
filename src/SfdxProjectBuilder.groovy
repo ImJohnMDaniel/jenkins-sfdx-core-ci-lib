@@ -492,12 +492,8 @@ class SfdxProjectBuilder implements Serializable {
   void initializeStage() {
 
     // record CLI version
-    def rmsg = _.sh returnStdout: true, script: "sfdx version --json"
+    def rmsg = _.sh returnStdout: true, script: "sf version --json"
     _.echo(rmsg)
-    // the following doesn't work on very old SFDX CLI versions
-    // def responseMsg = jsonParse( rmsg )
-    // _.echo(responseMsg)
-    // _.echo("sfdx version == ${responseMsg.cliVersion}")
 
     installRequiredCLIPlugins()
     // setup this build's unique artifact directory
@@ -537,11 +533,11 @@ class SfdxProjectBuilder implements Serializable {
     // _.echo(rmsg)
 
     // // _.sh returnStdout: true, script: "ls -lap /root/.local/share/sfdx/node_modules/"
-    // def rmsgForPluginCheck = _.sh returnStdout: true, script: "sfdx plugins"
+    // def rmsgForPluginCheck = _.sh returnStdout: true, script: "sf plugins"
     // _.echo(rmsgForPluginCheck)
-    // def rmsgInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install @dx-cli-toolbox/sfdx-toolbox-package-utils"
+    // def rmsgInstall = _.sh returnStdout: true, script: "echo y | sf plugins install @dx-cli-toolbox/sfdx-toolbox-package-utils"
     // _.echo(rmsgInstall)
-    // rmsg = _.sh returnStdout: true, script: "sfdx plugins"
+    // rmsg = _.sh returnStdout: true, script: "sf plugins"
     // _.echo(rmsg)
     // rmsg = _.sh returnStdout: true, script: 'ls -lap $HOME'
     // _.echo(rmsg)
@@ -815,8 +811,6 @@ class SfdxProjectBuilder implements Serializable {
     this.workingArtifactDirectory = "target/${_.env.BUILD_NUMBER}"
     this.sfdxScratchOrgAlias = "bluesphere-${_.env.BUILD_TAG.replaceAll("/", "_").replaceAll(" ","_")}"
 
-// TODO: Change env TREAT_RELEASE_BRANCHES_AS_NULL_FOR_DEPENDENCIES_AND_PACKAGE_VERSION_CREATION to be TREAT_RELEASE_BRANCHES_AS_NULL_FOR_DEPENDENCIES_AND_PACKAGE_VERSION_CREATION
-
     if ( _.env.TREAT_RELEASE_BRANCHES_AS_NULL_FOR_DEPENDENCIES_AND_PACKAGE_VERSION_CREATION != null ) {
       this.releaseBranchesShouldBeTreatedAsNull = _.env.TREAT_RELEASE_BRANCHES_AS_NULL_FOR_DEPENDENCIES_AND_PACKAGE_VERSION_CREATION.toBoolean()
     }
@@ -866,15 +860,9 @@ class SfdxProjectBuilder implements Serializable {
         // _.fileOperations([_.fileCopyOperation(excludes: '', flattenFiles: false, includes: _.jwt_key_file, targetLocation: './server.key')])  // some issue with the masking of the file name.  Need to sort it out
 
         _.echo("Authenticating To Dev Hub...")
-        
-
-        // def rc = _.sh returnStatus: true, script: "sfdx org login jwt --set-default-dev-hub --client-id ${_.env.CONNECTED_APP_CONSUMER_KEY_DH} --username ${_.env.SFDX_DEV_HUB_USERNAME} --jwt-key-file server.key --instance-url ${_.env.SFDX_DEV_HUB_HOST}"
-        // if (rc != 0) { 
-        //   _.error "hub org authorization failed" 
-        // }
 
       try {
-        def rmsg =  _.sh returnStdout: true, script: "sfdx org login jwt --set-default-dev-hub --client-id ${_.env.CONNECTED_APP_CONSUMER_KEY_DH} --username ${_.env.SFDX_DEV_HUB_USERNAME} --jwt-key-file server.key --instance-url ${_.env.SFDX_DEV_HUB_HOST} --json"
+        def rmsg =  _.sh returnStdout: true, script: "sf org login jwt --set-default-dev-hub --client-id ${_.env.CONNECTED_APP_CONSUMER_KEY_DH} --username ${_.env.SFDX_DEV_HUB_USERNAME} --jwt-key-file server.key --instance-url ${_.env.SFDX_DEV_HUB_HOST} --json"
         // _.echo('mark C')
         def response = jsonParse( rmsg )
         // _.echo('mark D')
@@ -895,7 +883,7 @@ class SfdxProjectBuilder implements Serializable {
   private void createScratchOrg() {
     _.echo('Creating scratch org')
 
-    def commandScriptString = "sfdx org create scratch --definition-file ${this.sfdxScratchOrgDefinitionFile} --json --duration-days 1 --alias ${this.sfdxScratchOrgAlias} --target-dev-hub ${_.env.SFDX_DEV_HUB_USERNAME} --wait 30"
+    def commandScriptString = "sf org create scratch --no-track-source --definition-file ${this.sfdxScratchOrgDefinitionFile} --json --duration-days 1 --alias ${this.sfdxScratchOrgAlias} --target-dev-hub ${_.env.SFDX_DEV_HUB_USERNAME} --wait 30"
 
     def response
 
@@ -945,14 +933,14 @@ class SfdxProjectBuilder implements Serializable {
   private void deleteScratchOrg() {
     if (this.scratchOrgWasCreated && this.scratchOrgShouldBeDeleted) {
       _.echo('Deleting scratch org')
-      def rc = _.sh returnStatus: true, script: "sfdx org delete scratch --no-prompt --target-org ${this.sfdxScratchOrgAlias}"
+      def rc = _.sh returnStatus: true, script: "sf org delete scratch --no-prompt --target-org ${this.sfdxScratchOrgAlias}"
       if (rc != 0) { 
         _.error "deletion of scratch org ${this.sfdxScratchOrgAlias} failed"
       }
     }
     else if ( this.scratchOrgWasCreated && ! this.scratchOrgShouldBeDeleted ) {
       // find the scratch org sfdxAuthUrl
-      def rmsg = _.sh returnStdout: true, script: "sfdx org display --verbose --json --target-org ${this.sfdxScratchOrgAlias}"
+      def rmsg = _.sh returnStdout: true, script: "sf org display --verbose --json --target-org ${this.sfdxScratchOrgAlias}"
 
       def response = jsonParse( rmsg )
 
@@ -964,7 +952,7 @@ class SfdxProjectBuilder implements Serializable {
   }
 
   private void resetAllDependenciesToLatestWherePossible() {
-    def commandScriptString = "sfdx toolbox:package:dependencies:manage --updatetolatest --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME} --json"
+    def commandScriptString = "sf toolbox package dependencies manage --updatetolatest --targetdevhubusername ${_.env.SFDX_DEV_HUB_USERNAME} --json"
 
     // TODO: Make adjustments here as well
     if ( !this.releaseBranchList.contains(_.env.BRANCH_NAME)
@@ -1015,7 +1003,7 @@ class SfdxProjectBuilder implements Serializable {
     //   _.echo('complete condition false')
     // }
 
-    def commandScriptString = "sfdx toolbox:package:dependencies:install --wait 240 --noprecheck --targetusername ${this.sfdxScratchOrgAlias} --json"
+    def commandScriptString = "sf toolbox package dependencies install --wait 240 --noprecheck --targetusername ${this.sfdxScratchOrgAlias} --json"
     
     // TODO: Make adjustments here as well
     if ( !this.releaseBranchList.contains(_.env.BRANCH_NAME) || ( this.releaseBranchList.contains(_.env.BRANCH_NAME) && !this.releaseBranchesShouldBeTreatedAsNull ) ) {
@@ -1044,22 +1032,13 @@ class SfdxProjectBuilder implements Serializable {
       debug('------------------------------------------------------')
     }
     catch (ex) {
-      debug( 'catch section of toolbox:apex:codecoverage:install' )
+      debug( 'catch section of toolbox package dependencies install' )
       debug( "${ex}")
       debug('------------------------------------------------------')
       // printf ex
       debug('------------------------------------------------------')
     }    
     
-    // if ( rmsg.isEmpty() ) {
-    //   // then this means that the toolbox plugin has not been installed on this server.
-    //   installRequiredCLIPlugins()
-    //   _.echo ("retrying the toolbox:package:dependencies:install command")
-    //   rmsg = _.sh returnStdout: true, script: commandScriptString
-    // }
-  
-   
-
     if (response.status != 0) {
       _.echo rmsg
       _.error "package dependency installed failed -- ${response.message}"
@@ -1069,31 +1048,23 @@ class SfdxProjectBuilder implements Serializable {
 
   private void installRequiredCLIPlugins() {
       _.echo ("installing the @dx-cli-toolbox/sfdx-toolbox-package-utils plugin")
-      def rmsgToolboxPackageUtilsInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install @dx-cli-toolbox/sfdx-toolbox-package-utils"
+      def rmsgToolboxPackageUtilsInstall = _.sh returnStdout: true, script: "echo y | sf plugins install @dx-cli-toolbox/sfdx-toolbox-package-utils"
       _.echo rmsgToolboxPackageUtilsInstall
 
       _.echo ("installing the @dx-cli-toolbox/sfdx-toolbox-utils plugin")
-      def rmsgToolboxUtilsInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install @dx-cli-toolbox/sfdx-toolbox-utils"
+      def rmsgToolboxUtilsInstall = _.sh returnStdout: true, script: "echo y | sf plugins install @dx-cli-toolbox/sfdx-toolbox-utils"
       _.echo rmsgToolboxUtilsInstall
 
       _.echo ("installing the sfdmu plugins")
-      def rmsgSFDMUInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install sfdmu"
+      def rmsgSFDMUInstall = _.sh returnStdout: true, script: "echo y | sf plugins install sfdmu"
       _.echo rmsgSFDMUInstall
-
-      // _.echo ("installing the shane-sfdx-plugins  plugins")
-      // def rmsgShaneSFDXPluginInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install shane-sfdx-plugins "
-      // _.echo rmsgShaneSFDXPluginInstall
-
-      // _.echo ("installing the sfpowerkit plugins")
-      // def rmsgSFPowerKitInstall = _.sh returnStdout: true, script: "echo y | sfdx plugins:install sfpowerkit"
-      // _.echo rmsgSFPowerKitInstall
   }
 
   private void setupCommunityIfNeeded() {
 
     if (this.isCreatingCommunity) {
       _.echo("Creating community ${this.communityName}...")
-      def rmsg = _.sh returnStdout: true, script: "sfdx community create --name \"${this.communityName}\" --url-path-prefix ${this.urlPathPrefix} --template-name \"${this.templateName}\" --json --target-org ${this.sfdxScratchOrgAlias}"
+      def rmsg = _.sh returnStdout: true, script: "sf community create --name \"${this.communityName}\" --url-path-prefix ${this.urlPathPrefix} --template-name \"${this.templateName}\" --json --target-org ${this.sfdxScratchOrgAlias}"
       
       def response = jsonParse( rmsg )
 
@@ -1111,7 +1082,7 @@ class SfdxProjectBuilder implements Serializable {
       _.echo("Publish community ${this.communityName}...")
   
       try {
-        _.sh script: "sfdx community publish --name \"${this.communityName}\" --json --target-org ${this.sfdxScratchOrgAlias} > ${this.workingArtifactDirectory}/community-publish.json"
+        _.sh script: "sf community publish --name \"${this.communityName}\" --json --target-org ${this.sfdxScratchOrgAlias} > ${this.workingArtifactDirectory}/community-publish.json"
         
         // wait some time to allow the community publishing to complete
         _.sleep(45)
@@ -1152,56 +1123,37 @@ class SfdxProjectBuilder implements Serializable {
     _.echo("Push To Scratch Org And Compile")
     def rmsg
     try {
-      // _.echo( _.env.SFDX_JSON_TO_STDOUT )
-      // rmsg = _.sh returnStdout: true, script: "sfdx force source push --forceoverwrite --json --targetusername ${this.sfdxScratchOrgAlias}"
 
-      // def response = jsonParse( rmsg )
-      // debug( response )
-
-      // if (response.status != 0) {
-      //     _.error "push failed -- ${response.message}"
-      // }
-
-      // debug( rmsg )
-      // if ( rmsg > 0 ) {
-      //   _.error('force source push failed')
-      // }
-
-      _.sh script: "sfdx force source push --forceoverwrite --json --wait 90 --targetusername ${this.sfdxScratchOrgAlias} > ${this.workingArtifactDirectory}/source-push.json"
+      _.sh script: "sf project deploy start --ignore-conflicts --json --wait 90 --target-org ${this.sfdxScratchOrgAlias} > ${this.workingArtifactDirectory}/project-deploy-start.json"
 
     }
     catch(ex) {
-      debug( 'catch section of force source push' )
-      // debug( ex.getMessage() )
-      // debug( 'does ex have a status?')
-
-      // check if source-push.json exists
-        // read the file as a JSON file
+      debug( 'catch section of project deploy start' )
       
       processSourcePushFailure()      
 
       _.error( ex )
     } 
     finally {
-      debug( 'finally section of force source push')
+      debug( 'finally section of project deploy start')
     }
   }
 
   private void processSourcePushFailure() {
     debug('processSourcePushFailure method called')
 
-    def sourcePushResultsFileExists = _.fileExists "${this.workingArtifactDirectory}/source-push.json"
+    def sourcePushResultsFileExists = _.fileExists "${this.workingArtifactDirectory}/project-deploy-start.json"
 
     if ( sourcePushResultsFileExists ) {
 
-      // def sourcePushResultFile = _.findFiles( glob: "${this.workingArtifactDirectory}/source-push.json") 
+      // def sourcePushResultFile = _.findFiles( glob: "${this.workingArtifactDirectory}/project-deploy-start.json") 
       
       // _.echo(sourcePushResultFile) // doing this produces an exception
       // printf sourcePushResultFile
       // def sourcePushResults = _.readJSON file: "${sourcePushResultFile[0].path}", returnPojo: true
-      debug( 'before source-push.json file read')
-      def sourcePushResults = jsonParse( _.readFile("${this.workingArtifactDirectory}/source-push.json") )
-      debug( 'after source-push.json file read')
+      debug( 'before project-deploy-start.json file read')
+      def sourcePushResults = jsonParse( _.readFile("${this.workingArtifactDirectory}/project-deploy-start.json") )
+      debug( 'after project-deploy-start.json file read')
 
       def sourcePushFailureDetails = "Compilation stage failed with error : ${sourcePushResults.name}\n\n"
       
@@ -1228,7 +1180,7 @@ class SfdxProjectBuilder implements Serializable {
         )
     }
     else {
-      _.echo ('file source-push.json not found')
+      _.echo ('file project-deploy-start.json not found')
     }
 
   }
@@ -1243,7 +1195,7 @@ class SfdxProjectBuilder implements Serializable {
         
         try {
           debug('before the apex run test execution')
-          rmsg = _.sh returnStdout: true, label: 'Executing apex run test...', script: "sfdx apex run test --test-level RunLocalTests --output-dir ${this.workingArtifactDirectory} --result-format tap --code-coverage --wait 60 --json --target-org ${this.sfdxScratchOrgAlias}"
+          rmsg = _.sh returnStdout: true, label: 'Executing apex run test...', script: "sf apex run test --test-level RunLocalTests --output-dir ${this.workingArtifactDirectory} --result-format tap --code-coverage --wait 60 --json --target-org ${this.sfdxScratchOrgAlias}"
           // debug( rmsg )
           // if ( rmsg == 0 ) {
           //   unitTestsHaveFailed = false
@@ -1288,7 +1240,7 @@ class SfdxProjectBuilder implements Serializable {
           //   // execute all unit tests a second time.  There is a bug with snapshots and CMDT-based 
           //   //      Dependency injection and Apex Unit Tests.  The workaround is to simply
           //   //      re-run the unit tests again.
-          //   rmsg = _.sh returnStdout: true, label: 'Executing apex run test...', script: "sfdx apex run test --test-level RunLocalTests --output-dir ${this.workingArtifactDirectory} --result-format junit --code-coverage --wait 60 --json --target-org ${this.sfdxScratchOrgAlias}"
+          //   rmsg = _.sh returnStdout: true, label: 'Executing apex run test...', script: "sf apex run test --test-level RunLocalTests --output-dir ${this.workingArtifactDirectory} --result-format junit --code-coverage --wait 60 --json --target-org ${this.sfdxScratchOrgAlias}"
           // }
         }
         finally {
@@ -1312,7 +1264,7 @@ class SfdxProjectBuilder implements Serializable {
       for ( aPermissionSetToAssign in this.permissionSetsToAssign ) {
         _.echo ("now assigning permission set '${aPermissionSetToAssign}'")
         try {
-          def rmsg =  _.sh returnStdout: true, script: "sfdx org assign permset --name ${aPermissionSetToAssign} --target-org ${this.sfdxScratchOrgAlias} --json"
+          def rmsg =  _.sh returnStdout: true, script: "sf org assign permset --name ${aPermissionSetToAssign} --target-org ${this.sfdxScratchOrgAlias} --json"
           def response = jsonParse( rmsg )
 
           _.echo("response object is")
@@ -1347,7 +1299,7 @@ class SfdxProjectBuilder implements Serializable {
 
       try {
         // evaluate the test results
-        _.sh script: "sfdx toolbox:apex:codecoverage:check --json -f ${testResultFiles[0].path} > ${this.workingArtifactDirectory}/toolbox-apex-codecoverage-check.json"
+        _.sh script: "sf toolbox apex codecoverage check --json -f ${testResultFiles[0].path} > ${this.workingArtifactDirectory}/toolbox-apex-codecoverage-check.json"
 
         def evaluationResults = _.readJSON file: "${this.workingArtifactDirectory}/toolbox-apex-codecoverage-check.json", returnPojo: true
 
@@ -1403,7 +1355,7 @@ class SfdxProjectBuilder implements Serializable {
           isFooterMessage: true
         )
 
-        debug( 'end of catch section of toolbox:apex:codecoverage:check' )
+        debug( 'end of catch section of toolbox apex codecoverage check' )
 
         _.error( ex )
       }
@@ -1499,7 +1451,7 @@ class SfdxProjectBuilder implements Serializable {
       _.error  "unable to determine pathToUseForPackageVersionCreation in stage:package"
     }
 
-    def commandScriptString = "sfdx package version create --path ${pathToUseForPackageVersionCreation} --json --code-coverage --tag ${this.buildGITCommitHash} --version-description ${this.buildTagName} --target-dev-hub ${_.env.SFDX_DEV_HUB_USERNAME}"
+    def commandScriptString = "sf package version create --path ${pathToUseForPackageVersionCreation} --json --code-coverage --tag ${this.buildGITCommitHash} --version-description ${this.buildTagName} --target-dev-hub ${_.env.SFDX_DEV_HUB_USERNAME}"
 
 /*
     GOAL: FEATURE: treat “rc/*” branches the same as “main” for package version builds
@@ -1554,9 +1506,9 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
 
 
     if ( this.packageInstallationKey == null ) {
-      commandScriptString = commandScriptString + ' --installationkeybypass'
+      commandScriptString = commandScriptString + ' --installation-key-bypass'
     } else {
-      commandScriptString = commandScriptString + " --installationkey '${this.packageInstallationKey}'"
+      commandScriptString = commandScriptString + " --installation-key '${this.packageInstallationKey}'"
     }
 
     _.echo ("commandScriptString == ${commandScriptString}")
@@ -1576,7 +1528,7 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
             // The package version creation is still underway
             def packageVersionCreationCheckResponseResult = ''
 
-            _.echo("To check on package version creation -- sfdx package version create report --package-create-request-id ${this.packageVersionCreationResponseResult.Id} ")
+            _.echo("To check on package version creation -- sf package version create report --package-create-request-id ${this.packageVersionCreationResponseResult.Id} ")
 
             _.timeout(360) {
                 _.waitUntil {
@@ -1586,7 +1538,7 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
                         def isPackageVersionCreationCompleted = false
                         def packageVersionCreationCheckResponse 
                         try {
-                          rmsg = _.sh returnStdout: true, script: "sfdx package version create report --package-create-request-id ${this.packageVersionCreationResponseResult.Id} --json --target-dev-hub ${_.env.SFDX_DEV_HUB_USERNAME}"
+                          rmsg = _.sh returnStdout: true, script: "sf package version create report --package-create-request-id ${this.packageVersionCreationResponseResult.Id} --json --target-dev-hub ${_.env.SFDX_DEV_HUB_USERNAME}"
                           // printf rmsg
 
                           packageVersionCreationCheckResponse = jsonParse(rmsg) 
@@ -1675,7 +1627,7 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
   private void captureCodeCoverage() {
     _.echo("Discovering code coverage for sfdxNewPackageVersionId == ${this.sfdxNewPackageVersionId}")
 
-    def rmsg = _.sh returnStdout: true, script: "sfdx package version report --package ${this.sfdxNewPackageVersionId} --json --target-dev-hub ${_.env.SFDX_DEV_HUB_USERNAME}"
+    def rmsg = _.sh returnStdout: true, script: "sf package version report --package ${this.sfdxNewPackageVersionId} --json --target-dev-hub ${_.env.SFDX_DEV_HUB_USERNAME}"
     
     def packageVersionReportResponse = jsonParse(rmsg) 
 
@@ -1712,7 +1664,7 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
     def rmsg
     def jsonParsedResponse
     try {
-      rmsg = _.sh returnStdout: true, script: "sfdx package installed list --json --target-org ${this.sfdxScratchOrgAlias}"
+      rmsg = _.sh returnStdout: true, script: "sf package installed list --json --target-org ${this.sfdxScratchOrgAlias}"
       _.echo( rmsg )
       if ( rmsg != null ) {
         jsonParsedResponse = jsonParse(rmsg)
@@ -1722,7 +1674,7 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
       if ( rmsg == null || (jsonParsedResponse != null && jsonParsedResponse.exitCode == 1 && jsonParsedResponse.name.equals("QUERY_TIMEOUT") ) ) {
         _.echo("Sleeping for 2 minutes and will try again")
         _.sleep time: 1, unit: 'MINUTES'
-        rmsg = _.sh returnStdout: true, script: "sfdx package installed list --json --target-org ${this.sfdxScratchOrgAlias}"
+        rmsg = _.sh returnStdout: true, script: "sf package installed list --json --target-org ${this.sfdxScratchOrgAlias}"
         jsonParsedResponse = jsonParse(rmsg)
       }
     }
@@ -1737,7 +1689,7 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
       if ( rmsg == null || (jsonParsedResponse != null && jsonParsedResponse.exitCode == 1 && jsonParsedResponse.name.equals("QUERY_TIMEOUT") ) ) {
         _.echo("Sleeping for 2 minutes and will try again")
         _.sleep time: 1, unit: 'MINUTES'
-        rmsg = _.sh returnStdout: true, script: "sfdx package installed list --json --target-org ${this.sfdxScratchOrgAlias}"
+        rmsg = _.sh returnStdout: true, script: "sf package installed list --json --target-org ${this.sfdxScratchOrgAlias}"
         jsonParsedResponse = jsonParse(rmsg)
       }
 
@@ -1746,7 +1698,7 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
     def allPackageVersionsInstalledInScratchOrg = jsonParsedResponse.result
 
     // Get the complete list of package versions that are currently available in the DevHub
-    rmsg = _.sh returnStdout: true, script: "sfdx force package version list --target-dev-hub ${_.env.SFDX_DEV_HUB_USERNAME} --json "
+    rmsg = _.sh returnStdout: true, script: "sf package version list --json --target-dev-hub ${_.env.SFDX_DEV_HUB_USERNAME}"
     def allPackageVersionsAvailableInDevHub = jsonParse(rmsg).result
 
     def packageVersion
@@ -1767,7 +1719,7 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
 
         // then a package was created.  Record its finger prints
         _.echo("finding all package versions for package ids found")
-        rmsg = _.sh returnStdout: true, script: "sfdx package version list --packages ${this.sfdxNewPackage} --json --target-dev-hub ${_.env.SFDX_DEV_HUB_USERNAME}"
+        rmsg = _.sh returnStdout: true, script: "sf package version list --json --packages ${this.sfdxNewPackage} --target-dev-hub ${_.env.SFDX_DEV_HUB_USERNAME}"
         //printf rmsg
 
         def response = jsonParse( rmsg )
@@ -1869,7 +1821,7 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
       for ( aDataLoadToProcess in this.dataLoadsToProcess ) {
         _.echo ("now processing data load folder '${aDataLoadToProcess}'")
         try {
-          def rmsg =  _.sh returnStdout: true, script: "sfdx sfdmu:run --sourceusername csvfile --path ${aDataLoadToProcess} --targetusername ${this.sfdxScratchOrgAlias} --json --quiet"
+          def rmsg =  _.sh returnStdout: true, script: "sf sfdmu run --sourceusername csvfile --path ${aDataLoadToProcess} --targetusername ${this.sfdxScratchOrgAlias} --json --quiet"
 
           _.echo('_______________________________________________________')
           _.echo('raw message returned __________________________________')
@@ -1926,7 +1878,6 @@ XXXXXXXX - Setter == designateAsReleaseBranch('foobar')
       _.echo('No data loads requested')
     }
   }
-
 
           //  THIS DEFINITELY WORKS 
           // _.pipelineTriggers(
